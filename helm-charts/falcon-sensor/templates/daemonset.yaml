@@ -19,6 +19,7 @@ metadata:
     {{ $key }}: {{ $value | quote }}
     {{- end }}
   {{- end }}
+  namespace: {{ .Values.namespace }}
 spec:
   selector:
     matchLabels:

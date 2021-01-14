@@ -38,3 +38,18 @@ namespace: default
 
 # How long to wait for Filebeat pods to stop gracefully
 terminationGracePeriod: 30
+
+falcon:
+  cid:
+  aid:
+  apd:
+  aph:
+  app:
+  trace:
+  feature:
+  message_log:
+  billing:
+  assert:
+  memfail_grace_period:
+  memfail_every_n:
+  provisioning_token:

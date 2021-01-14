@@ -8,17 +8,22 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
-
 data:
-  FALCONCTL_OPT_CID: {{ .values.FALCONCTL_OPT_CID | quote }}
-  FALCONCTL_OPT_AID: {{ .values.FALCONCTL_OPT_AID | quote }}
-  FALCONCTL_OPT_APD: {{ .values.FALCONCTL_OPT_APD | quote }}
-  FALCONCTL_OPT_APH: {{ .values.FALCONCTL_OPT_APH | quote }}
-  FALCONCTL_OPT_APP: {{ .values.FALCONCTL_OPT_APP | quote }}
-  FALCONCTL_OPT_TRACE: {{ .values.FALCONCTL_OPT_TRACE | quote }}
-  FALCONCTL_OPT_FEATURE: {{ .values.FALCONCTL_OPT_FEATURE | quote }}
-  FALCONCTL_OPT_MESSAGE_LOG: {{ .values.FALCONCTL_OPT_MESSAGE_LOG | quote }}
-  FALCONCTL_OPT_BILLING: {{ .values.FALCONCTL_OPT_BILLING | quote }}
-  FALCONCTL_OPT_ASSERT: {{ .values.FALCONCTL_OPT_ASSERT }}
-  FALCONCTL_OPT_MEMFAIL_GRACE_PERIOD: {{ .values.FALCONCTL_OPT_MEMFAIL_GRACE_PERIOD | quote }}
-  FALCONCTL_OPT_MEMFAIL_EVERY_N: {{ .values.FALCONCTL_OPT_MEMFAIL_EVERY_N | quote }}
+  {{- range $key, $value := .Values.falcon }}
+  {{- if .Values.falcon.$value }}
+  FALCONCTL_OPT_{{ $key | upper }}: {{ .Values.falcon.$value | quote }}
+  {{- end }}
+  {{- end }}
+
+  #  FALCONCTL_OPT_CID: {{ .Values.falcon.cid | quote }}
+  #FALCONCTL_OPT_AID: {{ .Values.falcon.aid | quote }}
+  #FALCONCTL_OPT_APD: {{ .Values.falcon.apd | quote }}
+  #FALCONCTL_OPT_APH: {{ .Values.falcon.aph | quote }}
+  #FALCONCTL_OPT_APP: {{ .Values.falcon.app | quote }}
+  #FALCONCTL_OPT_TRACE: {{ .Values.falcon.trace | quote }}
+  #FALCONCTL_OPT_FEATURE: {{ .Values.falcon.feature | quote }}
+  #FALCONCTL_OPT_MESSAGE_LOG: {{ .Values.falcon.message_log | quote }}
+  #FALCONCTL_OPT_BILLING: {{ .Values.falcon.billing | quote }}
+  #FALCONCTL_OPT_ASSERT: {{ .Values.falcon.assert }}
+  #FALCONCTL_OPT_MEMFAIL_GRACE_PERIOD: {{ .Values.falcon.memfail_grace_period | quote }}
+  #FALCONCTL_OPT_MEMFAIL_EVERY_N: {{ .Values.falcon.memfail_every_n | quote }}

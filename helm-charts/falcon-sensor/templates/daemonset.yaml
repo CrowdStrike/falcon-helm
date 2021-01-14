@@ -1,0 +1,114 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "falcon-sensor.fullname" . }}
+  labels:
+    name: {{ include "falcon-sensor.fullname" . }}
+    app: {{ include "falcon-sensor.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    {{- if .Values.daemonset.labels }}
+    {{- range $key, $value := .Values.daemonset.labels }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    {{- end }}
+  {{- if .Values.daemonset.annotations }}
+  annotations:
+    {{- range $key, $value := .Values.daemonset.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      name: {{ include "falcon-sensor.fullname" . }}
+      app: {{ include "falcon-sensor.fullname" . }}
+      release: {{ .Release.Name | quote }}
+  updateStrategy:
+    type: {{ .Values.daemonset.updateStrategy }}
+  template:
+    metadata:
+      annotations:
+        {{- range $key, $value := .Values.podAnnotations }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+      labels:
+        name: {{ include "falcon-sensor.fullname" . }}
+        app: {{ include "falcon-sensor.fullname" . }}
+        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+        heritage: {{ .Release.Service | quote }}
+        release: {{ .Release.Name | quote }}
+        {{- if .Values.daemonset.labels }}
+        {{- range $key, $value := .Values.daemonset.labels }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
+    spec:
+      initContainers:
+      
+      # This init container creates empty falconstore file so that when
+      # it's mounted into the sensor-container, k8s would just use it
+      # rather than creating a directory.  Mounting falconstore file as
+      # a file volume ensures that AID is preserved across container
+      # restarts.
+      - name: init-falconstore
+        image: busybox
+        args: [/bin/sh, -c, 'touch /tmp/CrowdStrike/falconstore']
+        volumeMounts:
+          - name: falconstore-dir
+            mountPath: /tmp/CrowdStrike
+
+      containers:
+      - name: sensor-container
+        image: "{{ .Values.image.repository }}:{{ .Values.image.imageTag }}"
+        imagePullPolicy: "{{ .Values.image.imagePullPolicy }}"
+        volumeMounts:
+        - name: dev
+          mountPath: /dev
+        - name: var-run
+          mountPath: /var/run
+        - name: etc
+          mountPath: /etc
+        - name: var-log
+          mountPath: /var/log
+        - name: falconstore
+          mountPath: /opt/CrowdStrike/falconstore
+
+        securityContext: {{ toYaml ( .Values.daemonset.securityContext ) | nindent 10 }}
+        envFrom:
+        - configMapRef:
+            name: {{ include "falcon-sensor.fullname" . }}-config
+
+      # This spits out logs from sensor-container to stdout so that they
+      # are routed through k8s log driver.
+      - name: log
+        image: busybox
+        args: [/bin/sh, -c, 'tail --retry -n1 -f /var/log/falcon-sensor.log']
+        volumeMounts:
+        - name: var-log
+          mountPath: /var/log
+
+      volumes:
+        - name: dev
+          hostPath:
+            path: /dev
+        - name: etc
+          hostPath:
+            path: /etc
+        - name: var-run
+          hostPath:
+            path: /var/run
+        - name: var-log
+          emptyDir: {}
+        - name: falconstore
+          hostPath:
+            path: /tmp/CrowdStrike/falconstore
+        - name: falconstore-dir
+          hostPath:
+            path: /tmp/CrowdStrike
+
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriod }}
+      hostNetwork: true
+      hostPID: true
+      hostIPC: true

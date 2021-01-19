@@ -47,6 +47,7 @@ falcon:
   app:
   trace:
   feature:
+  update:
   message_log:
   billing:
   assert:

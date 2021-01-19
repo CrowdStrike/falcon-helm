@@ -10,8 +10,8 @@ metadata:
     release: {{ .Release.Name | quote }}
 data:
   {{- range $key, $value := .Values.falcon }}
-  {{- if .Values.falcon.$value }}
-  FALCONCTL_OPT_{{ $key | upper }}: {{ .Values.falcon.$value | quote }}
+  {{- if $key }}
+  FALCONCTL_OPT_{{ $key | upper }}: {{ $value | quote }}
   {{- end }}
   {{- end }}
 

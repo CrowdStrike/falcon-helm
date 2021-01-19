@@ -1,0 +1,96 @@
+labels:
+      io.cattle.role: cluster # options are cluster/project
+      io.rancher.app_min_version: 7.3.8
+categories:
+
+questions:
+    - variable: image.repository
+      description: "URL of container image repository holding containerized Falcon sensor. Defaults to 'falcon-sensor'."
+      required: true
+      type: string
+      default: falcon-sensor
+      label: Container Image Repository
+      group: "Required Configuration Settings"
+
+    - variable: image.tag
+      description: "Container registry image tag. Defaults to 'latest'."
+      required: false
+      type: string
+      default: "latest"
+      label: Contaimer Image Tag
+      group: "Required Configuration Settings"
+      
+    - variable: falcon.cid
+      description: "CrowdStrike Customer ID (CID). Passed to falconctl as \"--cid=\"{uuid string}\"\""
+      required: true
+      type: string
+      label: --cid
+      group: "Required Configuration Settings"
+
+    - variable: falcon.apd
+      description: "Description goes here. Passed to falconctl as \"--apt=true\" or \"--apt=false\"."
+      required: false
+      type: boolean
+      default: false
+      label: --apt
+      group: "Optional Configuration Settings"
+
+    - variable: falcon.aph
+      description: "App Proxy Hostname (APH). Uncommon in container-based deployments. Passed to falconctl as \"--aph <app proxy host name>\""
+      required: false
+      type: string
+      label: --aph
+      group: "Optional Configuration Settings"
+
+    - variable: falcon.app
+      description: "App Proxy Port (APP). Uncommon in container-based deployments. Passed to falconctl as \"--app=<app proxy port>\""
+      required: false
+      type: string
+      label: --app
+      group: "Optional Configuration Settings"
+
+    - variable: falcon.trace
+      description: "Set trace level. Options are [none|err|warn|info|debug]. Passed to falconctl as \"--trace=[none|err|warn|info|debug]\""
+      required: false
+      type: string
+      label: --trace
+      default: "none"
+
+    - variable: falcon.feature
+      description: "Options to pass to the \"--feature\" flag. Options are [none,[enableLog[,disableLogBuffer[,disableOsfm[,emulateUpdate]]]]]"
+      required: false
+      type: string
+      label: --feature
+
+    - variable: falcon.update
+      description: "SIGHUP the sensor for immediate trace/feature update."
+      required: false
+      type: boolean
+      default: false
+      label: --update
+
+    - variable: falcon.message_log
+      description: "Enable message log (true/false)"
+      required: false
+      type: boolean
+      default: false
+      label: --message-log
+
+    - variable: falcon.billing
+      description: "Utilize default or metered billing."
+      required: false
+      type: boolean
+      default: true
+      label: --billing
+
+    - variable: falcon.tags
+      description: "Comma separated list of tags for sensor grouping. Allowed characters: all alphanumerics, '/', '-', '_', and ','."
+      required: false
+      type: string
+      label: --tags
+      
+    - variable: falcon.provisioning_token
+      description: "Provisioning token value."
+      required: false
+      type: string
+      label: --provisioning-token

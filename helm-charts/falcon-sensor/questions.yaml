@@ -14,7 +14,7 @@ questions:
 
     - variable: image.tag
       description: "Container registry image tag. Defaults to 'latest'."
-      required: false
+      required: true
       type: string
       default: "latest"
       label: Contaimer Image Tag

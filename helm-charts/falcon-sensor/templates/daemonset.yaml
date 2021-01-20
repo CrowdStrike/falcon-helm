@@ -85,7 +85,7 @@ spec:
       # are routed through k8s log driver.
       - name: log
         image: busybox
-        args: [/bin/sh, -c, 'tail --retry -n1 -f /var/log/falcon-sensor.log']
+        args: [/bin/sh, -c, 'tail -n1 -f /var/log/falcon-sensor.log']
         volumeMounts:
         - name: var-log
           mountPath: /var/log

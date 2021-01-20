@@ -62,8 +62,8 @@ spec:
 
       containers:
       - name: sensor-container
-        image: "{{ .Values.image.repository }}:{{ .Values.image.imageTag }}"
-        imagePullPolicy: "{{ .Values.image.imagePullPolicy }}"
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         volumeMounts:
         - name: dev
           mountPath: /dev

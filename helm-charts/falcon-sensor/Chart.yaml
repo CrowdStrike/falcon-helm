@@ -39,4 +39,4 @@ maintainers:
     - name: Shawn Wells
       email: shawn.wells@crowdstrike.com
 
-icon: file:///crowdstrike-logo.svg
+icon: https://github.com/CrowdStrike/falcon-helm/blob/main/images/crowdstrike-logo.svg

@@ -20,6 +20,8 @@ daemonset:
   securityContext:
     runAsUser: 0
     privileged: false
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
 
 image:
   repository: falcon-sensor

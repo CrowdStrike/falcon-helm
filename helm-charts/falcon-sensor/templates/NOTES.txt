@@ -1,1 +1,6 @@
-1. Get the application URL by running these commands:
+The CrowdStrike Falcon sensor should be spinning up on all your kubernetes nodes
+now. There should be no further action on your part unless no Falcon Sensor
+container exists in your regisry. If you forgot to add a Falcon Sensor image to
+your image registry before you ran `helm install`, please add the Falcon Sensor
+now; otherwise, pods will fail with errors and crash until there is a valid
+image to pull. The default image name is `falcon-sensor`.

@@ -28,6 +28,14 @@ install: kustomize
 uninstall: kustomize
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
+# Install Helm into a cluster
+helm-install:
+	helm install falcon-helm falcon.cid=$(CID) ./helm-charts/falcon-sensor
+
+# Uninstall Helm from a cluster
+helm-uninstall:
+	helm uninstall falcon-helm
+
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
@@ -45,8 +53,12 @@ docker-build:
 docker-push:
 	docker push ${IMG}
 
+# Make Helm release
+helm-release:
+	helm package ./helm-charts/falcon-sensor/
+
 PATH  := $(PATH):$(PWD)/bin
-SHELL := env PATH=$(PATH) /bin/sh
+#SHELL := env PATH=$(PATH) /bin/sh
 OS    = $(shell uname -s | tr '[:upper:]' '[:lower:]')
 ARCH  = $(shell uname -m | sed 's/x86_64/amd64/')
 OSOPER   = $(shell uname -s | tr '[:upper:]' '[:lower:]' | sed 's/darwin/apple-darwin/' | sed 's/linux/linux-gnu/')

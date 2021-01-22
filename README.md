@@ -16,7 +16,7 @@ helm install --set falcon.cid=<Your_CrowdStrike_CID> falcon-helm ./helm-charts/f
 You can use multiple `--set` arguments for configuring the Falcon Helm Chart
 according to your environment. See the [values yaml file for more configuration options](helm-charts/falcon-sensor/values.yaml).
 
-Alternatively instead of using multiple `--set` arguments, you can create a yaml
+Alternatively, instead of using multiple `--set` arguments, you can create a yaml
 file that customizes the default Helm Chart configurations.
 
 For example changing the default image repository using a yaml customization

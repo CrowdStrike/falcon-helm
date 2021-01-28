@@ -19,9 +19,9 @@ daemonset:
   #   necessarily unless running within environments such as OpenShift.
   securityContext:
     runAsUser: 0
-    privileged: false
-    readOnlyRootFilesystem: true
-    allowPrivilegeEscalation: false
+    privileged: true
+    readOnlyRootFilesystem: false
+    allowPrivilegeEscalation: true
 
 image:
   repository: falcon-sensor

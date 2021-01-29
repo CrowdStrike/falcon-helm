@@ -1,0 +1,5 @@
+target-branch: main
+chart-dirs: helm-charts
+validate-maintainers: false
+namespace: default
+release-label: app

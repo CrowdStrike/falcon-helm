@@ -26,17 +26,17 @@ jobs:
       - name: Run chart-testing (list-changed)
         id: list-changed
         run: |
-          changed=$(ct list-changed --config .github/config/ct.yaml)
+          changed=$(ct list-changed --config tests/ct.yaml)
           if [[ -n "$changed" ]]; then
             echo "::set-output name=changed::true"
           fi
 
       - name: Run chart-testing (lint)
-        run: ct lint --config .github/config/ct.yaml
+        run: ct lint --config tests/ct.yaml
 
       - name: Create kind cluster
         uses: helm/kind-action@v1.0.0
         if: steps.list-changed.outputs.changed == 'true'
 
       - name: Run chart-testing (install)
-        run: ct install --config .github/config/ct.yaml
+        run: ct install --config tests/ct.yaml

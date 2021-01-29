@@ -46,6 +46,11 @@ spec:
         {{- end }}
         {{- end }}
     spec:
+      tolerations:
+      # this toleration is to have the daemonset runnable on master nodes
+      # remove it if your masters can't run pods
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
       initContainers:
       
       # This init container creates empty falconstore file so that when

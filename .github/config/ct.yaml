@@ -1,2 +1,3 @@
 target-branch: main
 chart-dirs: helm-charts
+validate-maintainers: false

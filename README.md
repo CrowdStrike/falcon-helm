@@ -1,6 +1,42 @@
-# falcon-helm
+# CrowdStrike Falcon Helm Chart and Helm Operator
+
+[Falcon](https://www.crowdstrike.com/) is the [CrowdStrike](https://www.crowdstrike.com/)
+platform purpose-built to stop breaches via a unified set of cloud-delivered
+technologies that prevent all types of attacks — including malware and much
+more.
+
+The CrowdStrike Falcon Helm Chart and the Helm Operator are designed to deploy
+and manage the Falcon sensor on your Kubernetes cluster of choice.
+[Helm Charts](https://helm.sh/docs/topics/charts/Helm) and Helm-based Kubernetes
+Operators are packaging methodologies for Kubernetes. Which methodology you use
+is dependent on what the Kubernetes vendor and implementation supports.
+
+# Deployment Considerations
+
+To ensure a successful deployment, you will want to ensure that:
+1. You have access to a containerized falcon sensor image. This is most likely
+   through a private image registry on your network or cloud provider. See
+   https://github.com/CrowdStrike/Dockerfiles as an example of how to build a
+   Falcon sensor for your registry.
+1. The Falcon Linux Sensor RPM (not the Falcon Container) should be used in the
+   container image to deploy to Kubernetes nodes.
+1. You must have sufficient permissions to deploy Kubernetes DaemonSets. This is
+   often received through cluster admin privileges.
+1. Only deploying to Kubernetes nodes are supported at this time.
+1. You need to have cluster admin privileges and be able to deploy daemonsets to
+   nodes
+1. CrowdStrike's Helm Operator is a project, not a product, and released to the
+   community as a way to automate sensor deployment to kubernetes clusters. The
+   upstream repository for this project is
+   https://github.com/CrowdStrike/falcon-helm.
+1. The Helm Operator is IN DEVELOPMENT AND NOT PRODUCTION READY, so do not use
+   it! Use Helm Charts instead.
 
 # Installation
+
+## Using the Helm Operator
+
+IN DEVELOPMENT! NOT PRODUCTION READY!
 
 ## Using Helm Charts
 
@@ -23,19 +59,17 @@ For example changing the default image repository using a yaml customization
 file called `custom_repo.yaml`:
 
 1. Create `custom_repo.yaml`:
-
-```
-falcon:
-  cid: <Your_CrowdStrike_CID>
-image:
-  repository: 192.168.2.3:5000/falcon-sensor
-```
+   ```
+   falcon:
+     cid: <Your_CrowdStrike_CID>
+   image:
+     repository: <Your_Registry>/falcon-sensor
+   ```
 
 2. Run the `helm install` command specifying using `custom_repo.yaml`:
-
-```
-helm install -f `custom_repo.yaml` falcon-helm ./helm-charts/falcon-sensor
-```
+   ```
+   helm install -f `custom_repo.yaml` falcon-helm ./helm-charts/falcon-sensor
+   ```
 
 ### Using Make from the Git Repository:
 

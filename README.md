@@ -52,18 +52,19 @@ helm install --set falcon.cid=<Your_CrowdStrike_CID> falcon-helm ./helm-charts/f
 You can use multiple `--set` arguments for configuring the Falcon Helm Chart
 according to your environment. See the [values yaml file for more configuration options](helm-charts/falcon-sensor/values.yaml).
 
-Alternatively, instead of using multiple `--set` arguments, you can create a yaml
-file that customizes the default Helm Chart configurations.
+Alternatively, instead of using multiple `--set` arguments, you can create a
+yaml file that customizes the default Helm Chart configurations.
 
-For example changing the default image repository using a yaml customization
-file called `custom_repo.yaml`:
+For example, changing the default Kubernetes node image repository using a yaml
+customization file called `custom_repo.yaml`:
 
 1. Create `custom_repo.yaml`:
    ```
    falcon:
      cid: <Your_CrowdStrike_CID>
-   image:
-     repository: <Your_Registry>/falcon-sensor
+   node:
+     image:
+       repository: <Your_Registry>/falcon-sensor
    ```
 
 2. Run the `helm install` command specifying using `custom_repo.yaml`:

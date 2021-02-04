@@ -19,8 +19,9 @@ node:
     # on the Falcon Sensor working correctly.
     #
     # - User that the container will execute as. Typically necessary to run as root (0).
-    # - Runs the Falcon Sensor containers as privileged containers. Typically not
-    #   necessarily unless running within environments such as OpenShift.
+    # - Runs the Falcon Sensor containers as privileged containers. This is required when
+    #   running the Falcon Linux Sensor on Kubernetes nodes to properly run in the node's
+    #   kernel and to actually protect the node..
     securityContext:
       runAsUser: 0
       privileged: true
@@ -28,7 +29,7 @@ node:
       allowPrivilegeEscalation: true
 
   image:
-    repository: falcon-sensor
+    repository: falcon-node-sensor
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
     tag: "latest"

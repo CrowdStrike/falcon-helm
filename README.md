@@ -25,6 +25,14 @@ To ensure a successful deployment, you will want to ensure that:
 1. Only deploying to Kubernetes nodes are supported at this time.
 1. You need to have cluster admin privileges and be able to deploy daemonsets to
    nodes
+1. When deploying the Falcon Linux Sensor as a container to Kubernetes nodes, it
+   is a requirement that the Falcon Sensor run as a privileged container so that
+   the Sensor can properly work with the kernel. If this is unacceptable, you can
+   install the Falcon Linux Sensor (still runs with privileges) using an RPM or
+   DEB package on the nodes themselves. This assumes that you have the capability
+   to actually install RPM or DEB packages on the nodes. If you do not have this
+   capability and you want to protect the nodes, you have to install using a
+   privileged container.
 1. CrowdStrike's Helm Operator is a project, not a product, and released to the
    community as a way to automate sensor deployment to kubernetes clusters. The
    upstream repository for this project is

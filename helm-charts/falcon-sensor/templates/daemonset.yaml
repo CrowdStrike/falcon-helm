@@ -65,7 +65,7 @@ spec:
           - name: falconstore-dir
             mountPath: /tmp/CrowdStrike
       containers:
-      - name: sensor-node-container
+      - name: falcon-node-sensor
         image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag }}"
         imagePullPolicy: "{{ .Values.node.image.pullPolicy }}"
         volumeMounts:
@@ -91,6 +91,7 @@ spec:
         volumeMounts:
         - name: var-log
           mountPath: /var/log
+          readOnly: True
       volumes:
         - name: dev
           hostPath:

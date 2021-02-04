@@ -1,3 +1,4 @@
+{{- if .Values.node.enabled }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -8,18 +9,18 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
-    {{- if .Values.daemonset.labels }}
-    {{- range $key, $value := .Values.daemonset.labels }}
+    {{- if .Values.node.daemonset.labels }}
+    {{- range $key, $value := .Values.node.daemonset.labels }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
     {{- end }}
-  {{- if .Values.daemonset.annotations }}
+  {{- if .Values.node.daemonset.annotations }}
   annotations:
-    {{- range $key, $value := .Values.daemonset.annotations }}
+    {{- range $key, $value := .Values.node.daemonset.annotations }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
   {{- end }}
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.node.namespace }}
 spec:
   selector:
     matchLabels:
@@ -27,11 +28,11 @@ spec:
       app: {{ include "falcon-sensor.fullname" . }}
       release: {{ .Release.Name | quote }}
   updateStrategy:
-    type: {{ .Values.daemonset.updateStrategy }}
+    type: {{ .Values.node.daemonset.updateStrategy }}
   template:
     metadata:
       annotations:
-        {{- range $key, $value := .Values.podAnnotations }}
+        {{- range $key, $value := .Values.node.podAnnotations }}
         {{ $key }}: {{ $value | quote }}
         {{- end }}
       labels:
@@ -40,8 +41,8 @@ spec:
         chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
         heritage: {{ .Release.Service | quote }}
         release: {{ .Release.Name | quote }}
-        {{- if .Values.daemonset.labels }}
-        {{- range $key, $value := .Values.daemonset.labels }}
+        {{- if .Values.node.daemonset.labels }}
+        {{- range $key, $value := .Values.node.daemonset.labels }}
         {{ $key }}: {{ $value | quote }}
         {{- end }}
         {{- end }}
@@ -52,9 +53,8 @@ spec:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
       initContainers:
-      
       # This init container creates empty falconstore file so that when
-      # it's mounted into the sensor-container, k8s would just use it
+      # it's mounted into the sensor-node-container, k8s would just use it
       # rather than creating a directory.  Mounting falconstore file as
       # a file volume ensures that AID is preserved across container
       # restarts.
@@ -64,11 +64,10 @@ spec:
         volumeMounts:
           - name: falconstore-dir
             mountPath: /tmp/CrowdStrike
-
       containers:
-      - name: sensor-container
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-        imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+      - name: falcon-node-sensor
+        image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag }}"
+        imagePullPolicy: "{{ .Values.node.image.pullPolicy }}"
         volumeMounts:
         - name: dev
           mountPath: /dev
@@ -80,13 +79,11 @@ spec:
           mountPath: /var/log
         - name: falconstore
           mountPath: /opt/CrowdStrike/falconstore
-
-        securityContext: {{ toYaml ( .Values.daemonset.securityContext ) | nindent 10 }}
+        securityContext: {{ toYaml ( .Values.node.daemonset.securityContext ) | nindent 10 }}
         envFrom:
         - configMapRef:
             name: {{ include "falcon-sensor.fullname" . }}-config
-
-      # This spits out logs from sensor-container to stdout so that they
+      # This spits out logs from sensor-node-container to stdout so that they
       # are routed through k8s log driver.
       - name: log
         image: busybox
@@ -94,7 +91,7 @@ spec:
         volumeMounts:
         - name: var-log
           mountPath: /var/log
-
+          readOnly: True
       volumes:
         - name: dev
           hostPath:
@@ -113,8 +110,8 @@ spec:
         - name: falconstore-dir
           hostPath:
             path: /tmp/CrowdStrike
-
-      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriod }}
+      terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
       hostNetwork: true
       hostPID: true
       hostIPC: true
+{{- end }}

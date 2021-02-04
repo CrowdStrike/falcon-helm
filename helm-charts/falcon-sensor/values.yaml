@@ -2,44 +2,49 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-daemonset:
-  # Annotations to apply to the daemonset
-  annotations: {}
+node:
+  # When enabled, Helm chart deploys the Falcon Senors to Kubernetes nodes
+  enabled: true
 
-  # additionals labels
-  labels: {}
+  daemonset:
+    # Annotations to apply to the daemonset
+    annotations: {}
 
-  updateStrategy: RollingUpdate
+    # additionals labels
+    labels: {}
 
-  # Various pod security context settings. Bear in mind that many of these have an impact
-  # on the Falcon Sensor working correctly.
-  #
-  # - User that the container will execute as. Typically necessary to run as root (0).
-  # - Runs the Falcon Sensor containers as privileged containers. Typically not
-  #   necessarily unless running within environments such as OpenShift.
-  securityContext:
-    runAsUser: 0
-    privileged: true
-    readOnlyRootFilesystem: false
-    allowPrivilegeEscalation: true
+    updateStrategy: RollingUpdate
 
-image:
-  repository: falcon-sensor
-  pullPolicy: Always
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+    # Various pod security context settings. Bear in mind that many of these have an impact
+    # on the Falcon Sensor working correctly.
+    #
+    # - User that the container will execute as. Typically necessary to run as root (0).
+    # - Runs the Falcon Sensor containers as privileged containers. This is required when
+    #   running the Falcon Linux Sensor on Kubernetes nodes to properly run in the node's
+    #   kernel and to actually protect the node..
+    securityContext:
+      runAsUser: 0
+      privileged: true
+      readOnlyRootFilesystem: false
+      allowPrivilegeEscalation: true
 
-# Override various naming aspects of this chart
-# Only edit these if you know what you're doing
-nameOverride: ""
-fullnameOverride: ""
+  image:
+    repository: falcon-node-sensor
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "latest"
 
-podAnnotations: {}
+  # Override various naming aspects of this chart
+  # Only edit these if you know what you're doing
+  nameOverride: ""
+  fullnameOverride: ""
 
-namespace: default
+  podAnnotations: {}
 
-# How long to wait for Filebeat pods to stop gracefully
-terminationGracePeriod: 30
+  namespace: default
+
+  # How long to wait for Falcon pods to stop gracefully
+  terminationGracePeriod: 10
 
 falcon:
   cid:

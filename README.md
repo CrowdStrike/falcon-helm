@@ -25,6 +25,14 @@ To ensure a successful deployment, you will want to ensure that:
 1. Only deploying to Kubernetes nodes are supported at this time.
 1. You need to have cluster admin privileges and be able to deploy daemonsets to
    nodes
+1. When deploying the Falcon Linux Sensor as a container to Kubernetes nodes, it
+   is a requirement that the Falcon Sensor run as a privileged container so that
+   the Sensor can properly work with the kernel. If this is unacceptable, you can
+   install the Falcon Linux Sensor (still runs with privileges) using an RPM or
+   DEB package on the nodes themselves. This assumes that you have the capability
+   to actually install RPM or DEB packages on the nodes. If you do not have this
+   capability and you want to protect the nodes, you have to install using a
+   privileged container.
 1. CrowdStrike's Helm Operator is a project, not a product, and released to the
    community as a way to automate sensor deployment to kubernetes clusters. The
    upstream repository for this project is
@@ -52,18 +60,19 @@ helm install --set falcon.cid=<Your_CrowdStrike_CID> falcon-helm ./helm-charts/f
 You can use multiple `--set` arguments for configuring the Falcon Helm Chart
 according to your environment. See the [values yaml file for more configuration options](helm-charts/falcon-sensor/values.yaml).
 
-Alternatively, instead of using multiple `--set` arguments, you can create a yaml
-file that customizes the default Helm Chart configurations.
+Alternatively, instead of using multiple `--set` arguments, you can create a
+yaml file that customizes the default Helm Chart configurations.
 
-For example changing the default image repository using a yaml customization
-file called `custom_repo.yaml`:
+For example, changing the default Kubernetes node image repository using a yaml
+customization file called `custom_repo.yaml`:
 
 1. Create `custom_repo.yaml`:
    ```
    falcon:
      cid: <Your_CrowdStrike_CID>
-   image:
-     repository: <Your_Registry>/falcon-sensor
+   node:
+     image:
+       repository: <Your_Registry>/falcon-sensor
    ```
 
 2. Run the `helm install` command specifying using `custom_repo.yaml`:

@@ -18,13 +18,16 @@ To ensure a successful deployment, you will want to ensure that:
    through a private image registry on your network or cloud provider. See
    https://github.com/CrowdStrike/Dockerfiles as an example of how to build a
    Falcon sensor for your registry.
-1. The Falcon Linux Sensor RPM (not the Falcon Container) should be used in the
+1. The Falcon Linux Sensor (not the Falcon Container) should be used in the
    container image to deploy to Kubernetes nodes.
+1. When deploying the Falcon Linux Sensor to a node, the container image should
+   match the node's operating system. For example, if the node is running Red
+   Hat Enterprise Linux 8, the container image should be based on Red Hat
+   Enterprise Linux 8, etc. This is important to ensure sensor and image
+   compatibility with the base node operating system.
 1. You must have sufficient permissions to deploy Kubernetes DaemonSets. This is
    often received through cluster admin privileges.
 1. Only deploying to Kubernetes nodes are supported at this time.
-1. You need to have cluster admin privileges and be able to deploy daemonsets to
-   nodes
 1. When deploying the Falcon Linux Sensor as a container to Kubernetes nodes, it
    is a requirement that the Falcon Sensor run as a privileged container so that
    the Sensor can properly work with the kernel. If this is unacceptable, you can

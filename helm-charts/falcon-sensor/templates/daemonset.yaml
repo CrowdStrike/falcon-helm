@@ -32,6 +32,7 @@ spec:
   template:
     metadata:
       annotations:
+        sensor.falcon-system.crowdstrike.com/injection: disabled
         {{- range $key, $value := .Values.node.podAnnotations }}
         {{ $key }}: {{ $value | quote }}
         {{- end }}

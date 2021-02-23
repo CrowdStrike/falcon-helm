@@ -50,9 +50,10 @@ spec:
     spec:
       tolerations:
       # this toleration is to have the daemonset runnable on master nodes
-      # remove it if your masters can't run pods
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
+      nodeSelector:
+        beta.kubernetes.io/os: linux
       initContainers:
       # This init container creates empty falconstore file so that when
       # it's mounted into the sensor-node-container, k8s would just use it
@@ -80,7 +81,18 @@ spec:
           mountPath: /var/log
         - name: falconstore
           mountPath: /opt/CrowdStrike/falconstore
-        securityContext: {{ toYaml ( .Values.node.daemonset.securityContext ) | nindent 10 }}
+        # Various pod security context settings. Bear in mind that many of these have an impact
+        # on the Falcon Sensor working correctly.
+        #
+        # - User that the container will execute as. Typically necessary to run as root (0).
+        # - Runs the Falcon Sensor containers as privileged containers. This is required when
+        #   running the Falcon Linux Sensor on Kubernetes nodes to properly run in the node's
+        #   kernel and to actually protect the node.
+        securityContext:
+          runAsUser: 0
+          privileged: true
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: true
         envFrom:
         - configMapRef:
             name: {{ include "falcon-sensor.fullname" . }}-config

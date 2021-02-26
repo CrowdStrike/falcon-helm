@@ -1,5 +1,7 @@
 # CrowdStrike Falcon Helm Chart and Helm Operator
 
+[![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/falcon-helm)](https://artifacthub.io/packages/search?repo=falcon-helm)
+
 [Falcon](https://www.crowdstrike.com/) is the [CrowdStrike](https://www.crowdstrike.com/)
 platform purpose-built to stop breaches via a unified set of cloud-delivered
 technologies that prevent all types of attacks — including malware and much
@@ -70,6 +72,32 @@ To ensure a successful deployment, you will want to ensure that:
 IN DEVELOPMENT! NOT PRODUCTION READY!
 
 ## Using Helm Charts
+
+### Installing from Helm Repository
+
+#### Add the CrowdStrike Falcon Helm repository
+
+```
+helm repo add crowdstrike https://crowdstrike.github.io/falcon-helm
+```
+
+#### Install CrowdStrike Falcon Helm Chart
+
+```
+helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
+    --set falcon.cid="<CrowdStrike_CID>" \
+    --set node.image.repository="<Your_Registry>/falcon-node-sensor"
+```
+
+Above command will install the CrowdStrike Falcon Helm Chart with the release name `falcon-helm` in the namespace your `kubectl` context is currently set to.
+You can install also install into a customized namespace by running the following:
+
+```
+helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
+    -n falcon-system --create-namespace \
+    --set falcon.cid="<CrowdStrike_CID>" \
+    --set node.image.repository="<Your_Registry>/falcon-node-sensor"
+``` 
 
 ### Using Helm from the Git Repository:
 

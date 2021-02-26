@@ -1,0 +1,5 @@
+theme: jekyll-theme-slate
+name: CrowdStrike Falcon Helm Chart
+description: Helm charts for running CrowdStrike Falcon with Kubernetes
+plugins:
+  - jekyll-seo-tag

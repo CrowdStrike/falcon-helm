@@ -30,7 +30,7 @@ uninstall: kustomize
 
 # Install Helm into a cluster
 helm-install:
-	helm install falcon-helm falcon.cid=$(CID) ./helm-charts/falcon-sensor
+	helm install -n falcon-system --create-namespace falcon-helm falcon.cid=$(CID) ./helm-charts/falcon-sensor
 
 # Uninstall Helm from a cluster
 helm-uninstall:

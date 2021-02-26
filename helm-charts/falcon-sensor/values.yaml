@@ -15,19 +15,6 @@ node:
 
     updateStrategy: RollingUpdate
 
-    # Various pod security context settings. Bear in mind that many of these have an impact
-    # on the Falcon Sensor working correctly.
-    #
-    # - User that the container will execute as. Typically necessary to run as root (0).
-    # - Runs the Falcon Sensor containers as privileged containers. This is required when
-    #   running the Falcon Linux Sensor on Kubernetes nodes to properly run in the node's
-    #   kernel and to actually protect the node..
-    securityContext:
-      runAsUser: 0
-      privileged: true
-      readOnlyRootFilesystem: false
-      allowPrivilegeEscalation: true
-
   image:
     repository: falcon-node-sensor
     pullPolicy: Always
@@ -40,8 +27,6 @@ node:
   fullnameOverride: ""
 
   podAnnotations: {}
-
-  namespace: default
 
   # How long to wait for Falcon pods to stop gracefully
   terminationGracePeriod: 10

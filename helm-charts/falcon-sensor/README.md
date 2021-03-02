@@ -32,7 +32,6 @@ To ensure a successful deployment, you will want to ensure that:
 helm repo add crowdstrike https://crowdstrike.github.io/falcon-helm
 ```
 
-<br>
 ### Install CrowdStrike Falcon Helm Chart
 
 ```

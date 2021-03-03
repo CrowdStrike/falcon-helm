@@ -33,7 +33,7 @@ jobs:
         with:
           artifacts: ./falcon*.tgz
           allowUpdates: true
-          name: Release ${{ github.ref }}
+          name: ${{ github.event.release.tag_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update index.yaml

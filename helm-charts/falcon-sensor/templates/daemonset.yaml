@@ -62,10 +62,10 @@ spec:
       # restarts.
       - name: init-falconstore
         image: busybox
-        args: [/bin/sh, -c, 'touch /tmp/CrowdStrike/falconstore']
+        args: [/bin/sh, -c, 'touch /var/lib/crowdstrike/falconstore']
         volumeMounts:
           - name: falconstore-dir
-            mountPath: /tmp/CrowdStrike
+            mountPath: /var/lib/crowdstrike
       containers:
       - name: falcon-node-sensor
         image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag }}"
@@ -119,10 +119,10 @@ spec:
           emptyDir: {}
         - name: falconstore
           hostPath:
-            path: /tmp/CrowdStrike/falconstore
+            path: /var/lib/crowdstrike/falconstore
         - name: falconstore-dir
           hostPath:
-            path: /tmp/CrowdStrike
+            path: /var/lib/crowdstrike
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
       hostNetwork: true
       hostPID: true

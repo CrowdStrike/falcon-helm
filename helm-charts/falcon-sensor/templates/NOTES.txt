@@ -5,7 +5,7 @@ before this chart will install properly.
 
 The CrowdStrike Falcon sensor should be spinning up on all your kubernetes nodes
 now. There should be no further action on your part unless no Falcon Sensor
-container exists in your regisry. If you forgot to add a Falcon Sensor image to
+container exists in your registry. If you forgot to add a Falcon Sensor image to
 your image registry before you ran `helm install`, please add the Falcon Sensor
 now; otherwise, pods will fail with errors and crash until there is a valid
 image to pull. The default image name to deploy a kernel sensor to a node is

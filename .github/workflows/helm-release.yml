@@ -41,7 +41,7 @@ jobs:
           git fetch origin gh-pages
           git reset --hard HEAD
           git checkout gh-pages
-          helm repo index . --url https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }} --merge index.yam
+          helm repo index . --url https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }} --merge index.yaml
           git add index.yaml
           git commit -m "Update index.yaml to latest Helm release"
           git push origin gh-pages

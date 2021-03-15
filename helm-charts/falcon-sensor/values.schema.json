@@ -8,49 +8,12 @@
                 "cid"
               ],
             "properties": {
-                "aid": {
-                    "type": "null"
-                },
-                "apd": {
-                    "type": "null"
-                },
-                "aph": {
-                    "type": "null"
-                },
-                "app": {
-                    "type": "null"
-                },
-                "assert": {
-                    "type": "null"
-                },
-                "billing": {
-                    "type": "null",
-                    "enum": ["metered"]
-                },
                 "cid": {
-                    "type": "null",
-                    "pattern": "^[0-9a-zA-Z]{32}-[0-9a-zA-Z]{2}$"
-                },
-                "feature": {
-                    "type": "null"
-                },
-                "memfail_every_n": {
-                    "type": "null"
-                },
-                "memfail_grace_period": {
-                    "type": "null"
-                },
-                "message_log": {
-                    "type": "null"
-                },
-                "provisioning_token": {
-                    "type": "null"
-                },
-                "trace": {
-                    "type": "null"
-                },
-                "update": {
-                    "type": "null"
+                    "type": "string",
+                    "pattern": "^[0-9a-zA-Z]{32}-[0-9a-zA-Z]{2}$",
+                    "example": [
+                        "1234567890ABCDEFG1234567890ABCDEF-12"
+                    ]
                 }
             }
         },

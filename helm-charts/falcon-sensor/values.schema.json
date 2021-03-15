@@ -10,9 +10,9 @@
             "properties": {
                 "cid": {
                     "type": "string",
-                    "pattern": "^[0-9a-zA-Z]{32}-[0-9a-zA-Z]{2}$",
+                    "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$",
                     "example": [
-                        "1234567890ABCDEFG1234567890ABCDEF-12"
+                        "1234567890ABCDEF1234567890ABCDEF-12"
                     ]
                 }
             }

@@ -17,7 +17,9 @@ is dependent on what the Kubernetes vendor and implementation supports.
 
 The Falcon Helm chart has been tested to deploy on the following Kubernetes distributions:
 
+* Amazon Elastic Kubernetes Service (EKS)
 * Azure Kubernetes Service (AKS) - Linux Nodes Only
+* Google Kubernetes Engine (GKE)
 * Rancher K3s
   * Nodes must be Linux distributions supported by CrowdStrike. See [https://falcon.crowdstrike.com/support/documentation/20/falcon-sensor-for-linux#operating-systems](https://falcon.crowdstrike.com/support/documentation/20/falcon-sensor-for-linux#operating-systems) for supported Linux distributions and kernels.
 * Red Hat OpenShift Container Platform 4.6+

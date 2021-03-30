@@ -1,0 +1,84 @@
+# Default values for falcon-integration-gateway.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+cloud:
+  google:
+    enabled: true
+    application_credentials:
+
+falcon:
+  client_id:
+  client_secret:
+
+  integration_gateway:
+    # Configure number of threads that process Falcon Events
+    worker_threads:
+
+    # Filter out events based on severity (allowed values 1-5, default 2)
+    severity_threshold:
+
+    # Filter out events based on number of days past the event (default 365)
+    older_than_days_threshold:
+
+    # Configure logging level (ERROR, WARN, INFO, DEBUG)
+    level:
+
+    # Provide Falcon Cloud or use FALCON_CLOUD_REGION in the secrets to override
+    cloud_region:
+
+    # Provide OAuth Secret or use FALCON_CLIENT_SECRET in the secrets to override
+    client_id:
+
+    # Provide OAuth Secret or use FALCON_CLIENT_SECRET in the secrets to override
+    client_secret:
+
+    # Provide application id. Needs to be different per each fig instance.
+    application_id:
+
+    [gcp]
+    # Use GOOGLE_APPLICATION_CREDENTIALS env variable
+
+replicaCount: 1
+
+image:
+  repository: quay.io/crowdstrike/falcon-integration-gateway
+  pullPolicy: Always
+  tag: latest
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext:
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+
+resources: {}
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

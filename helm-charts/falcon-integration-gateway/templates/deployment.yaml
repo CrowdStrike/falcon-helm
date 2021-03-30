@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "falcon-integration-gateway.fullname" . }}
+  labels:
+    {{- include "falcon-integration-gateway.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      run: {{ include "falcon-integration-gateway.fullname" . }}
+      {{- include "falcon-integration-gateway.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        run: {{ include "falcon-integration-gateway.fullname" . }}
+        {{- include "falcon-integration-gateway.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: config-volume
+              mountPath: /fig/config/config.ini
+              subPath: config.ini
+            - name: google-application-credentials
+              mountPath: /google-application-credentials.json
+              subPath: google-application-credentials.json
+          env:
+            - name: FALCON_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "falcon-integration-gateway.fullname" . }}-creds
+                  key: FALCON_CLIENT_ID
+            - name: FALCON_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "falcon-integration-gateway.fullname" . }}-creds
+                  key: FALCON_CLIENT_SECRET
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /google-application-credentials.json
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ include "falcon-integration-gateway.fullname" . }}-config
+            items:
+            - key: config.ini
+              path: config.ini
+        - name: google-application-credentials
+          secret:
+            secretName: {{ include "falcon-integration-gateway.fullname" . }}-creds
+            items:
+            - key: GOOGLE_APPLICATION_CREDENTIALS
+              path: google-application-credentials.json
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -15,6 +15,14 @@ node:
 
     updateStrategy: RollingUpdate
 
+    tolerations:
+    # this toleration is to have the daemonset runnable on master nodes
+    - key: node-role.kubernetes.io/master
+      effect: NoSchedule
+
+    nodeSelector:
+      beta.kubernetes.io/os: linux
+
   image:
     repository: falcon-node-sensor
     pullPolicy: Always

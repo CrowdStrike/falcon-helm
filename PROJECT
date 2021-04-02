@@ -1,8 +1,8 @@
-domain: com
+domain: crowdstrike.com
 layout: helm.sdk.operatorframework.io/v1
 projectName: falcon-helm
 resources:
-- group: crowdstrike
-  kind: Falcon-sensor
+- group: falcon
+  kind: FalconSensor
   version: v1alpha1
 version: 3-alpha

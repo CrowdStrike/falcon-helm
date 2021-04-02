@@ -1,6 +1,6 @@
 # Use the 'create api' subcommand to add watches to this file.
-- group: crowdstrike.com
+- group: falcon.crowdstrike.com
   version: v1alpha1
-  kind: Falcon-sensor
+  kind: FalconSensor
   chart: helm-charts/falcon-sensor
 # +kubebuilder:scaffold:watch

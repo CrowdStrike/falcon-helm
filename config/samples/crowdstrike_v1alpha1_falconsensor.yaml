@@ -1,0 +1,36 @@
+apiVersion: falcon.crowdstrike.com/v1alpha1
+kind: FalconSensor
+metadata:
+  name: falcon-helm
+spec:
+  # Default values copied from <project_dir>/helm-charts/falcon-sensor/values.yaml
+  falcon:
+    aid: null
+    apd: null
+    aph: null
+    app: null
+    assert: null
+    billing: null
+    cid: null
+    feature: null
+    memfail_every_n: null
+    memfail_grace_period: null
+    message_log: null
+    provisioning_token: null
+    tags: null
+    trace: null
+    update: null
+  node:
+    daemonset:
+      annotations: {}
+      labels: {}
+      updateStrategy: RollingUpdate
+    enabled: true
+    fullnameOverride: ""
+    image:
+      pullPolicy: Always
+      repository: falcon-node-sensor
+      tag: latest
+    nameOverride: ""
+    podAnnotations: {}
+    terminationGracePeriod: 10

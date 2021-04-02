@@ -28,15 +28,61 @@ rules:
   verbs:
   - create
 
+# We need to manage Helm release daemonsets
+- apiGroups:
+  - falcon.crowdstrike.com
+  resources:
+  - daemonset
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+
+# We need to access the coreos nodes to protect them
+- apiGroups:
+  - security.openshift.io
+  resourceNames:
+  - privileged
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+
+# We need to easily pull images regardless of namespace
+- apiGroups:
+  - ""
+  - image.openshift.io
+  resources:
+  - imagestreamimages
+  - imagestreammappings
+  - imagestreams
+  - imagestreamtags
+  - imagetags
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  - image.openshift.io
+  resources:
+  - imagestreams/layers
+  verbs:
+  - get
+
 ##
-## Rules for crowdstrike.com/v1alpha1, Kind: Falcon-sensor
+## Rules for falcon.crowdstrike.com/v1alpha1, Kind: FalconSensor
 ##
 - apiGroups:
-  - crowdstrike.com
+  - falcon.crowdstrike.com
   resources:
-  - falcon-sensors
-  - falcon-sensors/status
-  - falcon-sensors/finalizers
+  - falconsensors
+  - falconsensors/status
+  - falconsensors/finalizers
   verbs:
   - create
   - delete
@@ -50,13 +96,12 @@ rules:
   apiGroups:
   - ""
   resources:
-  - "serviceaccounts"
-  - "services"
+  - "configmaps"
 - verbs:
   - "*"
   apiGroups:
   - "apps"
   resources:
-  - "deployments"
+  - "daemonsets"
 
 # +kubebuilder:scaffold:rules

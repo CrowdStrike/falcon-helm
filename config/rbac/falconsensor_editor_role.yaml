@@ -1,13 +1,13 @@
-# permissions for end users to edit falcon-sensors.
+# permissions for end users to edit falconsensors.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: falcon-sensor-editor-role
+  name: falconsensor-editor-role
 rules:
 - apiGroups:
-  - crowdstrike.com
+  - falcon.crowdstrike.com
   resources:
-  - falcon-sensors
+  - falconsensors
   verbs:
   - create
   - delete
@@ -17,8 +17,8 @@ rules:
   - update
   - watch
 - apiGroups:
-  - crowdstrike.com
+  - falcon.crowdstrike.com
   resources:
-  - falcon-sensors/status
+  - falconsensors/status
   verbs:
   - get

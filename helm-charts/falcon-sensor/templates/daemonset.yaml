@@ -48,6 +48,10 @@ spec:
         {{- end }}
         {{- end }}
     spec:
+    {{- with .Values.node.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
       tolerations:
       # this toleration is to have the daemonset runnable on master nodes
       - key: node-role.kubernetes.io/master

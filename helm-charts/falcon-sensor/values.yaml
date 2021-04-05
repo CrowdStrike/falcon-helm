@@ -18,6 +18,7 @@ node:
   image:
     repository: falcon-node-sensor
     pullPolicy: Always
+    pullSecrets: {}
     # Overrides the image tag whose default is the chart appVersion.
     tag: "latest"
 

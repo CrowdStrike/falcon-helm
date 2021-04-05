@@ -60,18 +60,22 @@ To ensure a successful deployment, you will want to ensure that:
    to actually install RPM or DEB packages on the nodes. If you do not have this
    capability and you want to protect the nodes, you have to install using a
    privileged container.
-1. CrowdStrike's Helm Operator is a project, not a product, and released to the
-   community as a way to automate sensor deployment to kubernetes clusters. The
-   upstream repository for this project is
-   [https://github.com/CrowdStrike/falcon-helm](https://github.com/CrowdStrike/falcon-helm).
-1. The Helm Operator is IN DEVELOPMENT AND NOT PRODUCTION READY, so do not use
-   it! Use Helm Charts instead.
+
+# Quick Note Regarding Support
+🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 
+ 
+This Helm chart is IN DEVELOPMENT, AND NOT (YET) SUPPORTED!!
+
+🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 
+
+On 24-FEB-2021, CrowdStrike announced (via [press release](https://www.crowdstrike.com/press-releases/advanced-threat-protection-for-cloud-and-container-workloads/)) technology previews are available for deploying Falcon into Azure Kubernetes Service (AKS), Google Kubernetes Engine (GKE), Rancher, and Red Hat OpenShift Container Platform (OCP).
+
+This Helm chart is being developed to automate Falcon sensor deployments into Kubernetes environments. As large-scale testing continues, please note that this Helm chart (and more broadly, sensor deployment into AKS, GKE, Rancher, or OCP) is not yet officially supported nor recommended for production workloads. 
+
+* To provide feedback regarding this  Helm chart, please open a ticket in this repo.
+* To provide feedback when containerizing the Linux sensor, please open a ticket/bug report with CrowdStrike Support
 
 # Installation
-
-## Using the Helm Operator
-
-IN DEVELOPMENT! NOT PRODUCTION READY!
 
 ## Using Helm Charts
 

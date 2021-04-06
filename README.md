@@ -62,11 +62,11 @@ To ensure a successful deployment, you will want to ensure that:
    privileged container.
 
 # Quick Note Regarding Support
-🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 
+🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 
  
 This Helm chart is IN DEVELOPMENT, AND NOT (YET) SUPPORTED!!
 
-🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 🔥 🚒 
+🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 
 
 On 24-FEB-2021, CrowdStrike announced (via [press release](https://www.crowdstrike.com/press-releases/advanced-threat-protection-for-cloud-and-container-workloads/)) technology previews are available for deploying Falcon into Azure Kubernetes Service (AKS), Google Kubernetes Engine (GKE), Rancher, and Red Hat OpenShift Container Platform (OCP).
 

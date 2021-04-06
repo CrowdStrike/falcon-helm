@@ -13,6 +13,21 @@ and manage the Falcon sensor on your Kubernetes cluster of choice.
 Operators are packaging methodologies for Kubernetes. Which methodology you use
 is dependent on what the Kubernetes vendor and implementation supports.
 
+- [Kubernetes Cluster Compatability](#kubernetes-cluster-compatability)
+- [Dependencies](#dependencies)
+- [Deployment Considerations](#deployment-considerations)
+- [Quick Note Regarding Support](#quick-note-regarding-support)
+- [Using Helm Operator](#using-helm-operator)
+- [Using Helm Charts](#using-helm-charts)
+  * [Installing from Helm Repository](#installing-from-helm-repository)
+    + [Add the CrowdStrike Falcon Helm repository](#add-the-crowdstrike-falcon-helm-repository)
+    + [Install CrowdStrike Falcon Helm Chart](#install-crowdstrike-falcon-helm-chart)
+  * [Installing Helm from the Git Repository](#installing-helm-from-the-git-repository)
+  * [Installing Make from the Git Repository](#installing-make-from-the-git-repository)
+  * [Uninstalling](#uninstalling)
+    + [Uninstalling with Helm](#uninstalling-with-helm)
+    + [Uninstalling with Make from the Git Repository](#uninstalling-with-make-from-the-git-repository)
+
 # Kubernetes Cluster Compatability
 
 The Falcon Helm chart has been tested to deploy on the following Kubernetes distributions:
@@ -64,7 +79,7 @@ To ensure a successful deployment, you will want to ensure that:
 # Quick Note Regarding Support
 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 
  
-This Helm chart is IN DEVELOPMENT, AND NOT (YET) SUPPORTED!!
+The Helm chart and operator code is in development, and not (yet) supported!
 
 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 
 
@@ -75,19 +90,18 @@ This Helm chart is being developed to automate Falcon sensor deployments into Ku
 * To provide feedback regarding this  Helm chart, please open a ticket in this repo.
 * To provide feedback when containerizing the Linux sensor, please open a ticket/bug report with CrowdStrike Support
 
-# Installation
+# Using Helm Operator
+The Helm Operator code is under development and not yet documented. It is not recommended to use the Helm Operator.
 
-## Using Helm Charts
-
-### Installing from Helm Repository
-
-#### Add the CrowdStrike Falcon Helm repository
+# Using Helm Charts
+## Installing from Helm Repository
+### Add the CrowdStrike Falcon Helm repository
 
 ```
 helm repo add crowdstrike https://crowdstrike.github.io/falcon-helm
 ```
 
-#### Install CrowdStrike Falcon Helm Chart
+### Install CrowdStrike Falcon Helm Chart
 
 ```
 helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
@@ -105,7 +119,7 @@ helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
     --set node.image.repository="<Your_Registry>/falcon-node-sensor"
 ``` 
 
-### Using Helm from the Git Repository:
+### Installing Helm from the Git Repository
 
 To install using Helm, run the following command replacing
 `<Your_CrowdStrike_CID>` with your CrowdStrike Customer ID:
@@ -137,7 +151,7 @@ customization file called `custom_repo.yaml`:
    helm install -f custom_repo.yaml -n falcon-system --create-namespace falcon-helm ./helm-charts/falcon-sensor
    ```
 
-### Using Make from the Git Repository:
+### Installing Make from the Git Repository
 
 To install using a Makefile (assumes Helm is installed on your system), run the
 following command replacing `<Your_CrowdStrike_CID>` with your CrowdStrike
@@ -147,10 +161,7 @@ Customer ID:
 make helm-install CID=<Your_CrowdStrike_CID>
 ```
 
-# Uninstalling
-
-## Using Helm Charts
-
+## Uninstalling
 ### Uninstalling with Helm
 
 Assuming the Falcon helm chart is the same and has not been customized, run the
@@ -160,7 +171,7 @@ following command:
 helm uninstall falcon-helm
 ```
 
-### Uninstalling with Make from the Git Repository:
+### Uninstalling with Make from the Git Repository
 
 ```
 make helm-uninstall

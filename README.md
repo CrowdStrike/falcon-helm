@@ -59,7 +59,7 @@ To ensure a successful deployment, you will want to ensure that:
 1. By default when deploying using a Helm Chart, the Helm Chart installs in the `default` namespace. Best
    practices for deploying to Kubernetes is to create a new namespace.
    This can be done by adding `-n falcon-system --create-namespace` to your
-   `helm install` command. You do not have to do this when using the Helm Operator.
+   `helm install` command. This is not required when using the Helm Operator.
 1. You have access to a containerized falcon sensor image. This is most likely
    through a private image registry on your network or cloud provider. See
    [https://github.com/CrowdStrike/Dockerfiles](https://github.com/CrowdStrike/Dockerfiles)
@@ -92,7 +92,7 @@ The Helm chart and operator code is in development, and not (yet) supported!
 
 On 24-FEB-2021, CrowdStrike announced (via [press release](https://www.crowdstrike.com/press-releases/advanced-threat-protection-for-cloud-and-container-workloads/)) technology previews are available for deploying Falcon into Azure Kubernetes Service (AKS), Google Kubernetes Engine (GKE), Rancher, and Red Hat OpenShift Container Platform (OCP).
 
-This Helm operator and chart are being developed to automate Falcon sensor deployments into Kubernetes environments. As large-scale testing continues, please note that this Helm chart (and more broadly, sensor deployment into AKS, GKE, Rancher, or OCP) is not yet officially supported nor recommended for production workloads. 
+This Helm operator and chart are being developed to automate Falcon sensor deployments into Kubernetes environments. As large-scale testing continues, please note that this content (and more broadly, sensor deployment into AKS, GKE, Rancher, or OCP) is not yet officially supported nor recommended for production workloads. 
 
 * To provide feedback regarding this Helm operator and/or chart, please open a ticket in this repo.
 * To provide feedback when containerizing the Linux sensor, please open a ticket/bug report with CrowdStrike Support
@@ -106,9 +106,9 @@ This Helm operator and chart are being developed to automate Falcon sensor deplo
    make deploy IMG=quay.io/crowdstrike/falcon-helm-operator:latest
    ```
 
-2. Customize the Helm operator deployment by adding your CID and configuring the
-   registry containing the Falcon sensor in
-   `config/samples/crowdstrike_v1alpha1_falconsensor.yaml`.
+2. Customize the Helm operator deployment by adding your Crowdstrike Customer ID (CID), configuring the
+   registry containing the Falcon sensor, and any other sensor configurations in
+   `config/samples/crowdstrike_v1alpha1_falconsensor.yaml`. 
 
 3. Apply the customized Helm operator resource
    ```

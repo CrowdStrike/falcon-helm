@@ -1,12 +1,10 @@
-You should be a Crowdstrike customer and have access to the Falcon Linux Sensor
-and Falcon Container Downloads to install this helm chart and have it work
-correctly as a specialized container has to exist in the container registry
-before this chart will install properly.
+Thank you for installing the CrowdStrike Falcon Helm Chart!
 
-The CrowdStrike Falcon sensor should be spinning up on all your kubernetes nodes
-now. There should be no further action on your part unless no Falcon Sensor
-container exists in your registry. If you forgot to add a Falcon Sensor image to
-your image registry before you ran `helm install`, please add the Falcon Sensor
-now; otherwise, pods will fail with errors and crash until there is a valid
-image to pull. The default image name to deploy a kernel sensor to a node is
-`falcon-node-sensor`.
+Access to the Falcon Linux and Container Sensor downloads at https://falcon.crowdstrike.com/hosts/sensor-downloads are
+required to complete the install of this Helm chart. This is provided automatically to all active CrowdStrike customers.
+Additionally, a containerized sensor must be present in a container registry accessible from Kubernetes installation.
+Sample Dockerfiles are available at https://github.com/CrowdStrike/Dockerfiles.
+CrowdStrike Falcon sensors will deploy across all nodes in your Kubernetes cluster after
+installing this Helm chart. An extremely common error on installation is accidentally
+forgetting to add your containerized sensor to your local image registry prior to executing
+`helm install`. The default image name to deploy a kernel sensor to a node is `falcon-node-sensor`.

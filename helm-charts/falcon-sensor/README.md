@@ -83,3 +83,8 @@ To uninstall, run the following command:
 ```
 helm uninstall falcon-helm
 ```
+
+To uninstall from a custom namespace, run the following command:
+```
+helm uninstall falcon-helm -n falcon-system
+```

@@ -78,3 +78,13 @@ The following tables lists the more common configurable parameters of the chart 
 
 `falcon.cid` and `node.image.repository` are required values.
 
+### Uninstall Helm Chart
+To uninstall, run the following command:
+```
+helm uninstall falcon-helm
+```
+
+To uninstall from a custom namespace, run the following command:
+```
+helm uninstall falcon-helm -n falcon-system
+```

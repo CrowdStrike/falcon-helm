@@ -13,16 +13,12 @@ and manage the Falcon sensor on your Kubernetes cluster of choice.
 Operators are packaging methodologies for Kubernetes. Which methodology you use
 is dependent on what the Kubernetes vendor and implementation supports.
 
-If you only use Helm Charts, please read our [Falcon Helm Chart readme](helm-charts/falcon-sensor/README.md).
-If you are a developer, please read our [Developer's Guide](docs/developer_guide.md)
-If you are planning on using the Helm Operator, please read on.
-
-# Quick Note Regarding Support
-� � � � � � � � � � � � � � � � � � � � � � � � � � � � � �
+## Quick Note Regarding Support
+🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥
 
 The Helm chart and operator code is in development, and not (yet) supported!
 
-� � � � � � � � � � � � � � � � � � � � � � � � � � � � � �
+🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥
 
 On 24-FEB-2021, CrowdStrike announced (via [press release](https://www.crowdstrike.com/press-releases/advanced-threat-protection-for-cloud-and-container-workloads/)) technology previews are available for deploying Falcon into Azure Kubernetes Service (AKS), Google Kubernetes Engine (GKE), Rancher, and Red Hat OpenShift Container Platform (OCP).
 
@@ -31,21 +27,28 @@ This Helm operator and chart are being developed to automate Falcon sensor deplo
 * To provide feedback regarding this Helm operator and/or chart, please open a ticket in this repo.
 * To provide feedback when containerizing the Linux sensor, please open a ticket/bug report with CrowdStrike Support
 
-# Kubernetes Cluster Compatability
+## Helm Chart
+If you only use Helm Charts for Kubernetes installation, please read our [Falcon Helm Chart readme](helm-charts/falcon-sensor/README.md).
+
+## Developer Guide
+If you are a developer, please read our [Developer's Guide](docs/developer_guide.md).
+
+# Helm Operator
+## Kubernetes Cluster Compatability
 
 The Falcon Helm Operator has been tested to deploy on the following Kubernetes
 distributions:
 
 * Red Hat OpenShift Container Platform 4.6+
 
-# Dependencies
+## Dependencies
 
 1. Requires a `x86_64` Kubernetes cluster
 1. Must be a CrowdStrike customer with access to the Falcon Linux Sensor and Falcon Container downloads.
 1. Before deploying the Helm chart, you should have a Falcon Linux Sensor in the container registry before installing the Helm Chart. See the Deployment Considerations for more.
 1. Helm 3.x is installed and supported by the Kubernetes vendor.
 
-# Deployment Considerations
+## Deployment Considerations
 
 To ensure a successful deployment, you will want to ensure that:
 1. You have access to a containerized falcon sensor image. This is most likely
@@ -73,9 +76,9 @@ To ensure a successful deployment, you will want to ensure that:
 
 
 
-# Using Helm Operator
+## Using Helm Operator
 
-## Deploy using Make from the Git Repository
+### Deploy using Make from the Git Repository
 
 1. Deploy the Helm operator
    ```
@@ -91,7 +94,7 @@ To ensure a successful deployment, you will want to ensure that:
    kubectl apply -f config/samples/crowdstrike_v1alpha1_falconsensor.yaml
    ```
 
-## Undeploy using Make from the Git Repository
+### Undeploy using Make from the Git Repository
 
 3. Delete the customized Helm operator resouce
    ```

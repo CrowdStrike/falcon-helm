@@ -1,0 +1,258 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "falcon.crowdstrike.com/v1alpha1",
+          "kind": "FalconSensor",
+          "metadata": {
+            "name": "falcon-helm"
+          },
+          "spec": {
+            "falcon": {
+              "aid": null,
+              "apd": null,
+              "aph": null,
+              "app": null,
+              "assert": null,
+              "billing": null,
+              "cid": null,
+              "feature": null,
+              "memfail_every_n": null,
+              "memfail_grace_period": null,
+              "message_log": null,
+              "provisioning_token": null,
+              "tags": null,
+              "trace": null,
+              "update": null
+            },
+            "node": {
+              "daemonset": {
+                "annotations": {},
+                "labels": {},
+                "updateStrategy": "RollingUpdate"
+              },
+              "enabled": true,
+              "fullnameOverride": "",
+              "image": {
+                "pullPolicy": "Always",
+                "repository": "falcon-node-sensor",
+                "tag": "latest"
+              },
+              "nameOverride": "",
+              "podAnnotations": {},
+              "terminationGracePeriod": 10
+            }
+          }
+        }
+      ]
+    capabilities: Basic Install
+    operators.operatorframework.io/builder: operator-sdk-v1.3.0
+    operators.operatorframework.io/project_layout: helm.sdk.operatorframework.io/v1
+  name: falcon-helm.v0.0.1
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - kind: FalconSensor
+      name: falconsensors.falcon.crowdstrike.com
+      version: v1alpha1
+  description: Helm operator for running CrowdStrike Falcon with Kubernetes
+  displayName: falcon-helm-operator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+        - apiGroups:
+          - falcon.crowdstrike.com
+          resources:
+          - daemonset
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - privileged
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        - apiGroups:
+          - ""
+          - image.openshift.io
+          resources:
+          - imagestreamimages
+          - imagestreammappings
+          - imagestreams
+          - imagestreamtags
+          - imagetags
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ""
+          - image.openshift.io
+          resources:
+          - imagestreams/layers
+          verbs:
+          - get
+        - apiGroups:
+          - falcon.crowdstrike.com
+          resources:
+          - falconsensors
+          - falconsensors/status
+          - falconsensors/finalizers
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - daemonsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        serviceAccountName: default
+      deployments:
+      - name: falcon-helm-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --secure-listen-address=0.0.0.0:8443
+                - --upstream=http://127.0.0.1:8080/
+                - --logtostderr=true
+                - --v=10
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
+                name: kube-rbac-proxy
+                ports:
+                - containerPort: 8443
+                  name: https
+                resources: {}
+              - args:
+                - --metrics-addr=127.0.0.1:8080
+                - --enable-leader-election
+                - --leader-election-id=falcon-helm
+                image: quay.io/crowdstrike/falcon-helm-operator:latest
+                name: manager
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 180Mi
+                  requests:
+                    cpu: 100m
+                    memory: 90Mi
+              terminationGracePeriodSeconds: 10
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: default
+    strategy: deployment
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - security
+  - monitoring
+  - sensor
+  - EDR
+  - kubernetes
+  - alerting
+  - CrowdStrike
+  links:
+  - name: Falcon Helm
+    url: https://falcon-helm.domain
+  maintainers:
+  - email: gabriel.alford@crowdstrike.com
+    name: Gabriel Alford
+  maturity: alpha
+  provider:
+    name: CrowdStrike Inc.
+    url: https://crowdstrike.com
+  version: 0.0.1

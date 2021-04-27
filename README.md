@@ -1,6 +1,6 @@
 # CrowdStrike Falcon Helm Chart and Helm Operator
 
-[![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/falcon-helm)](https://artifacthub.io/packages/search?repo=falcon-helm) [![Docker Repository on Quay](https://quay.io/repository/crowdstrike/falcon-helm-operator/status "Docker Repository on Quay")](https://quay.io/repository/crowdstrike/falcon-helm-operator)
+[![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/falcon-helm)](https://artifacthub.io/packages/search?repo=falcon-helm) [![Helm Operator on Quay](https://quay.io/repository/crowdstrike/falcon-helm-operator/status "Helm Operator on Quay")](https://quay.io/repository/crowdstrike/falcon-helm-operator) [![Helm Operator Lifecycle Manager (OLM) Bundle on Quay](https://quay.io/repository/crowdstrike/falcon-helm-operator-bundle/status "Helm Operator Lifecycle Manager OLM Bundle on Quay")](https://quay.io/repository/crowdstrike/falcon-helm-operator-bundle)
 
 [Falcon](https://www.crowdstrike.com/) is the [CrowdStrike](https://www.crowdstrike.com/)
 platform purpose-built to stop breaches via a unified set of cloud-delivered
@@ -78,7 +78,32 @@ To ensure a successful deployment, you will want to ensure that:
 
 ## Using Helm Operator
 
-### Deploy using Make from the Git Repository
+## Deploy using the Operator Lifecycle Manager (OLM) deployment
+
+1. Install the Operator SDK CLI tool. See [https://sdk.operatorframework.io/docs/installation/](https://sdk.operatorframework.io/docs/installation/) for installation guide.
+
+2. Run the bundle
+   ```
+   operator-sdk run bundle quay.io/crowdstrike/falcon-helm-operator-bundle:latest
+   ```
+
+3. Customize the Helm operator deployment by adding your Crowdstrike Customer ID (CID), configuring the
+   registry containing the Falcon sensor, and any other sensor configurations in
+   `config/samples/crowdstrike_v1alpha1_falconsensor.yaml`.
+
+4. Apply the customized Helm operator resource:
+   ```
+   kubectl apply -f config/samples/crowdstrike_v1alpha1_falconsensor.yaml
+   ```
+
+## Uninstall using the Operator Lifecycle Manager (OLM)
+
+1. Uninstall the operator
+   ```
+   operator-sdk cleanup falcon-helm
+   ```
+
+## Deploy using Make from the Git Repository
 
 1. Deploy the Helm operator
    ```

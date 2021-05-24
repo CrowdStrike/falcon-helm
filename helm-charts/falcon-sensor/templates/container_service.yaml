@@ -1,0 +1,13 @@
+{{- if .Values.container.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: injector
+  namespace: falcon-system
+spec:
+  selector:
+    app: injector
+  ports:
+    - port: 443
+      targetPort: api
+{{- end }}

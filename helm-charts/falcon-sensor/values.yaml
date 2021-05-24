@@ -3,7 +3,7 @@
 # Declare variables to be passed into your templates.
 
 node:
-  # When enabled, Helm chart deploys the Falcon Senors to Kubernetes nodes
+  # When enabled, Helm chart deploys the Falcon Sensors to Kubernetes nodes
   enabled: true
 
   daemonset:
@@ -31,6 +31,26 @@ node:
 
   # How long to wait for Falcon pods to stop gracefully
   terminationGracePeriod: 10
+
+container:
+  # When enabled, Helm chart deploys the Falcon Container Sensor to Pods through Webhooks
+  enabled: false
+
+  image:
+    repository: falcon-sensor
+    pullPolicy: Always
+    pullSecrets: {}
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "latest"
+
+  resources:
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+
 
 falcon:
   cid:

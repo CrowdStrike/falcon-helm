@@ -18,7 +18,8 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1234
+        runAsUser: 10001
+        runAsGroup: 10001
       imagePullSecrets:
       - name: crowdstrike-falcon-pull-secret
       containers:

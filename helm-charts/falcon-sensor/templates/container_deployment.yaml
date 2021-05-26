@@ -1,0 +1,62 @@
+{{- if .Values.container.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: falcon-injector
+  namespace: falcon-system
+  labels:
+    app: falcon-injector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: falcon-injector
+  template:
+    metadata:
+      annotations:
+        sensor.falcon-system.crowdstrike.com/injection: disabled
+      labels:
+        app: falcon-injector
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+      imagePullSecrets:
+      - name: crowdstrike-falcon-pull-secret
+      containers:
+      - name: falcon-injector
+        image: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}"
+        imagePullPolicy: "{{ .Values.container.image.pullPolicy }}"
+        command: ["injector"]
+        envFrom:
+        - configMapRef:
+            name: injector-config
+        ports:
+        - containerPort: 8443
+          name: api
+        volumeMounts:
+        - name: tls-certs
+          mountPath: /run/secrets/tls
+          readOnly: true
+        readinessProbe:
+          httpGet:
+            path: /live
+            port: 8443
+            scheme: HTTPS
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /live
+            port: 8443
+            scheme: HTTPS
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+      - name: falcon-tls-certs
+        secret:
+          secretName: falcon-injector-tls
+{{- end }}

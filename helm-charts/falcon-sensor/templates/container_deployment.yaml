@@ -2,19 +2,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: injector
+  name: falcon-injector
   namespace: falcon-system
   labels:
-    app: injector
+    app: falcon-injector
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: injector
+      app: falcon-injector
   template:
     metadata:
+      annotations:
+        sensor.falcon-system.crowdstrike.com/injection: disabled
       labels:
-        app: injector
+        app: falcon-injector
     spec:
       securityContext:
         runAsNonRoot: true
@@ -23,7 +25,7 @@ spec:
       imagePullSecrets:
       - name: crowdstrike-falcon-pull-secret
       containers:
-      - name: injector
+      - name: falcon-injector
         image: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}"
         imagePullPolicy: "{{ .Values.container.image.pullPolicy }}"
         command: ["injector"]
@@ -54,7 +56,7 @@ spec:
         resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
-      - name: tls-certs
+      - name: falcon-tls-certs
         secret:
-          secretName: injector-tls
+          secretName: falcon-injector-tls
 {{- end }}

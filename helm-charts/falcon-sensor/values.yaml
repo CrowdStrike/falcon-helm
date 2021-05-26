@@ -51,6 +51,14 @@ container:
       cpu: 250m
       memory: 512Mi
 
+  certificates:
+    autogenerate: true
+    # base64 encoded CA certificate
+    caBundle:
+    # base64 encoded TLS Key
+    tlsKey:
+    # base64 encoded TLS
+    tlsCert:
 
 falcon:
   cid:

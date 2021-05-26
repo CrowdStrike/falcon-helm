@@ -1,0 +1,44 @@
+{{- if .Values.container.enabled }}
+{{ $fullName := ( include "falcon-sensor.fullname" . ) }}
+# fullname, fullname.namespace, fullname.namespace.svc
+{{- $altNames := list ( printf "%s" $fullName ) ( printf "%s.%s" $fullName .Release.Namespace ) ( printf "%s.%s.svc" $fullName .Release.Namespace ) -}}
+{{- $ca := genCA "falcon-sensor" 3650 -}}
+{{- $cert := genSignedCert ( include "falcon-sensor.fullname" . ) nil $altNames 3650 $ca -}}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: falcon-injector-tls
+  namespace: falcon-system
+type: Opaque
+data:
+  tls.crt: {{ if .Values.container.certificates.autogenerate }} {{ $cert.Cert | b64enc }} {{ else }} {{ .Values.container.certificates.tlsCert }} {{ end }}
+  tls.key: {{ if .Values.container.certificates.autogenerate }} {{ $cert.Key | b64enc }} {{ else }} {{ .Values.container.certificates.tlsKey }} {{ end }}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: falcon-injector.falcon-system.svc
+webhooks:
+  - name: falcon-injector.falcon-system.svc
+    admissionReviewVersions: ["v1", "v1beta1"]
+    sideEffects: None
+    namespaceSelector:
+      matchExpressions:
+      - key: falcon-sensor.falcon-system.crowdstrike.com/injection
+        operator: In
+        values: ["enabled"]
+    clientConfig:
+      service:
+        name: falcon-injector
+        namespace: falcon-system
+        path: "/mutate"
+      caBundle: {{ if .Values.container.certificates.autogenerate }} {{ $ca.Cert | b64enc }} {{- else -}} {{ .Values.container.certificates.caBundle }} {{ end }}
+    failurePolicy: Fail
+    rules:
+      - operations: [ "CREATE" ]
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+    timeoutSeconds: 30
+{{- end }}

@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "falcon-integration-gateway.fullname" . }}-config
+  labels:
+    {{- include "falcon-integration-gateway.labels" . | nindent 4 }}
+data:
+  config.ini: |
+    # Falcon Integration Gateway
+
+    [main]
+    # Uncomment to configure number of threads that process Falcon Events
+    # worker_threads = 4
+    {{- if .Values.falcon.integration_gateway.worker_threads }}
+    worker_threads = {{ .Values.falcon.integration_gateway.worker_threads }}
+    {{- end }}
+
+    [events]
+    # Uncomment to filter out events based on severity (allowed values 1-5, default 2)
+    #severity_threshold = 3
+    {{- if .Values.falcon.integration_gateway.severity_threshold }}
+    severity_threshold = {{ .Values.falcon.integration_gateway.severity_threshold }}
+    {{- end }}
+    # Uncomment to filter out events based on number of days past the event (default 365)
+    #older_than_days_threshold = 90
+    {{- if .Values.falcon.integration_gateway.older_than_days_threshold }}
+    older_than_days_threshold = {{ .Values.falcon.integration_gateway.older_than_days_threshold }}
+    {{- end }}
+
+    [logging]
+    # Uncomment to request logging level (ERROR, WARN, INFO, DEBUG)
+    # level = DEBUG
+    {{- if .Values.falcon.integration_gateway.level }}
+    level = {{ .Values.falcon.integration_gateway.level }}
+    {{- end }}
+
+    [falcon]
+    # Uncomment to provide Falcon Cloud alternatively use FALCON_CLOUD_REGION to override
+    #cloud_region = us-1
+    {{- if .Values.falcon.integration_gateway.cloud_region }}
+    cloud_region = {{ .Values.falcon.integration_gateway.cloud_region }}
+    {{- end }}
+
+    # Uncomment to provide OAuth Secret alternatively use FALCON_CLIENT_SECRET to override
+    #client_id = ABCD
+    {{- if .Values.falcon.integration_gateway.client_id }}
+    client_id = {{ .Values.falcon.integration_gateway.client_id }}
+    {{- end }}
+    # Uncomment to provide OAuth Secret alternatively use FALCON_CLIENT_SECRET to override
+    #client_secret = ABCD
+    {{- if .Values.falcon.integration_gateway.client_secret }}
+    client_secret = {{ .Values.falcon.integration_gateway.client_secret }}
+    {{- end }}
+    # Uncomment to provide application id. Needs to be different per each fig instance.
+    #application_id = my-acme-gcp-1
+    {{- if .Values.falcon.integration_gateway.application_id }}
+    application_id = {{ .Values.falcon.integration_gateway.application_id }}
+    {{- end }}
+    [gcp]
+    # Use GOOGLE_APPLICATION_CREDENTIALS env variable

@@ -39,7 +39,22 @@ container:
   image:
     repository: falcon-sensor
     pullPolicy: Always
-    pullSecrets: {}
+    # Set to true if connecting to a registry that requires authentication
+    pullSecrets:
+      enable: false
+      # Configure the list of namespaces that should have access to pull the Falcon
+      # sensor from a registry that requires authentication. This is a comma separated
+      # list. For example:
+      #
+      # namespaces: ns1,ns2,ns3
+      namespaces:
+
+      # Value must be base64
+      # The base64 encoded string of the docker config json for the pull secret can be
+      # gotten through:
+      # $ cat ~/.docker/config.json | base64 -
+      registryConfigJSON:
+
     # Overrides the image tag whose default is the chart appVersion.
     tag: "latest"
 

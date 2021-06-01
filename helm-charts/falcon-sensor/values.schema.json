@@ -1,0 +1,87 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "type": "object",
+    "properties": {
+        "falcon": {
+            "type": "object",
+            "required": [
+                "cid"
+              ],
+            "properties": {
+                "cid": {
+                    "type": "string",
+                    "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$",
+                    "example": [
+                        "1234567890ABCDEF1234567890ABCDEF-12"
+                    ]
+                }
+            }
+        },
+        "node": {
+            "type": "object",
+            "required": [
+                "enabled"
+              ],
+            "properties": {
+                "daemonset": {
+                    "type": "object",
+                    "required": [
+                        "updateStrategy"
+                      ],
+                    "properties": {
+                        "annotations": {
+                            "type": "object"
+                        },
+                        "labels": {
+                            "type": "object"
+                        },
+                        "updateStrategy": {
+                            "type": "string",
+                            "default": "RollingUpdate"
+                        }
+                    }
+                },
+                "enabled": {
+                    "type": "boolean",
+                    "default": "true"
+                },
+                "fullnameOverride": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "object",
+                    "required": [
+                        "repository",
+                        "pullPolicy",
+                        "tag"
+                      ],
+                    "properties": {
+                        "pullPolicy": {
+                            "type": "string",
+                            "default": "Always",
+                            "pattern": "^(Always|Never|IfNotPresent)$"
+                        },
+                        "repository": {
+                            "type": "string",
+                            "default": "Always"
+                        },
+                        "tag": {
+                            "type": "string",
+                            "default": "latest"
+                        }
+                    }
+                },
+                "nameOverride": {
+                    "type": "string"
+                },
+                "podAnnotations": {
+                    "type": "object"
+                },
+                "terminationGracePeriod": {
+                    "type": "integer",
+                    "default": "10"
+                }
+            }
+        }
+    }
+}

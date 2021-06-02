@@ -18,6 +18,8 @@ node:
 
     updateStrategy: RollingUpdate
 
+    serviceAccountName: ""
+
   image:
     repository: falcon-node-sensor
     pullPolicy: Always

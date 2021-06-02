@@ -38,6 +38,9 @@
                         "updateStrategy": {
                             "type": "string",
                             "default": "RollingUpdate"
+                        },
+                        "serviceAccountName": {
+                            "type": "string"
                         }
                     }
                 },

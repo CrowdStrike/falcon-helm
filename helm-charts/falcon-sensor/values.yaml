@@ -13,6 +13,9 @@ node:
     # additionals labels
     labels: {}
 
+    # additional tolerations for server scheduling to nodes with taints
+    tolerations: []
+
     updateStrategy: RollingUpdate
 
   image:

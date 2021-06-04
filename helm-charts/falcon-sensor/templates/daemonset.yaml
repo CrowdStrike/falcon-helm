@@ -56,6 +56,9 @@ spec:
       # this toleration is to have the daemonset runnable on master nodes
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
+      {{- with .Values.node.daemonset.tolerations }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
       nodeSelector:
         beta.kubernetes.io/os: linux
       initContainers:

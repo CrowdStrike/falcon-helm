@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: falcon-injector
-  namespace: falcon-system
+  namespace: {{ .Release.Namespace }}
   labels:
     app: falcon-injector
 spec:
@@ -20,10 +20,10 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
-        runAsUser: 10001
-        runAsGroup: 10001
+      {{- if .Values.container.image.pullSecrets.enable }}
       imagePullSecrets:
-      - name: crowdstrike-falcon-pull-secret
+        - name: crowdstrike-falcon-pull-secret
+      {{- end }}
       containers:
       - name: falcon-injector
         image: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}"
@@ -31,12 +31,12 @@ spec:
         command: ["injector"]
         envFrom:
         - configMapRef:
-            name: injector-config
+            name: {{ include "falcon-sensor.fullname" . }}-config
         ports:
         - containerPort: 8443
           name: api
         volumeMounts:
-        - name: tls-certs
+        - name: falcon-tls-certs
           mountPath: /run/secrets/tls
           readOnly: true
         readinessProbe:

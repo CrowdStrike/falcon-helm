@@ -41,6 +41,12 @@ container:
   # When enabled, Helm chart deploys the Falcon Container Sensor to Pods through Webhooks
   enabled: false
 
+  # Disable injection for all Namespaces
+  disableNSInjection: false
+
+  # Disable injection for all Pods
+  disablePodInjection: false
+
   image:
     repository: falcon-sensor
     pullPolicy: Always
@@ -70,15 +76,6 @@ container:
     requests:
       cpu: 250m
       memory: 512Mi
-
-  certificates:
-    autogenerate: true
-    # base64 encoded CA certificate
-    caBundle:
-    # base64 encoded TLS Key
-    tlsKey:
-    # base64 encoded TLS
-    tlsCert:
 
 falcon:
   cid:

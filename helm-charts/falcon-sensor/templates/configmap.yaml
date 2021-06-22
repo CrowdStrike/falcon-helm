@@ -15,3 +15,14 @@ data:
   FALCONCTL_OPT_{{ $key | upper }}: {{ $value | quote }}
   {{- end }}
   {{- end }}
+  {{- if .Values.container.enabled }}
+  CP_NAMESPACE: {{ .Release.Namespace }}
+  FALCON_IMAGE_PULL_POLICY: "{{ .Values.container.image.pullPolicy }}"
+  FALCON_IMAGE: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}"
+  {{- if .Values.container.image.pullSecrets.enable }}
+  FALCON_IMAGE_PULL_SECRET: crowdstrike-falcon-pull-secret
+  {{- end }}
+  {{- if .Values.container.disablePodInjection }}
+  INJECTION_DEFAULT_DISABLED: T
+  {{- end }}
+  {{- end }}

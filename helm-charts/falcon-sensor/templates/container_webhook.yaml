@@ -1,19 +1,18 @@
 {{- if .Values.container.enabled }}
-{{ $fullName := ( include "falcon-sensor.fullname" . ) }}
-# fullname, fullname.namespace, fullname.namespace.svc
+{{- $fullName := "falcon-injector" -}}
 {{- $altNames := list ( printf "%s" $fullName ) ( printf "%s.%s" $fullName .Release.Namespace ) ( printf "%s.%s.svc" $fullName .Release.Namespace ) -}}
-{{- $ca := genCA "falcon-sensor" 3650 -}}
+{{- $ca := genCA "{{ .Release.Namespace }} ca" 3650 -}}
 {{- $cert := genSignedCert ( include "falcon-sensor.fullname" . ) nil $altNames 3650 $ca -}}
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   name: falcon-injector-tls
-  namespace: falcon-system
+  namespace: {{ .Release.Namespace }}
 type: Opaque
 data:
-  tls.crt: {{ if .Values.container.certificates.autogenerate }} {{ $cert.Cert | b64enc }} {{ else }} {{ .Values.container.certificates.tlsCert }} {{ end }}
-  tls.key: {{ if .Values.container.certificates.autogenerate }} {{ $cert.Key | b64enc }} {{ else }} {{ .Values.container.certificates.tlsKey }} {{ end }}
+  tls.crt: {{ $cert.Cert | b64enc }}
+  tls.key: {{ $cert.Key | b64enc }}
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
@@ -25,15 +24,15 @@ webhooks:
     sideEffects: None
     namespaceSelector:
       matchExpressions:
-      - key: falcon-sensor.falcon-system.crowdstrike.com/injection
-        operator: In
-        values: ["enabled"]
+      - key: sensor.falcon-system.crowdstrike.com/injection
+        operator: {{ if .Values.container.disableNSInjection }}In{{ else }}NotIn{{- end }}
+        values: ["{{ if .Values.container.disableNSInjection }}enabled{{ else }}disabled{{- end }}"]
     clientConfig:
       service:
         name: falcon-injector
-        namespace: falcon-system
+        namespace: {{ .Release.Namespace }}
         path: "/mutate"
-      caBundle: {{ if .Values.container.certificates.autogenerate }} {{ $ca.Cert | b64enc }} {{- else -}} {{ .Values.container.certificates.caBundle }} {{ end }}
+      caBundle: {{ $ca.Cert | b64enc }}
     failurePolicy: Fail
     rules:
       - operations: [ "CREATE" ]

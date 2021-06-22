@@ -3,7 +3,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: falcon-injector
-  namespace: falcon-system
+  namespace: {{ .Release.Namespace }}
 spec:
   selector:
     app: falcon-injector

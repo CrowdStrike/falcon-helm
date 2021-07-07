@@ -1,8 +1,9 @@
 {{- if .Values.container.enabled }}
 {{- $fullName := "falcon-injector" -}}
-{{- $altNames := list ( printf "%s" $fullName ) ( printf "%s.%s" $fullName .Release.Namespace ) ( printf "%s.%s.svc" $fullName .Release.Namespace ) -}}
-{{- $ca := genCA "{{ .Release.Namespace }} ca" 3650 -}}
-{{- $cert := genSignedCert ( include "falcon-sensor.fullname" . ) nil $altNames 3650 $ca -}}
+{{- $certValid := (.Values.container.certExpiration | int) -}}
+{{- $altNames := list (  printf "%s.%s.svc" $fullName .Release.Namespace ) (  printf "%s.%s.svc.cluster.local" $fullName .Release.Namespace ) ( printf "%s.%s" $fullName .Release.Namespace ) ( printf "%s" $fullName ) -}}
+{{- $ca := genCA ( printf "%s ca" .Release.Namespace ) $certValid -}}
+{{- $cert := genSignedCert ( printf "%s.%s.svc" $fullName .Release.Namespace ) nil $altNames $certValid $ca -}}
 ---
 apiVersion: v1
 kind: Secret

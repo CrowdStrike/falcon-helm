@@ -47,6 +47,9 @@ container:
   # Disable injection for all Pods
   disablePodInjection: false
 
+  # Certificate validity duration in number of days
+  certExpiration: 3650
+
   image:
     repository: falcon-sensor
     pullPolicy: Always

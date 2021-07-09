@@ -2,9 +2,12 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ .Release.Namespace }}-secrets-reader
+  name: {{ include "falcon-sensor.fullname" . }}-access-role
 rules:
-- apiGroups: [""]
-  resources: ["secrets"]
-  verbs: ["get"]
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
 {{- end }}

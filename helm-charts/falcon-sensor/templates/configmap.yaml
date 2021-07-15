@@ -4,10 +4,13 @@ metadata:
   name: {{ include "falcon-sensor.fullname" . }}-config
   namespace: {{ .Release.Namespace }}
   labels:
-    app: "{{ include "falcon-sensor.fullname" . }}"
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    heritage: {{ .Release.Service | quote }}
-    release: {{ .Release.Name | quote }}
+    app: "{{ include "falcon-sensor.name" . }}"
+    app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/component: "container_sensor"
+    crowdstrike.com/provider: crowdstrike
+    helm.sh/chart: {{ include "falcon-sensor.chart" . }}
 data:
   FALCONCTL_OPT_CID: {{ .Values.falcon.cid }}
   {{- range $key, $value := .Values.falcon }}
@@ -20,7 +23,7 @@ data:
   FALCON_IMAGE_PULL_POLICY: "{{ .Values.container.image.pullPolicy }}"
   FALCON_IMAGE: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}"
   {{- if .Values.container.image.pullSecrets.enable }}
-  FALCON_IMAGE_PULL_SECRET: crowdstrike-falcon-pull-secret
+  FALCON_IMAGE_PULL_SECRET: {{ include "falcon-sensor.fullname" . }}-pull-secret
   {{- end }}
   {{- if .Values.container.disablePodInjection }}
   INJECTION_DEFAULT_DISABLED: T

@@ -1,35 +1,51 @@
 {{- if .Values.container.enabled }}
-{{- $fullName := "falcon-injector" -}}
+{{- $name := (printf "%s-injector" (include "falcon-sensor.name" .)) -}}
+{{- $fullName := (printf "%s.%s.svc" $name .Release.Namespace) -}}
 {{- $certValid := (.Values.container.certExpiration | int) -}}
-{{- $altNames := list (  printf "%s.%s.svc" $fullName .Release.Namespace ) (  printf "%s.%s.svc.cluster.local" $fullName .Release.Namespace ) ( printf "%s.%s" $fullName .Release.Namespace ) ( printf "%s" $fullName ) -}}
+{{- $altNames := list (  printf "%s.%s.svc" $name .Release.Namespace ) (  printf "%s.%s.svc.cluster.local" $name .Release.Namespace ) ( printf "%s.%s" $name .Release.Namespace ) ( printf "%s" $name ) -}}
 {{- $ca := genCA ( printf "%s ca" .Release.Namespace ) $certValid -}}
-{{- $cert := genSignedCert ( printf "%s.%s.svc" $fullName .Release.Namespace ) nil $altNames $certValid $ca -}}
+{{- $cert := genSignedCert ( printf "%s.%s.svc" $name .Release.Namespace ) nil $altNames $certValid $ca -}}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: falcon-injector
+  name: {{ include "falcon-sensor.name" . }}-injector
   namespace: {{ .Release.Namespace }}
   labels:
-    app: falcon-injector
+    app: {{ include "falcon-sensor.name" . }}-injector
+    app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/component: "container_sensor"
+    crowdstrike.com/provider: crowdstrike
+    helm.sh/chart: {{ include "falcon-sensor.chart" . }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: falcon-injector
+      app: {{ include "falcon-sensor.name" . }}-injector
+      app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: "container_sensor"
+      crowdstrike.com/provider: crowdstrike
   template:
     metadata:
       labels:
-        app: falcon-injector
+        app: {{ include "falcon-sensor.name" . }}-injector
+        app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: "container_sensor"
+        crowdstrike.com/provider: crowdstrike
+        crowdstrike.com/component: crowdstrike-falcon-injector
     spec:
       securityContext:
         runAsNonRoot: true
       {{- if .Values.container.image.pullSecrets.enable }}
       imagePullSecrets:
-        - name: crowdstrike-falcon-pull-secret
+        - name: {{ include "falcon-sensor.fullname" . }}-pull-secret
       {{- end }}
       containers:
-      - name: falcon-injector
+      - name: {{ include "falcon-sensor.name" . }}-injector
         image: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}"
         imagePullPolicy: "{{ .Values.container.image.pullPolicy }}"
         command: ["injector"]
@@ -37,10 +53,10 @@ spec:
         - configMapRef:
             name: {{ include "falcon-sensor.fullname" . }}-config
         ports:
-        - containerPort: 8443
-          name: api
+        - name: https
+          containerPort: 8443
         volumeMounts:
-        - name: falcon-tls-certs
+        - name: {{ include "falcon-sensor.name" . }}-tls-certs
           mountPath: /run/secrets/tls
           readOnly: true
         readinessProbe:
@@ -60,15 +76,23 @@ spec:
         resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
-      - name: falcon-tls-certs
+      - name: {{ include "falcon-sensor.name" . }}-tls-certs
         secret:
-          secretName: falcon-injector-tls
+          secretName: {{ include "falcon-sensor.name" . }}-tls
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: falcon-injector-tls
+  name: {{ include "falcon-sensor.name" . }}-tls
   namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "falcon-sensor.name" . }}
+    app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/component: "container_sensor"
+    crowdstrike.com/provider: crowdstrike
+    helm.sh/chart: {{ include "falcon-sensor.chart" . }}
 type: Opaque
 data:
   tls.crt: {{ $cert.Cert | b64enc }}
@@ -77,15 +101,27 @@ data:
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: falcon-injector.falcon-system.svc
+  name: {{ include "falcon-sensor.name" . }}-injector
+  labels:
+    app: {{ include "falcon-sensor.name" . }}
+    app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/component: "container_sensor"
+    crowdstrike.com/provider: crowdstrike
+    helm.sh/chart: {{ include "falcon-sensor.chart" . }}
 webhooks:
-  - name: falcon-injector.falcon-system.svc
+  - name: {{ $fullName }}
     admissionReviewVersions:
       - v1
       - v1beta1
     sideEffects: None
     namespaceSelector:
       matchExpressions:
+      - key: sensor.crowdstrike.com/injection
+        operator: {{ if .Values.container.disableNSInjection }}In{{ else }}NotIn{{- end }}
+        values:
+          - {{ if .Values.container.disableNSInjection }}enabled{{ else }}disabled{{- end }}
       - key: sensor.falcon-system.crowdstrike.com/injection
         operator: {{ if .Values.container.disableNSInjection }}In{{ else }}NotIn{{- end }}
         values:
@@ -96,7 +132,7 @@ webhooks:
         - {{ .Release.Namespace }}
     clientConfig:
       service:
-        name: falcon-injector
+        name: {{ include "falcon-sensor.name" . }}-injector
         namespace: {{ .Release.Namespace }}
         path: "/mutate"
       caBundle: {{ $ca.Cert | b64enc }}

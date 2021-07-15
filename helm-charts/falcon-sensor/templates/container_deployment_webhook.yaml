@@ -38,6 +38,17 @@ spec:
         crowdstrike.com/provider: crowdstrike
         crowdstrike.com/component: crowdstrike-falcon-injector
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/os
+                operator: In
+                values:
+                - linux
+              - key: node-role.kubernetes.io/worker
+                operator: Exists
       securityContext:
         runAsNonRoot: true
       {{- if .Values.container.image.pullSecrets.enable }}

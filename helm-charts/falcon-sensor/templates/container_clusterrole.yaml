@@ -26,5 +26,13 @@ rules:
   - imagestreams/layers
   verbs:
   - get
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  resourceNames:
+  - {{ include "falcon-sensor.fullname" . }}
+  verbs:
+  - use
 {{- end }}
 {{- end }}

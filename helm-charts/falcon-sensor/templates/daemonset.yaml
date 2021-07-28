@@ -75,8 +75,9 @@ spec:
       # a file volume ensures that AID is preserved across container
       # restarts.
       - name: init-falconstore
-        image: busybox
-        args: [/bin/sh, -c, 'touch /var/lib/crowdstrike/falconstore']
+        image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag }}"
+        command: ["/bin/sh"]
+        args: [-c, 'touch /var/lib/crowdstrike/falconstore']
         volumeMounts:
           - name: falconstore-dir
             mountPath: /var/lib/crowdstrike

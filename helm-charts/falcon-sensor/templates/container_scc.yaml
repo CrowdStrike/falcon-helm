@@ -3,7 +3,7 @@
 kind: SecurityContextConstraints
 apiVersion: security.openshift.io/v1
 metadata:
-  name: {{ include "falcon-sensor.fullname" . }}
+  name: {{ include "falcon-sensor.fullname" . }}-container
   labels:
     app: {{ include "falcon-sensor.name" . }}
     app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}

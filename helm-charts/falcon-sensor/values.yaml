@@ -18,8 +18,6 @@ node:
 
     updateStrategy: RollingUpdate
 
-    serviceAccountName: ""
-
   image:
     repository: falcon-node-sensor
     pullPolicy: Always
@@ -77,8 +75,8 @@ container:
   #   cpu: 100m
   #   memory: 128Mi
     requests:
-      cpu: 250m
-      memory: 512Mi
+      cpu: 10m
+      memory: 20Mi
 
 falcon:
   cid:

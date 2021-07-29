@@ -138,9 +138,7 @@ spec:
         - name: falconstore-dir
           hostPath:
             path: /var/lib/crowdstrike
-      {{- if .Values.node.daemonset.serviceAccountName }}
-      serviceAccountName: {{ .Values.node.daemonset.serviceAccountName }}
-      {{- end }}
+      serviceAccountName: crowdstrike-falcon-sa
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
       hostNetwork: true
       hostPID: true

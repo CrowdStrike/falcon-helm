@@ -1,4 +1,3 @@
-{{- if .Values.container.enabled }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -12,12 +11,14 @@ metadata:
     crowdstrike.com/provider: crowdstrike
     helm.sh/chart: {{ include "falcon-sensor.chart" . }}
 rules:
+{{- if .Values.container.enabled }}
 - apiGroups:
   - ""
   resources:
   - secrets
   verbs:
   - get
+{{- end }}
 {{- if .Capabilities.APIVersions.Has "image.openshift.io/v1" }}
 - apiGroups:
   - ""
@@ -26,12 +27,35 @@ rules:
   - imagestreams/layers
   verbs:
   - get
+{{- end }}
+{{- if .Capabilities.APIVersions.Has "security.openshift.io/v1" }}
 - apiGroups:
   - security.openshift.io
   resources:
   - securitycontextconstraints
   resourceNames:
-  - {{ include "falcon-sensor.fullname" . }}
+{{- if .Values.node.enabled }}
+  - {{ include "falcon-sensor.fullname" . }}-node
+{{- end }}
+  {{- if .Values.container.enabled }}
+  - {{ include "falcon-sensor.fullname" . }}-container
+{{- end }}
+  verbs:
+  - use
+{{- end }}
+{{- if not (.Capabilities.APIVersions.Has "security.openshift.io/v1") }}
+{{- if .Capabilities.APIVersions.Has "policy/v1beta1/PodSecurityPolicy" }}
+- apiGroups:
+  - policy
+  resourceNames:
+{{- if .Values.node.enabled }}
+  - {{ include "falcon-sensor.fullname" . }}-node
+{{- end }}
+{{- if .Values.container.enabled }}
+  - {{ include "falcon-sensor.fullname" . }}-container
+{{- end }}
+  resources:
+  - podsecuritypolicies
   verbs:
   - use
 {{- end }}

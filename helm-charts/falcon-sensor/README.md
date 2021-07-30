@@ -78,6 +78,26 @@ The following tables lists the more common configurable parameters of the chart 
 
 `falcon.cid` and `node.image.repository` are required values.
 
+## Container Sensor Configuration
+
+The following tables lists the more common configurable parameters of the chart and their default values for installing the Container sensor.
+
+| Parameter                                        | Description                                                             | Default                                   |
+|:-------------------------------------------------|:------------------------------------------------------------------------|:----------------------------------------- |
+| `container.enabled`                              | Enable installation on the Kubernetes node                              | `false`                                   |
+| `container.disableNSInjection`                   | Disable injection for all Namespaces                                    | `false`                                   |
+| `container.disablePodInjection`                  | Disable injection for all Pods                                          | `false`                                   |
+| `container.certExpiration`                       | Certificate validity duration in number of days                         | `3650`                                    |
+| `container.image.repository`                     | Falcon Sensor Node registry/image name                                  | `falcon-sensor`                           |
+| `container.image.tag`                            | The version of the official image to use                                | `latest`                                  |
+| `container.image.pullPolicy`                     | Policy for updating images                                              | `Always`                                  |
+| `container.image.pullSecrets.enable`             | Enable pull secrets for private registry                                | `false`                                   |
+| `container.image.pullSecrets.namespaces`         | Namespaces that should the Falcon sensor from an authenticated registry | None                                      |
+| `container.image.pullSecrets.registryConfigJSON` | base64 encoded docker config json for the pull secret                   | None                                      |
+| `falcon.cid`                                     | CrowdStrike Customer ID (CID)                                           | None       (Required)                     |
+
+`falcon.cid` and `container.image.repository` are required values.
+
 ### Uninstall Helm Chart
 To uninstall, run the following command:
 ```

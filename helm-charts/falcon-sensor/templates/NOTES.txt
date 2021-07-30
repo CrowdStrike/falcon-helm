@@ -3,8 +3,24 @@ Thank you for installing the CrowdStrike Falcon Helm Chart!
 Access to the Falcon Linux and Container Sensor downloads at https://falcon.crowdstrike.com/hosts/sensor-downloads are
 required to complete the install of this Helm chart. This is provided automatically to all active CrowdStrike customers.
 Additionally, a containerized sensor must be present in a container registry accessible from Kubernetes installation.
+{{- if .Values.node.enabled }}
 Sample Dockerfiles are available at https://github.com/CrowdStrike/Dockerfiles.
 CrowdStrike Falcon sensors will deploy across all nodes in your Kubernetes cluster after
-installing this Helm chart. An extremely common error on installation is accidentally
-forgetting to add your containerized sensor to your local image registry prior to executing
-`helm install`. The default image name to deploy a kernel sensor to a node is `falcon-node-sensor`.
+installing this Helm chart. The default image name to deploy a kernel sensor to a node is `falcon-node-sensor`.
+{{- end }}
+
+{{- if .Values.container.enabled }}
+CrowdStrike Falcon sensors will deploy across all pods as sidecars in your Kubernetes cluster after
+installing this Helm chart and starting a new pod deployment for all your applications.
+The default image name to deploy the pod sensor is `falcon-sensor`.
+{{- end }}
+
+An extremely common error on installation is accidentally forgetting to add your containerized
+sensor to your local image registry prior to executing `helm install`.
+
+{{ if and (.Capabilities.APIVersions.Has "security.openshift.io/v1") .Values.container.enabled -}}
+If deploying the Falcon Container Sensor on Red Hat OpenShift, push the Falcon Container sensor image
+after you install the Helm Chart if you are using OpenShift's internal registry.
+This is due to OpenShift requiring a valid ImageStream Tag to pull from a valid image hash in
+the internal registry.
+{{- end }}

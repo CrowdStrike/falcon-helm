@@ -4,7 +4,7 @@
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
-  name: {{ include "falcon-sensor.fullname" . }}
+  name: {{ include "falcon-sensor.fullname" . }}-container
   labels:
     app: {{ include "falcon-sensor.name" . }}
     app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}
@@ -35,7 +35,7 @@ spec:
   allowedCapabilities:
   - SYS_PTRACE
   fsGroup:
-    rule: MustRunAs
+    rule: RunAsAny
   hostIPC: false
   hostNetwork: false
   hostPID: false
@@ -43,9 +43,9 @@ spec:
   runAsUser:
     rule: RunAsAny
   seLinux:
-    rule: MustRunAs
+    rule: RunAsAny
   supplementalGroups:
-    rule: MustRunAs
+    rule: RunAsAny
   volumes:
   - configMap
   - downwardAPI

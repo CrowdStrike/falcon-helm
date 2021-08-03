@@ -4,7 +4,7 @@
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
-  name: {{ include "falcon-sensor.fullname" . }}
+  name: {{ include "falcon-sensor.fullname" . }}-node
   labels:
     app: {{ include "falcon-sensor.name" . }}
     app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}

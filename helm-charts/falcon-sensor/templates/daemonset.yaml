@@ -32,7 +32,7 @@ spec:
       crowdstrike.com/provider: crowdstrike
   updateStrategy:
     type: {{ .Values.node.daemonset.updateStrategy }}
-    {{- if and (eq .Values.node.daemonset.updateStrategy "RollingUpdate") (.Values.node.daemonset.maxUnavailable) }}
+    {{- if and (eq .Values.node.daemonset.updateStrategy "RollingUpdate") (ne (int .Values.node.daemonset.maxUnavailable) 1) }}
     rollingUpdate:
       maxUnavailable: {{ .Values.node.daemonset.maxUnavailable }}
     {{- end }}

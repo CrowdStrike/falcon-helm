@@ -3,4 +3,4 @@
   version: v1alpha1
   kind: FalconSensor
   chart: helm-charts/falcon-sensor
-# +kubebuilder:scaffold:watch
+#+kubebuilder:scaffold:watch

@@ -45,12 +45,10 @@ rules:
 # We need to access the coreos nodes to protect them
 - apiGroups:
   - security.openshift.io
-  resourceNames:
-  - privileged
   resources:
   - securitycontextconstraints
   verbs:
-  - use
+  - "*"
 
 # We need to easily pull images regardless of namespace
 - apiGroups:
@@ -94,9 +92,17 @@ rules:
 - verbs:
   - "*"
   apiGroups:
+  - "rbac.authorization.k8s.io"
+  resources:
+  - "clusterrolebindings"
+  - "clusterroles"
+- verbs:
+  - "*"
+  apiGroups:
   - ""
   resources:
   - "configmaps"
+  - "serviceaccounts"
 - verbs:
   - "*"
   apiGroups:
@@ -104,4 +110,4 @@ rules:
   resources:
   - "daemonsets"
 
-# +kubebuilder:scaffold:rules
+#+kubebuilder:scaffold:rules

@@ -1,6 +1,4 @@
 repositoryID: 8a7fda6e-508f-4cc5-8887-dd7054c6b71c
 owners:
-  - name: Shawn Wells
-    email: shawn.wells@crowdstrike.com
-  - name: Gabe Alford
-    email: gabriel.alford@crowdstrike.com
+  - name: Crowdstrike Solutions Architecture
+    email: integrations@crowdstrike.com

@@ -84,7 +84,7 @@ falcon:
   apd:
   aph:
   app:
-  trace:
+  trace: none
   feature:
   update:
   message_log:

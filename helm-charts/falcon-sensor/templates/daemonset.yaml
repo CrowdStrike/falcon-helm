@@ -111,15 +111,6 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "falcon-sensor.fullname" . }}-config
-      # This spits out logs from sensor-node-container to stdout so that they
-      # are routed through k8s log driver.
-      - name: log
-        image: busybox
-        args: [/bin/sh, -c, 'tail -n1 -f /var/log/falcon-sensor.log']
-        volumeMounts:
-        - name: var-log
-          mountPath: /var/log
-          readOnly: True
       volumes:
         - name: dev
           hostPath:

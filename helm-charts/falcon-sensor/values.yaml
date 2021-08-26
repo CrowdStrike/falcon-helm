@@ -48,6 +48,12 @@ container:
   # Certificate validity duration in number of days
   certExpiration: 3650
 
+  # For custom DNS configurations when .svc requires a domain for services
+  # For example if service.my-namespace.svc doesn't resolve and the cluster uses
+  # service.my-namespace.svc.testing.io, you would add testing.io as the value below.
+  # Otherwise, keep this blank.
+  domainName:
+
   image:
     repository: falcon-sensor
     pullPolicy: Always

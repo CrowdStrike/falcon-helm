@@ -1,10 +1,13 @@
 {{- if .Values.container.enabled }}
 {{- $name := (printf "%s-injector" (include "falcon-sensor.name" .)) -}}
 {{- $fullName := (printf "%s.%s.svc" $name .Release.Namespace) -}}
+{{- if .Values.container.domainName }}
+{{- $fullName = (printf "%s.%s.svc.%s" $name .Release.Namespace .Values.container.domainName) -}}
+{{- end }}
 {{- $certValid := (.Values.container.certExpiration | int) -}}
-{{- $altNames := list (  printf "%s.%s.svc" $name .Release.Namespace ) (  printf "%s.%s.svc.cluster.local" $name .Release.Namespace ) ( printf "%s.%s" $name .Release.Namespace ) ( printf "%s" $name ) -}}
+{{- $altNames := list ( printf "%s" $fullName ) ( printf "%s.%s.svc" $name .Release.Namespace ) (  printf "%s.%s.svc.cluster.local" $name .Release.Namespace ) ( printf "%s.%s" $name .Release.Namespace ) ( printf "%s" $name ) -}}
 {{- $ca := genCA ( printf "%s ca" .Release.Namespace ) $certValid -}}
-{{- $cert := genSignedCert ( printf "%s.%s.svc" $name .Release.Namespace ) nil $altNames $certValid $ca -}}
+{{- $cert := genSignedCert $fullName nil $altNames $certValid $ca -}}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -122,7 +125,7 @@ metadata:
     crowdstrike.com/provider: crowdstrike
     helm.sh/chart: {{ include "falcon-sensor.chart" . }}
 webhooks:
-  - name: {{ $fullName }}
+  - name: {{ $name }}.{{ .Release.Namespace }}.svc
     admissionReviewVersions:
       - v1
       - v1beta1
@@ -142,10 +145,14 @@ webhooks:
         values:
         - {{ .Release.Namespace }}
     clientConfig:
+      {{- if .Values.container.domainName }}
+      url: https://{{ $fullName }}:443/mutate
+      {{- else }}
       service:
         name: {{ include "falcon-sensor.name" . }}-injector
         namespace: {{ .Release.Namespace }}
         path: "/mutate"
+      {{- end }}
       caBundle: {{ $ca.Cert | b64enc }}
     failurePolicy: Fail
     rules:

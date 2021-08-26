@@ -1,10 +1,17 @@
 domain: crowdstrike.com
 layout: helm.sdk.operatorframework.io/v1
+multigroup: true
 projectName: falcon-helm
+repo: github.com/crowdstrike/falcon-helm
 resources:
--
+- api:
+    crdVersion: v1
+  controller: true
   domain: crowdstrike.com
   group: falcon
   kind: FalconSensor
   version: v1alpha1
 version: "3"
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}

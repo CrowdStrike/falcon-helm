@@ -18,21 +18,207 @@ spec:
         description: FalconSensor is the Schema for the falconsensors API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
           spec:
             description: Spec defines the desired state of FalconSensor
+            properties:
+              container:
+                description: Falcon Container Sensor (sidecar) for Kubernetes Pods
+                properties:
+                  certExpiration:
+                    default: 3650
+                    description: Webook Certificate Authority Expiration (in days)
+                    pattern: ^[0-9]+$
+                    type: integer
+                  disableNSInjection:
+                    default: false
+                    description: Disable sensor injection for all namespaces
+                    type: boolean
+                  disablePodInjection:
+                    default: false
+                    description: Disable sensor injection for all pods
+                    type: boolean
+                  enabled:
+                    default: false
+                    description: Enable the Falcon Container Sensor
+                    type: boolean
+                  image:
+                    description: Falcon Container Sensor image configuration for Kubernetes
+                      Pods
+                    properties:
+                      pullPolicy:
+                        default: Always
+                        description: Image pull policy
+                        enum:
+                        - Always
+                        - Never
+                        - IfNotPresent
+                        type: string
+                      pullSecrets:
+                        description: Container image configuration
+                        properties:
+                          enable:
+                            default: false
+                            description: Connect to registry that requires authentication
+                            type: boolean
+                          namespaces:
+                            description: Comma separated list of namespaces allowed
+                              to pull Falcon Sensor
+                            type: string
+                          registryConfigJSON:
+                            description: A base64-encoded string of the Docker config
+                              JSON of the registry pull secret
+                            type: string
+                        type: object
+                      repository:
+                        default: falcon-sensor
+                        description: Repository to pull Falcon Sensor for the nodes
+                        type: string
+                      tag:
+                        default: latest
+                        description: Image tag to use for the Falcon Sensor version
+                        type: string
+                    required:
+                    - repository
+                    - tag
+                    type: object
+                  resources:
+                    description: Resource configuration for the Falcon Injector Pod
+                    properties:
+                      requests:
+                        description: Default mimimum resource requests for the Falcon
+                          Injector Pod
+                        properties:
+                          cpu:
+                            default: 10m
+                            description: Minimum CPU request (in millicpu)
+                            type: string
+                          memory:
+                            default: 20Mi
+                            description: Minimum memory request (in bytes)
+                            type: string
+                        type: object
+                    type: object
+                required:
+                - enabled
+                type: object
+              falcon:
+                description: CrowdStrike Falcon sensor configuration
+                properties:
+                  apd:
+                    default: false
+                    description: Enable the App Proxy Port (APP). Uncommon in container-based
+                      deployments.
+                    type: boolean
+                  aph:
+                    description: App Proxy Hostname (APH). Uncommon in container-based
+                      deployments.
+                    type: string
+                  app:
+                    description: App Proxy Port (APP). Uncommon in container-based
+                      deployments.
+                    type: string
+                  billing:
+                    description: Utilize default or metered billing
+                    enum:
+                    - default
+                    - metered
+                    type: string
+                  cid:
+                    description: Falcon Customer ID (CID)
+                    pattern: ^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$
+                    type: string
+                  feature:
+                    description: Options to pass to the "--feature" flag. Options
+                      are [none,[enableLog[,disableLogBuffer[,disableOsfm[,emulateUpdate]]]]]
+                    type: string
+                  message_log:
+                    default: false
+                    description: Enable message log for logging to disk
+                    type: boolean
+                  provisioning_token:
+                    description: Provisioning token value
+                    type: string
+                  tags:
+                    description: 'Comma separated list of tags for sensor grouping.
+                      Allowed characters: all alphanumerics, ''/'', ''-'', ''_'',
+                      and '',''.'
+                    type: string
+                  trace:
+                    description: Set trace level. Options are [none|err|warn|info|debug].
+                    enum:
+                    - none
+                    - err
+                    - warn
+                    - info
+                    - debug
+                    type: string
+                required:
+                - cid
+                type: object
+              node:
+                description: Falcon Sensor for Kubernetes Nodes
+                properties:
+                  daemonset:
+                    description: Falcon Sensor Daemonset configuration
+                    properties:
+                      updateStrategy:
+                        default: RollingUpdate
+                        description: Kubernetes update methodology for Daemonsets
+                        enum:
+                        - RollingUpdate
+                        - OnDelete
+                        type: string
+                    type: object
+                  enabled:
+                    default: true
+                    description: Enable the Falcon Sensor for Kubernetes Nodes
+                    type: boolean
+                  image:
+                    description: Falcon Sensor image configuration for Kubernetes
+                      Nodes
+                    properties:
+                      pullPolicy:
+                        default: Always
+                        description: Image pull policy
+                        enum:
+                        - Always
+                        - Never
+                        - IfNotPresent
+                        type: string
+                      repository:
+                        default: falcon-node-sensor
+                        description: Repository to pull Falcon Sensor for the nodes
+                        type: string
+                      tag:
+                        default: latest
+                        description: Image tag to use for the Falcon Sensor version
+                        type: string
+                    required:
+                    - repository
+                    - tag
+                    type: object
+                  terminationGracePeriod:
+                    default: 10
+                    description: Grace period (in seconds) to cleanly shutdown pods
+                    pattern: ^[0-9]+$
+                    type: integer
+                required:
+                - enabled
+                type: object
+            required:
+            - falcon
             type: object
-            x-kubernetes-preserve-unknown-fields: true
-          status:
-            description: Status defines the observed state of FalconSensor
-            type: object
-            x-kubernetes-preserve-unknown-fields: true
         type: object
     served: true
     storage: true
@@ -42,5 +228,5 @@ status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: null
-  storedVersions: null
+  conditions: []
+  storedVersions: []

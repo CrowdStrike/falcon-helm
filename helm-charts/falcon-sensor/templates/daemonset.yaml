@@ -68,19 +68,6 @@ spec:
       {{- end }}
       nodeSelector:
         kubernetes.io/os: linux
-      initContainers:
-      # This init container creates empty falconstore file so that when
-      # it's mounted into the sensor-node-container, k8s would just use it
-      # rather than creating a directory.  Mounting falconstore file as
-      # a file volume ensures that AID is preserved across container
-      # restarts.
-      - name: init-falconstore
-        image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag }}"
-        command: ["/bin/sh"]
-        args: [-c, 'touch /var/lib/crowdstrike/falconstore']
-        volumeMounts:
-          - name: falconstore-dir
-            mountPath: /var/lib/crowdstrike
       containers:
       - name: falcon-node-sensor
         image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag }}"
@@ -94,8 +81,8 @@ spec:
           mountPath: /etc
         - name: var-log
           mountPath: /var/log
-        - name: falconstore
-          mountPath: /opt/CrowdStrike/falconstore
+        - name: crowdstrike-dir
+          mountPath: /opt/CrowdStrike
         # Various pod security context settings. Bear in mind that many of these have an impact
         # on the Falcon Sensor working correctly.
         #
@@ -123,12 +110,9 @@ spec:
             path: /var/run
         - name: var-log
           emptyDir: {}
-        - name: falconstore
+        - name: crowdstrike-dir
           hostPath:
-            path: /var/lib/crowdstrike/falconstore
-        - name: falconstore-dir
-          hostPath:
-            path: /var/lib/crowdstrike
+            path: /opt/CrowdStrike
       serviceAccountName: crowdstrike-falcon-sa
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
       hostNetwork: true

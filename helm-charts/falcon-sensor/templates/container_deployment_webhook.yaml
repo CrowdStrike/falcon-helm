@@ -68,7 +68,7 @@ spec:
             name: {{ include "falcon-sensor.fullname" . }}-config
         ports:
         - name: https
-          containerPort: 8443
+          containerPort: {{ .Values.container.injectorPort }}
         volumeMounts:
         - name: {{ include "falcon-sensor.name" . }}-tls-certs
           mountPath: /run/secrets/tls
@@ -76,14 +76,14 @@ spec:
         readinessProbe:
           httpGet:
             path: /live
-            port: 8443
+            port: {{ .Values.container.injectorPort }}
             scheme: HTTPS
           initialDelaySeconds: 5
           periodSeconds: 10
         livenessProbe:
           httpGet:
             path: /live
-            port: 8443
+            port: {{ .Values.container.injectorPort }}
             scheme: HTTPS
           initialDelaySeconds: 5
           periodSeconds: 10

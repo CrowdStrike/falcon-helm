@@ -16,7 +16,11 @@ node:
     # additional tolerations for server scheduling to nodes with taints
     tolerations: []
 
+    # Update strategy to role out new daemonset configuration to the nodes.
     updateStrategy: RollingUpdate
+
+    # Sets the max unavailable nodes. Default is 1 when no value exists.
+    maxUnavailable:
 
   image:
     repository: falcon-node-sensor
@@ -47,6 +51,9 @@ container:
 
   # Certificate validity duration in number of days
   certExpiration: 3650
+
+  # Configure the Injector Port
+  injectorPort: 4433
 
   # For custom DNS configurations when .svc requires a domain for services
   # For example if service.my-namespace.svc doesn't resolve and the cluster uses

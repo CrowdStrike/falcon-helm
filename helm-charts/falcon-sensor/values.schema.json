@@ -35,9 +35,18 @@
                         "labels": {
                             "type": "object"
                         },
+                        "tolerations": {
+                            "type": "array"
+                        },
                         "updateStrategy": {
                             "type": "string",
-                            "default": "RollingUpdate"
+                            "default": "RollingUpdate",
+                            "pattern": "^(RollingUpdate|OnDelete)$"
+                        },
+                        "maxUnavailable": {
+                            "type": "integer",
+                            "default": "1",
+                            "pattern": "^[0-9]+$"
                         },
                         "serviceAccountName": {
                             "type": "string"
@@ -64,9 +73,11 @@
                             "default": "Always",
                             "pattern": "^(Always|Never|IfNotPresent)$"
                         },
+                        "pullSecrets": {
+                            "type": "object"
+                        },
                         "repository": {
-                            "type": "string",
-                            "default": "Always"
+                            "type": "string"
                         },
                         "tag": {
                             "type": "string",
@@ -82,7 +93,85 @@
                 },
                 "terminationGracePeriod": {
                     "type": "integer",
-                    "default": "10"
+                    "default": "10",
+                    "pattern": "^[0-9]+$"
+                }
+            }
+        },
+        "container": {
+            "type": "object",
+            "required": [
+                "enabled"
+              ],
+            "properties": {
+                "certExpiration": {
+                    "type": "integer",
+                    "default": "3650",
+                    "pattern": "^[0-9]+$"
+                },
+                "injectorPort": {
+                    "type": "integer",
+                    "default": "4433",
+                    "pattern": "^[0-9]+$"
+                },
+                "disableNSInjection": {
+                    "type": "boolean",
+                    "default": "false"
+                },
+                "disablePodInjection": {
+                    "type": "boolean",
+                    "default": "false"
+                },
+                "enabled": {
+                    "type": "boolean",
+                    "default": "true"
+                },
+                "image": {
+                    "type": "object",
+                    "required": [
+                        "repository",
+                        "pullPolicy",
+                        "tag"
+                      ],
+                    "properties": {
+                        "pullPolicy": {
+                            "type": "string",
+                            "default": "Always",
+                            "pattern": "^(Always|Never|IfNotPresent)$"
+                        },
+                        "pullSecrets": {
+                            "type": "object",
+                            "properties": {
+                                 "enable": {
+                                    "type": "boolean",
+                                    "default": "false"
+                                }
+                            }
+                        },
+                        "repository": {
+                            "type": "string"
+                        },
+                        "tag": {
+                            "type": "string",
+                            "default": "latest"
+                        }
+                    }
+                },
+                "resources": {
+                    "type": "object",
+                    "properties": {
+                        "requests": {
+                            "type": "object",
+                            "properties": {
+                                "cpu": {
+                                    "type": "string"
+                                },
+                                "memory": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

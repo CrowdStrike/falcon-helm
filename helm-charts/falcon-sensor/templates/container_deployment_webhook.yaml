@@ -33,6 +33,8 @@ spec:
       crowdstrike.com/provider: crowdstrike
   template:
     metadata:
+      annotations:
+        rollme: {{ randAlphaNum 5 | quote }}
       labels:
         app: {{ include "falcon-sensor.name" . }}-injector
         app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}

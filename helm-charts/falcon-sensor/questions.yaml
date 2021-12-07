@@ -23,11 +23,11 @@ questions:
     group: "Falcon Sensor Node Settings"
 
   - variable: falcon.apd
-    description: "Description goes here. Passed to falconctl as \"--apt=true\" or \"--apt=false\"."
+    description: "Enable/Disable the Proxy. Passed to falconctl as \"--apd=true\" or \"--apd=false\"."
     required: false
     type: boolean
     default: false
-    label: --apt
+    label: --apd
     group: "Falcon Sensor Node Settings"
 
   - variable: falcon.aph
@@ -57,14 +57,6 @@ questions:
     required: false
     type: string
     label: --feature
-    group: "Falcon Sensor Node Settings"
-
-  - variable: falcon.update
-    description: "SIGHUP the sensor for immediate trace/feature update."
-    required: false
-    type: boolean
-    default: false
-    label: --update
     group: "Falcon Sensor Node Settings"
 
   - variable: falcon.message_log

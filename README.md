@@ -14,15 +14,10 @@ Operators are packaging methodologies for Kubernetes. Which methodology you use
 is dependent on what the Kubernetes vendor and implementation supports.
 
 ## Quick Note Regarding Support
-🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥
 
-The Helm chart and operator code is in development, and not (yet) supported!
-
-🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥 🚒 🔥 🚒 🔥 🔥 🔥
+The Falcon Helm is an open source project, not a CrowdStrike product. As such, it carries no formal support, expressed or implied.
 
 On 24-FEB-2021, CrowdStrike announced (via [press release](https://www.crowdstrike.com/press-releases/advanced-threat-protection-for-cloud-and-container-workloads/)) technology previews are available for deploying Falcon into Azure Kubernetes Service (AKS), Google Kubernetes Engine (GKE), Rancher, and Red Hat OpenShift Container Platform (OCP).
-
-This Helm operator and chart are being developed to automate Falcon sensor deployments into Kubernetes environments. As large-scale testing continues, please note that this content (and more broadly, sensor deployment into AKS, GKE, Rancher, or OCP) is not yet officially supported nor recommended for production workloads.
 
 * To provide feedback regarding this Helm operator and/or chart, please open a ticket in this repo.
 * To provide feedback when containerizing the Linux sensor, please open a ticket/bug report with CrowdStrike Support

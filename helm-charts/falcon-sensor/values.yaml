@@ -99,11 +99,7 @@ falcon:
   app:
   trace: none
   feature:
-  update:
   message_log:
   billing:
   tags:
-  assert:
-  memfail_grace_period:
-  memfail_every_n:
   provisioning_token:

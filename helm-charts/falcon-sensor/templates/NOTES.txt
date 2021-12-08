@@ -16,7 +16,8 @@ The default image name to deploy the pod sensor is `falcon-sensor`.
 {{- end }}
 
 An extremely common error on installation is accidentally forgetting to add your containerized
-sensor to your local image registry prior to executing `helm install`.
+sensor to your local image registry prior to executing `helm install`. Please read the Helm Chart's readme
+for more deployment considerations.
 
 {{ if and (.Capabilities.APIVersions.Has "security.openshift.io/v1") .Values.container.enabled -}}
 If deploying the Falcon Container Sensor on Red Hat OpenShift, push the Falcon Container sensor image

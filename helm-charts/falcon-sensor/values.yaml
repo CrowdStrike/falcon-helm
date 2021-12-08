@@ -92,7 +92,7 @@ container:
       memory: 20Mi
 
 falcon:
-  cid: null
+  cid:
   aid:
   apd:
   aph:

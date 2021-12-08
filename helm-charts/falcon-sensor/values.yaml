@@ -104,4 +104,6 @@ falcon:
   tags:
   provisioning_token:
 
+# When set, uses an existing secret to inject environment variablesto the Falcon sensor.
+# If used, secret object must include key FALCONCTL_OPT_CID
 existingSecretName:

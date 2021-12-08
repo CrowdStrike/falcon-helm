@@ -12,7 +12,6 @@ metadata:
     crowdstrike.com/provider: crowdstrike
     helm.sh/chart: {{ include "falcon-sensor.chart" . }}
 data:
-  FALCONCTL_OPT_CID: {{ .Values.falcon.cid }}
   {{- range $key, $value := .Values.falcon }}
   {{- if and ($value) (ne $key "cid") }}
   FALCONCTL_OPT_{{ $key | upper }}: {{ $value | quote }}

@@ -84,15 +84,15 @@ container:
     tag: "latest"
 
   resources:
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
     requests:
       cpu: 10m
       memory: 20Mi
 
 falcon:
-  cid:
+  cid: null
   aid:
   apd:
   aph:
@@ -103,3 +103,5 @@ falcon:
   billing:
   tags:
   provisioning_token:
+
+existingSecretName:

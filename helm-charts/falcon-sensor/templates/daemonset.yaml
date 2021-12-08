@@ -115,6 +115,12 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "falcon-sensor.fullname" . }}-config
+        - secretRef:
+            {{- if .Values.existingSecretName }}
+            name: {{ .Values.existingSecretName }}
+            {{- else }}
+            name: {{ include "falcon-sensor.fullname" . }}-secret
+            {{- end }}
       volumes:
         - name: dev
           hostPath:

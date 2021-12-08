@@ -2,32 +2,17 @@
     "$schema": "http://json-schema.org/schema#",
     "type": "object",
     "properties": {
-        "falcon": {
-            "type": "object",
-            "required": [
-                "cid"
-              ],
-            "properties": {
-                "cid": {
-                    "type": "string",
-                    "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$",
-                    "example": [
-                        "1234567890ABCDEF1234567890ABCDEF-12"
-                    ]
-                }
-            }
-        },
         "node": {
             "type": "object",
             "required": [
                 "enabled"
-              ],
+            ],
             "properties": {
                 "daemonset": {
                     "type": "object",
                     "required": [
                         "updateStrategy"
-                      ],
+                    ],
                     "properties": {
                         "annotations": {
                             "type": "object"
@@ -66,7 +51,7 @@
                         "repository",
                         "pullPolicy",
                         "tag"
-                      ],
+                    ],
                     "properties": {
                         "pullPolicy": {
                             "type": "string",
@@ -102,7 +87,7 @@
             "type": "object",
             "required": [
                 "enabled"
-              ],
+            ],
             "properties": {
                 "certExpiration": {
                     "type": "integer",
@@ -132,7 +117,7 @@
                         "repository",
                         "pullPolicy",
                         "tag"
-                      ],
+                    ],
                     "properties": {
                         "pullPolicy": {
                             "type": "string",
@@ -142,7 +127,7 @@
                         "pullSecrets": {
                             "type": "object",
                             "properties": {
-                                 "enable": {
+                                "enable": {
                                     "type": "boolean",
                                     "default": "false"
                                 }
@@ -175,5 +160,34 @@
                 }
             }
         }
-    }
+    },
+    "oneOf": [
+        {
+            "properties": {
+                "falcon": {
+                    "type": "object",
+                    "required": [
+                        "cid"
+                    ],
+                    "properties": {
+                        "cid": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$",
+                            "example": [
+                                "1234567890ABCDEF1234567890ABCDEF-12"
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "properties": {
+                "existingSecretName": {
+                    "type": "string",
+                    "description": "The name of an existing secret in which the FALCONCTL_OPT_CID key is set."
+                }
+            }
+        }
+    ]
 }

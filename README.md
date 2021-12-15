@@ -9,7 +9,7 @@ more.
 
 The CrowdStrike Falcon Helm Chart and the Helm Operator are designed to deploy
 and manage the Falcon sensor on your Kubernetes cluster of choice.
-[Helm Charts](https://helm.sh/docs/topics/charts/Helm) and Helm-based Kubernetes
+[Helm Charts](https://helm.sh/docs/topics/charts) and Helm-based Kubernetes
 Operators are packaging methodologies for Kubernetes. Which methodology you use
 is dependent on what the Kubernetes vendor and implementation supports.
 

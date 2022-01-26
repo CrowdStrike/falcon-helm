@@ -25,7 +25,7 @@ node:
   image:
     repository: falcon-node-sensor
     pullPolicy: Always
-    pullSecrets: []
+    pullSecrets: ""
     # Overrides the image tag whose default is the chart appVersion.
     tag: "latest"
 
@@ -37,7 +37,7 @@ node:
   podAnnotations: {}
 
   # How long to wait for Falcon pods to stop gracefully
-  terminationGracePeriod: 10
+  terminationGracePeriod: 30
 
 container:
   # When enabled, Helm chart deploys the Falcon Container Sensor to Pods through Webhooks

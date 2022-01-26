@@ -57,9 +57,9 @@ spec:
         {{- end }}
         {{- end }}
     spec:
-    {{- with .Values.node.image.pullSecrets }}
+    {{- if .Values.node.image.pullSecrets }}
       imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
+        - name: {{ .Values.node.image.pullSecrets }}
     {{- end }}
       tolerations:
       # this toleration is to have the daemonset runnable on all nodes
@@ -80,26 +80,15 @@ spec:
       # restarts.
       - name: init-falconstore
         image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag }}"
-        command: ["/bin/sh"]
-        args: [-c, 'touch /var/lib/crowdstrike/falconstore']
+        command: ["/bin/bash"]
+        args: [-c, 'mkdir -p /opt/CrowdStrike && touch /opt/CrowdStrike/falconstore']
         volumeMounts:
           - name: falconstore-dir
-            mountPath: /var/lib/crowdstrike
+            mountPath: /opt
       containers:
       - name: falcon-node-sensor
         image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag }}"
         imagePullPolicy: "{{ .Values.node.image.pullPolicy }}"
-        volumeMounts:
-        - name: dev
-          mountPath: /dev
-        - name: var-run
-          mountPath: /var/run
-        - name: etc
-          mountPath: /etc
-        - name: var-log
-          mountPath: /var/log
-        - name: falconstore
-          mountPath: /opt/CrowdStrike/falconstore
         # Various pod security context settings. Bear in mind that many of these have an impact
         # on the Falcon Sensor working correctly.
         #
@@ -115,24 +104,17 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "falcon-sensor.fullname" . }}-config
+        volumeMounts:
+          - name: falconstore
+            mountPath: /opt/CrowdStrike/falconstore
       volumes:
-        - name: dev
-          hostPath:
-            path: /dev
-        - name: etc
-          hostPath:
-            path: /etc
-        - name: var-run
-          hostPath:
-            path: /var/run
-        - name: var-log
-          emptyDir: {}
-        - name: falconstore
-          hostPath:
-            path: /var/lib/crowdstrike/falconstore
         - name: falconstore-dir
           hostPath:
-            path: /var/lib/crowdstrike
+            path: /opt
+            type: DirectoryOrCreate
+        - name: falconstore
+          hostPath:
+            path: /opt/CrowdStrike/falconstore
       serviceAccountName: crowdstrike-falcon-sa
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
       hostNetwork: true

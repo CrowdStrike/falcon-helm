@@ -29,4 +29,7 @@ data:
   {{- if .Values.container.disablePodInjection }}
   INJECTION_DEFAULT_DISABLED: T
   {{- end }}
+  {{- if .Values.container.sensorResources }}
+  FALCON_RESOURCES: '{{ toJson .Values.container.sensorResources | b64enc }}'
+  {{- end }}
   {{- end }}

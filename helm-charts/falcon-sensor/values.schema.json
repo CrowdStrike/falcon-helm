@@ -74,7 +74,7 @@
                             "pattern": "^(Always|Never|IfNotPresent)$"
                         },
                         "pullSecrets": {
-                            "type": "array"
+                            "type": "string"
                         },
                         "repository": {
                             "type": "string"

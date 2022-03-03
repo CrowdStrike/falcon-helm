@@ -93,12 +93,14 @@ container:
     tag: "latest"
 
   resources:
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
     requests:
       cpu: 10m
       memory: 20Mi
+
+serviceAccount: crowdstrike-falcon-sa
 
 falcon:
   cid:

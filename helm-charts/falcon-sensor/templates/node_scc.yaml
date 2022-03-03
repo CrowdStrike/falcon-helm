@@ -31,7 +31,7 @@ requiredDropCapabilities:
 defaultAddCapabilities:
 allowedCapabilities:
 users:
-- crowdstrike-falcon-sa
+- {{ .Values.serviceAccount }}
 groups:
 volumes:
 - configMap

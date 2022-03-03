@@ -23,6 +23,13 @@ The Falcon Helm chart has been tested to deploy on the following Kubernetes dist
 1. Before deploying the Helm chart, you should have a Falcon Linux Sensor and/or Falcon Container sensor in your own container registry or use CrowdStrike's registry before installing the Helm Chart. See the Deployment Considerations for more.
 1. Helm 3.x is installed and supported by the Kubernetes vendor.
 
+## Helm Shart Support for Falcon Sensor Versions
+
+| Helm chart Version | Falcon Sensor Version |
+|:-------------------|:----------------------|
+| `<= 1.6.x`         | `<= 6.34.x`           |
+| `>= 1.7.x`         | `>= 6.35.x`           |
+
 # Installation
 
 ### Add the CrowdStrike Falcon Helm repository

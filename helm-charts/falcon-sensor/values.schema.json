@@ -14,6 +14,10 @@
                     "example": [
                         "1234567890ABCDEF1234567890ABCDEF-12"
                     ]
+                },
+                "trace": {
+                    "type": ["null", "string"],
+                    "pattern": "^(|none|err|warn|info|debug)$"
                 }
             }
         },
@@ -68,13 +72,16 @@
                         "tag"
                     ],
                     "properties": {
+                        "registryConfigJSON": {
+                            "type": ["null", "string"]
+                        },
                         "pullPolicy": {
                             "type": "string",
                             "default": "Always",
                             "pattern": "^(Always|Never|IfNotPresent)$"
                         },
                         "pullSecrets": {
-                            "type": "string"
+                            "type": ["null", "string"]
                         },
                         "repository": {
                             "type": "string"
@@ -93,7 +100,7 @@
                 },
                 "terminationGracePeriod": {
                     "type": "integer",
-                    "default": "10",
+                    "default": "30",
                     "pattern": "^[0-9]+$"
                 }
             }
@@ -145,6 +152,9 @@
                                 "enable": {
                                     "type": "boolean",
                                     "default": "false"
+                                },
+                                "registryConfigJSON": {
+                                    "type": ["null", "string"]
                                 }
                             }
                         },

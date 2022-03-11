@@ -99,16 +99,23 @@ For more details please see the [falcon-helm](https://github.com/CrowdStrike/fal
 
 The following tables lists the more common configurable parameters of the chart and their default values for installing on a Kubernetes node.
 
-| Parameter                       | Description                                                          | Default                                   |
-|:--------------------------------|:---------------------------------------------------------------------|:----------------------------------------- |
-| `node.enabled`                  | Enable installation on the Kubernetes node                           | `true`                                    |
-| `node.image.repository`         | Falcon Sensor Node registry/image name                               | `falcon-node-sensor`                      |
-| `node.image.tag`                | The version of the official image to use                             | `latest`                                  |
-| `node.image.pullPolicy`         | Policy for updating images                                           | `Always`                                  |
-| `node.image.pullSecrets`        | Pull secrets for private registry                                    | `{}`                                      |
-| `falcon.cid`                    | CrowdStrike Customer ID (CID)                                        | None       (Required)                     |
+| Parameter                       | Description                                                          | Default                                                   |
+|:--------------------------------|:---------------------------------------------------------------------|:--------------------------------------------------------- |
+| `node.enabled`                  | Enable installation on the Kubernetes node                           | `true`                                                    |
+| `node.image.repository`         | Falcon Sensor Node registry/image name                               | `falcon-node-sensor`                                      |
+| `node.image.tag`                | The version of the official image to use                             | `latest`                                                  |
+| `node.image.pullPolicy`         | Policy for updating images                                           | `Always`                                                  |
+| `node.image.pullSecrets`        | Pull secrets for private registry                                    | `""`       (Conflicts with node.image.registryConfigJSON) |
+| `node.image.registryConfigJSON` | base64 encoded docker config json for the pull secret                | None       (Conflicts with node.image.pullSecrets)        |
+| `falcon.cid`                    | CrowdStrike Customer ID (CID)                                        | None       (Required)                                     |
 
 `falcon.cid` and `node.image.repository` are required values.
+
+For a complete listing of configurable parameters, run the following command:
+
+```
+helm show values crowdstrike/falcon-sensor
+```
 
 ## Installing in Kubernetes Cluster as a Sidecar
 
@@ -161,6 +168,12 @@ The following tables lists the more common configurable parameters of the chart 
 | `falcon.cid`                                     | CrowdStrike Customer ID (CID)                                           | None       (Required)                     |
 
 `falcon.cid` and `container.image.repository` are required values.
+
+For a complete listing of configurable parameters, run the following command:
+
+```
+helm show values crowdstrike/falcon-sensor
+```
 
 ### Uninstall Helm Chart
 To uninstall, run the following command:

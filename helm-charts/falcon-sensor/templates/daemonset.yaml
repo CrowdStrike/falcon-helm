@@ -57,9 +57,18 @@ spec:
         {{- end }}
         {{- end }}
     spec:
-    {{- if .Values.node.image.pullSecrets }}
+    {{- if and (.Values.node.image.pullSecrets) (.Values.node.image.registryConfigJSON) }}
+      {{- fail "node.image.pullSecrets and node.image.registryConfigJSON cannot be used together." }}
+    {{- else -}}
+    {{- if or (.Values.node.image.pullSecrets) (.Values.node.image.registryConfigJSON) }}
       imagePullSecrets:
+      {{- if .Values.node.image.pullSecrets }}
         - name: {{ .Values.node.image.pullSecrets }}
+      {{- end }}
+      {{- if .Values.node.image.registryConfigJSON }}
+        - name: {{ include "falcon-sensor.fullname" . }}-pull-secret
+      {{- end }}
+    {{- end }}
     {{- end }}
       tolerations:
       # this toleration is to have the daemonset runnable on all nodes

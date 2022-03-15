@@ -1,0 +1,108 @@
+{{- if .Values.node.enabled }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "falcon-sensor.fullname" . }}-node-cleanup
+  labels:
+    app: "{{ include "falcon-sensor.name" . }}"
+    app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}-node-cleanup
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/component: "kernel_sensor"
+    crowdstrike.com/provider: crowdstrike
+    helm.sh/chart: {{ include "falcon-sensor.chart" . }}
+    {{- if .Values.node.daemonset.labels }}
+    {{- range $key, $value := .Values.node.daemonset.labels }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    {{- end }}
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  {{- if .Values.node.daemonset.annotations }}
+    {{- range $key, $value := .Values.node.daemonset.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}-node-cleanup
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: "kernel_sensor"
+      crowdstrike.com/provider: crowdstrike
+  template:
+    metadata:
+      annotations:
+        sensor.falcon-system.crowdstrike.com/injection: disabled
+        {{- range $key, $value := .Values.node.podAnnotations }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+      labels:
+        app: "{{ include "falcon-sensor.name" . }}"
+        app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}-node-cleanup
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/component: "kernel_sensor"
+        crowdstrike.com/provider: crowdstrike
+        helm.sh/chart: {{ include "falcon-sensor.chart" . }}
+        {{- if .Values.node.daemonset.labels }}
+        {{- range $key, $value := .Values.node.daemonset.labels }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
+    spec:
+    {{- if and (.Values.node.image.pullSecrets) (.Values.node.image.registryConfigJSON) }}
+      {{- fail "node.image.pullSecrets and node.image.registryConfigJSON cannot be used together." }}
+    {{- else -}}
+    {{- if or (.Values.node.image.pullSecrets) (.Values.node.image.registryConfigJSON) }}
+      imagePullSecrets:
+      {{- if .Values.node.image.pullSecrets }}
+        - name: {{ .Values.node.image.pullSecrets }}
+      {{- end }}
+      {{- if .Values.node.image.registryConfigJSON }}
+        - name: {{ include "falcon-sensor.fullname" . }}-pull-secret
+      {{- end }}
+    {{- end }}
+    {{- end }}
+      tolerations:
+      # this toleration is to have the daemonset runnable on all nodes
+      - operator: Exists
+        effect: NoExecute
+      - operator: Exists
+        effect: NoSchedule
+      {{- with .Values.node.daemonset.tolerations }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+      nodeSelector:
+        kubernetes.io/os: linux
+      initContainers:
+      - name: cleanup-opt-crowdstrike
+        image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag }}"
+        command: ["rm", "-rf", "/opt/CrowdStrike"]
+        volumeMounts:
+          - name: opt-crowdstrike
+            mountPath: /opt
+        securityContext:
+          runAsUser: 0
+          privileged: true
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: true
+      containers:
+      - name: cleanup-sleep
+        image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag }}"
+        command: ["sleep", "10"]
+        securityContext:
+          runAsUser: 0
+          privileged: true
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: true
+      volumes:
+      - name: opt-crowdstrike
+        hostPath:
+          path: /opt
+      serviceAccountName: {{ .Values.serviceAccount }}
+      terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
+{{- end }}
+

@@ -128,6 +128,10 @@
                         }
                     }
                 },
+                "autoDeploymentUpdate": {
+                    "type": "boolean",
+                    "default": "true"
+                },
                 "certExpiration": {
                     "type": "integer",
                     "default": "3650",

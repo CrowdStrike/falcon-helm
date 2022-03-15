@@ -40,6 +40,10 @@ spec:
         app.kubernetes.io/component: "container_sensor"
         crowdstrike.com/provider: crowdstrike
         crowdstrike.com/component: crowdstrike-falcon-injector
+    {{- if .Values.container.autoDeploymentUpdate }}
+      annotations:
+        rollme: {{ randAlphaNum 5 | quote }}
+    {{- end }}
     spec:
       affinity:
         nodeAffinity:

@@ -111,6 +111,23 @@
                 "enabled"
             ],
             "properties": {
+                "azure": {
+                    "type": "object",
+                    "required": [
+                        "enabled",
+                        "azureConfig"
+                    ],
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": "false"
+                        },
+                        "azureConfig": {
+                            "type": "string",
+                            "default": "/etc/kubernetes/azure.json"
+                        }
+                    }
+                },
                 "certExpiration": {
                     "type": "integer",
                     "default": "3650",

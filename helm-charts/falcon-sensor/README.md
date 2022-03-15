@@ -156,6 +156,8 @@ The following tables lists the more common configurable parameters of the chart 
 | Parameter                                        | Description                                                             | Default                                   |
 |:-------------------------------------------------|:------------------------------------------------------------------------|:----------------------------------------- |
 | `container.enabled`                              | Enable installation on the Kubernetes node                              | `false`                                   |
+| `container.azure.enabled`                        | For AKS without the pulltoken option                                    | `false`                                   |
+| `container.azure.azureConfig`                    | Path to the Kubernetes Azure config file on worker nodes                | `/etc/kubernetes/azure.json`              |
 | `container.disableNSInjection`                   | Disable injection for all Namespaces                                    | `false`                                   |
 | `container.disablePodInjection`                  | Disable injection for all Pods                                          | `false`                                   |
 | `container.certExpiration`                       | Certificate validity duration in number of days                         | `3650`                                    |

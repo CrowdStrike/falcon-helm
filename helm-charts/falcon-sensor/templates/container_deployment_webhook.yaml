@@ -58,6 +58,23 @@ spec:
       imagePullSecrets:
         - name: {{ include "falcon-sensor.fullname" . }}-pull-secret
       {{- end }}
+      {{- if .Values.container.azure.enabled }}
+      initContainers:
+      - name: {{ include "falcon-sensor.name" . }}-init-container
+        image: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}"
+        imagePullPolicy: Always
+        command: ['bash', '-c', "cp /run/azure.json /tmp/CrowdStrike/; chmod a+r /tmp/CrowdStrike/azure.json"]
+        securityContext:
+          runAsUser: 0
+          runAsNonRoot: false
+          privileged: false
+        volumeMounts:
+        - name: {{ include "falcon-sensor.name" . }}-volume
+          mountPath: /tmp/CrowdStrike
+        - name: {{ include "falcon-sensor.name" . }}-azure-config
+          mountPath: /run/azure.json
+          readOnly: true
+      {{- end }}
       containers:
       - name: {{ include "falcon-sensor.name" . }}-injector
         image: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}"
@@ -73,6 +90,16 @@ spec:
         - name: {{ include "falcon-sensor.name" . }}-tls-certs
           mountPath: /run/secrets/tls
           readOnly: true
+        {{- if (.Files.Glob "certs/*.crt") }}
+        - name: {{ include "falcon-sensor.name" . }}-registry-certs
+          mountPath: /etc/docker/certs.d/{{ .Release.Namespace }}-certs
+          readOnly: true
+        {{- end }}
+        {{- if .Values.container.azure.enabled }}
+        - name: {{ include "falcon-sensor.name" . }}-volume
+          mountPath: /tmp/CrowdStrike
+          readOnly: true
+        {{- end }}
         readinessProbe:
           httpGet:
             path: /live
@@ -93,6 +120,19 @@ spec:
       - name: {{ include "falcon-sensor.name" . }}-tls-certs
         secret:
           secretName: {{ include "falcon-sensor.name" . }}-tls
+      {{- if (.Files.Glob "certs/*.crt") }}
+      - name: {{ include "falcon-sensor.name" . }}-registry-certs
+        configMap:
+          name: {{ include "falcon-sensor.name" . }}-registry-certs-config
+      {{- end }}
+      {{- if .Values.container.azure.enabled }}
+      - emptyDir: {}
+        name: {{ include "falcon-sensor.name" . }}-volume
+      - name: {{ include "falcon-sensor.name" . }}-azure-config
+        hostPath:
+          path: {{ .Values.container.azure.azureConfig }}
+          type: File
+      {{- end }}
       serviceAccountName: {{ .Values.serviceAccount }}
 ---
 apiVersion: v1

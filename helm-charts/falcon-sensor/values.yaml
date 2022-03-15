@@ -49,6 +49,13 @@ container:
   # When enabled, Helm chart deploys the Falcon Container Sensor to Pods through Webhooks
   enabled: false
 
+  # For AKS without the pulltoken option
+  azure:
+    enabled: false
+
+    # Path to the Kubernetes Azure config file on worker nodes
+    azureConfig: /etc/kubernetes/azure.json
+
   # Disable injection for all Namespaces
   disableNSInjection: false
 

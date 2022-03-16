@@ -1,0 +1,19 @@
+{{- if and .Values.container.enabled (.Files.Glob "certs/*.crt") }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "falcon-sensor.fullname" . }}-registry-certs-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "falcon-sensor.name" . }}
+    app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/component: "container_sensor"
+    crowdstrike.com/provider: crowdstrike
+    helm.sh/chart: {{ include "falcon-sensor.chart" . }}
+metadata:
+  name: {{ include "falcon-sensor.fullname" . }}-registry-certs
+data:
+{{ (.Files.Glob "certs/*.crt").AsConfig | indent 2 }}
+{{- end }}

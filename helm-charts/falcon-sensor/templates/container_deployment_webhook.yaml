@@ -54,6 +54,10 @@ spec:
                 operator: In
                 values:
                 - linux
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
               - key: node-role.kubernetes.io/master
                 operator: DoesNotExist
       securityContext:
@@ -185,7 +189,7 @@ webhooks:
         operator: {{ if .Values.container.disableNSInjection }}In{{ else }}NotIn{{- end }}
         values:
           - {{ if .Values.container.disableNSInjection }}enabled{{ else }}disabled{{- end }}
-      - key: "name"
+      - key: kubernetes.io/metadata.name
         operator: "NotIn"
         values:
         - {{ .Release.Namespace }}

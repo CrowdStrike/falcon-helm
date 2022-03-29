@@ -193,6 +193,8 @@ webhooks:
         operator: "NotIn"
         values:
         - {{ .Release.Namespace }}
+        - kube-system
+        - kube-public
     clientConfig:
       {{- if .Values.container.domainName }}
       url: https://{{ $fullName }}:443/mutate

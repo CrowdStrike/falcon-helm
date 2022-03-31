@@ -126,6 +126,7 @@ To ensure a successful deployment, you will want to ensure that:
 1. When deploying the Falcon Container as a sidecar sensor, make sure that there are no firewall rules blocking communication to the Mutating Webhook. This will most likely result in a `context deadline exceeded` error. The default port for the Webhook is `4433`.
 1. The Falcon Container as a sidecar sensor should be deployed to Kubernetes managed environments, or environments that do not allow node access or installation via a Kubernetes DaemonSet.
 1. CrowdStrike's Helm Chart is a project, not a product, and released to the community as a way to automate sensor deployment to kubernetes clusters. The upstream repository for this project is [https://github.com/CrowdStrike/falcon-helm](https://github.com/CrowdStrike/falcon-helm).
+1. Be aware that there is advanced Helm Chart functionality in use and those specific features may not work fully with GitOps tools like ArgoCD. The reason for this is that ArgoCD does not fully support Helm when compared to FluxCD. For features that do not work in this instance, disable those features until ArgoCD supports Helm correctly.
 
 ### Install CrowdStrike Falcon Helm Chart in Kubernetes Cluster as a Sidecar
 

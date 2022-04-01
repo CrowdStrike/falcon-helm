@@ -49,6 +49,9 @@ container:
   # When enabled, Helm chart deploys the Falcon Container Sensor to Pods through Webhooks
   enabled: false
 
+  # Auto update the certificates every time there is an update
+  autoCertificateUpdate: true
+
   # Update Webhook and roll out new Deployment on upgrade
   autoDeploymentUpdate: true
 
@@ -98,6 +101,10 @@ container:
       #
       # namespaces: ns1,ns2,ns3
       namespaces:
+
+      # Attempt to create the Falcon sensor pull secret in all Namespaces
+      # instead of using "container.image.pullSecrets.namespaces"
+      allNamespaces: false
 
       # Value must be base64
       # The base64 encoded string of the docker config json for the pull secret can be

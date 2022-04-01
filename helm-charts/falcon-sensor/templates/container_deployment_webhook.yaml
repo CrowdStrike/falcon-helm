@@ -5,9 +5,24 @@
 {{- $fullName = (printf "%s.%s.svc.%s" $name .Release.Namespace .Values.container.domainName) -}}
 {{- end }}
 {{- $certValid := (.Values.container.certExpiration | int) -}}
-{{- $altNames := list ( printf "%s" $fullName ) ( printf "%s.%s.svc" $name .Release.Namespace ) (  printf "%s.%s.svc.cluster.local" $name .Release.Namespace ) ( printf "%s.%s" $name .Release.Namespace ) ( printf "%s" $name ) -}}
+{{- $altNames := list ( printf "%s" $fullName ) ( printf "%s.%s.svc" $name .Release.Namespace ) ( printf "%s.%s.svc.cluster.local" $name .Release.Namespace ) ( printf "%s.%s" $name .Release.Namespace ) ( printf "%s" $name ) -}}
 {{- $ca := genCA ( printf "%s ca" .Release.Namespace ) $certValid -}}
 {{- $cert := genSignedCert $fullName nil $altNames $certValid $ca -}}
+{{- if not .Values.container.autoCertificateUpdate }}
+{{- $tlscrt := (lookup "v1" "Secret" .Release.Namespace (printf "%s-tls" (include "falcon-sensor.name" .))).data -}}
+{{- if kindIs "map" $tlscrt }}
+{{- $cert = dict "Cert" (index $tlscrt "tls.crt" | b64dec ) "Key" (index $tlscrt "tls.key" | b64dec ) -}}
+{{- end }}
+{{- $tlsca := (lookup "admissionregistration.k8s.io/v1" "MutatingWebhookConfiguration" .Release.Namespace $name).webhooks -}}
+{{- if kindIs "slice" $tlsca }}
+{{- range $index, $wca := $tlsca -}}
+  {{- $ca = dict "Cert" ($wca.clientConfig.caBundle | b64dec) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- $tlsCert := $cert.Cert | b64enc }}
+{{- $tlsKey := $cert.Key | b64enc }}
+{{- $caCert := $ca.Cert | b64enc }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -158,8 +173,9 @@ metadata:
     helm.sh/chart: {{ include "falcon-sensor.chart" . }}
 type: Opaque
 data:
-  tls.crt: {{ $cert.Cert | b64enc }}
-  tls.key: {{ $cert.Key | b64enc }}
+  tls.crt: {{ $tlsCert }}
+  tls.key: {{ $tlsKey }}
+  ca.crt: {{ $caCert }}
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
@@ -204,7 +220,7 @@ webhooks:
         namespace: {{ .Release.Namespace }}
         path: "/mutate"
       {{- end }}
-      caBundle: {{ $ca.Cert | b64enc }}
+      caBundle: {{ $caCert }}
     failurePolicy: Fail
     rules:
       - operations:

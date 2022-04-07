@@ -26,22 +26,33 @@
             "type": "object",
             "properties": {
                 "client_id": {
-                    "type": "null"
+                    "type": "string",
+                    "pattern": "^[0-9a-zA-Z]+$"
+
                 },
                 "client_secret": {
-                    "type": "null"
+                    "type": "string",
+                    "pattern": "^[0-9a-zA-Z]+$"
                 },
                 "cloud_region": {
-                    "type": "null"
+                    "type": "string",
+                    "enum": ["us-1", "us-2", "eu-1", "us-gov-1"]
                 },
                 "integration_gateway": {
                     "type": "object",
                     "properties": {
                         "application_id": {
-                            "type": "null"
+                            "type": "string",
+                            "pattern": "^.+$",
+                            "example": [
+                                "my-unique-fig-instance-001"
+                            ]
                         },
                         "level": {
-                            "type": "string"
+                            "type": "string",
+                            "enum": ["ERROR", "WARN", "INFO", "DEBUG"],
+                            "default": "INFO"
+
                         },
                         "older_than_days_threshold": {
                             "type": "integer"
@@ -96,9 +107,14 @@
                     "properties": {
                         "enabled": {
                             "type": "boolean"
-                        },
-                        "region": {
-                            "type": "null"
+                        }
+                    },
+                    "if": { "properties": { "enabled": { "const": true } } },
+                    "then": {
+                        "properties": {
+                            "region": {
+                                "type": "string"
+                            }
                         }
                     }
                 },
@@ -107,12 +123,17 @@
                     "properties": {
                         "enabled": {
                             "type": "boolean"
-                        },
-                        "primary_key": {
-                            "type": "null"
-                        },
-                        "workspace_id": {
-                            "type": "null"
+                        }
+                    },
+                    "if": { "properties": { "enabled": { "const": true } } },
+                    "then": {
+                        "properties": {
+                            "primary_key": {
+                                "type": "string"
+                            },
+                            "workspace_id": {
+                                "type": "string"
+                            }
                         }
                     }
                 },
@@ -121,12 +142,17 @@
                     "properties": {
                         "enabled": {
                             "type": "boolean"
-                        },
-                        "region": {
-                            "type": "null"
-                        },
-                        "security_key": {
-                            "type": "null"
+                        }
+                    },
+                    "if": { "properties": { "enabled": { "const": true } } },
+                    "then": {
+                        "properties": {
+                            "region": {
+                                "type": "string"
+                            },
+                            "security_key": {
+                                "type": "string"
+                            }
                         }
                     }
                 },
@@ -143,15 +169,20 @@
                     "properties": {
                         "enabled": {
                             "type": "boolean"
-                        },
-                        "syslog_host": {
-                            "type": "null"
-                        },
-                        "syslog_port": {
-                            "type": "null"
-                        },
-                        "token": {
-                            "type": "null"
+                        }
+                    },
+                    "if": { "properties": { "enabled": { "const": true } } },
+                    "then": {
+                        "properties": {
+                            "syslog_host": {
+                                "type": "string"
+                            },
+                            "syslog_port": {
+                                "type": "string"
+                            },
+                            "token": {
+                                "type": "string"
+                            }
                         }
                     }
                 }

@@ -5,3 +5,4 @@ falcon:
 push:
   aws_security_hub:
     enabled: true
+    region: eu-west-3

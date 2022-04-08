@@ -11,9 +11,10 @@ This repository is a collection of CrowdStrike Helm Charts. The Helm Charts deve
 
 ## Helm Charts
 
-| Helm Chart | Description |
-|:-|:-|
-| [Falcon Sensor](helm-charts/falcon-sensor) | Deploys the Falcon Sensor to Kubernetes Nodes or as a Sidecar to a pod. See [the README](helm-charts/falcon-sensor/README.md) for more info. |
+| Helm Chart                                                           | Description                                                                                                                                  |
+| :-                                                                   | :-                                                                                                                                           |
+| [Falcon Sensor](helm-charts/falcon-sensor)                           | Deploys the Falcon Sensor to Kubernetes Nodes or as a Sidecar to a pod. See [the README](helm-charts/falcon-sensor/README.md) for more info. |
+| [Falcon Integration Gateway](helm-charts/falcon-integration-gateway) | Deploys the Falcon Integration Gateway. See [the README](helm-charts/falcon-integration-gateway/README.md) for more info.                    |
 
 ## Developer Guide
 If you are a developer, please read our [Developer's Guide](docs/developer_guide.md).

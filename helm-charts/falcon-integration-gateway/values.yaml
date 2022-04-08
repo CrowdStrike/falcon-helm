@@ -1,0 +1,88 @@
+# Default values for falcon-integration-gateway.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+push:
+  aws_security_hub:
+    enabled: false
+    region:
+  azure_log_analytics:
+    enabled: false
+    workspace_id:
+    primary_key:
+  chronicle:
+    enabled: false
+    region:
+    security_key:
+  gcp_security_command_center:
+    enabled: false
+  vmware_workspace_one:
+    enabled: false
+    syslog_host:
+    syslog_port:
+    token:
+
+falcon:
+  client_id:
+  client_secret:
+  cloud_region:
+
+  integration_gateway:
+    # Configure number of threads that process Falcon Events
+    worker_threads: 4
+
+    # Filter out events based on severity (allowed values 1-5, default 2)
+    severity_threshold: 2
+
+    # Filter out events based on number of days past the event (default 14)
+    older_than_days_threshold: 14
+
+    # Configure logging level (ERROR, WARN, INFO, DEBUG)
+    level: INFO
+
+    # Provide application id. Needs to be different per each fig instance.
+    application_id: helm-chart-default
+
+replicaCount: 1
+
+image:
+  repository: gcr.io/crowdstrike-public/falcon-integration-gateway
+  pullPolicy: Always
+  tag: latest
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext:
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+
+resources: {}
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

@@ -1,0 +1,8 @@
+falcon:
+  client_id: 1234567890ABCDEF1234567890ABCDEF
+  client_secret: 1234567890ABCDEF1234567890ABCDEF
+  cloud_region: us-1
+push:
+  aws_security_hub:
+    enabled: true
+    region: eu-west-3

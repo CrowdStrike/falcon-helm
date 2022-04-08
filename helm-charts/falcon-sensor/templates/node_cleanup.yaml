@@ -102,7 +102,7 @@ spec:
       - name: opt-crowdstrike
         hostPath:
           path: /opt
-      serviceAccountName: {{ .Values.serviceAccount }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
 {{- end }}
 

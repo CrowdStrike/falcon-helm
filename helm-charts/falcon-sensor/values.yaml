@@ -123,7 +123,10 @@ container:
       cpu: 10m
       memory: 20Mi
 
-serviceAccount: crowdstrike-falcon-sa
+serviceAccount:
+  name: crowdstrike-falcon-sa
+  # annotations:
+  #   iam.gke.io/gcp-service-account: my-service-account@my-project.iam.gserviceaccount.com
 
 falcon:
   cid:

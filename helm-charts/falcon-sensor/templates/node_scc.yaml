@@ -31,7 +31,7 @@ requiredDropCapabilities:
 defaultAddCapabilities:
 allowedCapabilities:
 users:
-- {{ .Values.serviceAccount }}
+- {{ .Values.serviceAccount.name }}
 groups:
 volumes:
 - configMap

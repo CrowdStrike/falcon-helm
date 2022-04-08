@@ -16,7 +16,10 @@
                     ]
                 },
                 "trace": {
-                    "type": ["null", "string"],
+                    "type": [
+                        "null",
+                        "string"
+                    ],
                     "pattern": "^(|none|err|warn|info|debug)$"
                 }
             }
@@ -53,7 +56,17 @@
                             "pattern": "^[0-9]+$"
                         },
                         "serviceAccountName": {
-                            "type": "string"
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "default": "crowdstrike-falcon-sa"
+                                },
+                                "annotations": {
+                                    "type": "object",
+                                    "default": {}
+                                }
+                            }
                         }
                     }
                 },
@@ -73,7 +86,10 @@
                     ],
                     "properties": {
                         "registryConfigJSON": {
-                            "type": ["null", "string"]
+                            "type": [
+                                "null",
+                                "string"
+                            ]
                         },
                         "pullPolicy": {
                             "type": "string",
@@ -81,7 +97,10 @@
                             "pattern": "^(Always|Never|IfNotPresent)$"
                         },
                         "pullSecrets": {
-                            "type": ["null", "string"]
+                            "type": [
+                                "null",
+                                "string"
+                            ]
                         },
                         "repository": {
                             "type": "string"
@@ -183,10 +202,16 @@
                                     "default": "false"
                                 },
                                 "namespaces": {
-                                    "type": ["null", "string"]
+                                    "type": [
+                                        "null",
+                                        "string"
+                                    ]
                                 },
                                 "registryConfigJSON": {
-                                    "type": ["null", "string"]
+                                    "type": [
+                                        "null",
+                                        "string"
+                                    ]
                                 }
                             }
                         },
@@ -218,7 +243,22 @@
             }
         },
         "serviceAccount": {
-            "type": "string"
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "default": "crowdstrike-falcon-sa"
+                },
+                "annotations": {
+                    "type": "object",
+                    "default": {},
+                    "examples": [
+                        {
+                            "iam.gke.io/gcp-service-account": "my-service-account@my-project.iam.gserviceaccount.com"
+                        }
+                    ]
+                }
+            }
         }
     }
 }

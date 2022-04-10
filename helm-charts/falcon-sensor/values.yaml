@@ -125,8 +125,7 @@ container:
 
 serviceAccount:
   name: crowdstrike-falcon-sa
-  # annotations:
-  #   iam.gke.io/gcp-service-account: my-service-account@my-project.iam.gserviceaccount.com
+  annotations: {}
 
 falcon:
   cid:

@@ -124,7 +124,7 @@ spec:
         - name: falconstore
           hostPath:
             path: /opt/CrowdStrike/falconstore
-      serviceAccountName: {{ .Values.serviceAccount }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
       hostNetwork: true
       hostPID: true

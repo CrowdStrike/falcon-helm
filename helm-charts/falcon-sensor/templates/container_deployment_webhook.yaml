@@ -156,7 +156,7 @@ spec:
           path: {{ .Values.container.azure.azureConfig }}
           type: File
       {{- end }}
-      serviceAccountName: {{ .Values.serviceAccount }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
 ---
 apiVersion: v1
 kind: Secret

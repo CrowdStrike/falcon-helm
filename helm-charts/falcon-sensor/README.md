@@ -154,21 +154,22 @@ helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
 
 The following tables lists the more common configurable parameters of the chart and their default values for installing the Container sensor as a Sidecar.
 
-| Parameter                                        | Description                                                             | Default                                   |
-|:-------------------------------------------------|:------------------------------------------------------------------------|:----------------------------------------- |
-| `container.enabled`                              | Enable installation on the Kubernetes node                              | `false`                                   |
-| `container.azure.enabled`                        | For AKS without the pulltoken option                                    | `false`                                   |
-| `container.azure.azureConfig`                    | Path to the Kubernetes Azure config file on worker nodes                | `/etc/kubernetes/azure.json`              |
-| `container.disableNSInjection`                   | Disable injection for all Namespaces                                    | `false`                                   |
-| `container.disablePodInjection`                  | Disable injection for all Pods                                          | `false`                                   |
-| `container.certExpiration`                       | Certificate validity duration in number of days                         | `3650`                                    |
-| `container.image.repository`                     | Falcon Sensor Node registry/image name                                  | `falcon-sensor`                           |
-| `container.image.tag`                            | The version of the official image to use                                | `latest`                                  |
-| `container.image.pullPolicy`                     | Policy for updating images                                              | `Always`                                  |
-| `container.image.pullSecrets.enable`             | Enable pull secrets for private registry                                | `false`                                   |
-| `container.image.pullSecrets.namespaces`         | Namespaces that should the Falcon sensor from an authenticated registry | None                                      |
-| `container.image.pullSecrets.registryConfigJSON` | base64 encoded docker config json for the pull secret                   | None                                      |
-| `falcon.cid`                                     | CrowdStrike Customer ID (CID)                                           | None       (Required)                     |
+| Parameter                                        | Description                                                                 | Default                                   |
+|:-------------------------------------------------|:----------------------------------------------------------------------------|:----------------------------------------- |
+| `container.enabled`                              | Enable installation on the Kubernetes node                                  | `false`                                   |
+| `container.azure.enabled`                        | For AKS without the pulltoken option                                        | `false`                                   |
+| `container.azure.azureConfig`                    | Path to the Kubernetes Azure config file on worker nodes                    | `/etc/kubernetes/azure.json`              |
+| `container.disableNSInjection`                   | Disable injection for all Namespaces                                        | `false`                                   |
+| `container.disablePodInjection`                  | Disable injection for all Pods                                              | `false`                                   |
+| `container.certExpiration`                       | Certificate validity duration in number of days                             | `3650`                                    |
+| `container.image.repository`                     | Falcon Sensor Node registry/image name                                      | `falcon-sensor`                           |
+| `container.image.tag`                            | The version of the official image to use                                    | `latest`                                  |
+| `container.image.pullPolicy`                     | Policy for updating images                                                  | `Always`                                  |
+| `container.image.pullSecrets.enable`             | Enable pull secrets for private registry                                    | `false`                                   |
+| `container.image.pullSecrets.namespaces`         | List of Namespaces to pull the Falcon sensor from an authenticated registry | None                                      |
+| `container.image.pullSecrets.allNamespaces`      | Use Helm's lookup function to deploy the pull secret to all namespaces      | `false`                                   |
+| `container.image.pullSecrets.registryConfigJSON` | base64 encoded docker config json for the pull secret                       | None                                      |
+| `falcon.cid`                                     | CrowdStrike Customer ID (CID)                                               | None       (Required)                     |
 
 `falcon.cid` and `container.image.repository` are required values.
 

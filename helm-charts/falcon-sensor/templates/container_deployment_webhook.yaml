@@ -193,7 +193,9 @@ webhooks:
   - name: {{ $name }}.{{ .Release.Namespace }}.svc
     admissionReviewVersions:
       - v1
+    {{- if lt (int .Capabilities.KubeVersion.Minor) 22 }}
       - v1beta1
+    {{- end }}
     sideEffects: None
     namespaceSelector:
       matchExpressions:
@@ -205,7 +207,11 @@ webhooks:
         operator: {{ if .Values.container.disableNSInjection }}In{{ else }}NotIn{{- end }}
         values:
           - {{ if .Values.container.disableNSInjection }}enabled{{ else }}disabled{{- end }}
+    {{- if lt (int .Capabilities.KubeVersion.Minor) 22 }}
+      - key: "name"
+    {{- else }}
       - key: kubernetes.io/metadata.name
+    {{- end }}
         operator: "NotIn"
         values:
         - {{ .Release.Namespace }}

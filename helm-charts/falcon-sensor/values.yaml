@@ -13,8 +13,16 @@ node:
     # additionals labels
     labels: {}
 
-    # additional tolerations for server scheduling to nodes with taints
-    tolerations: []
+    tolerations:
+    # We want to schedule on control plane nodes where they are accessible
+    - key: "node-role.kubernetes.io/master"
+      operator: "Exists"
+      effect: "NoSchedule"
+    # Future taint for K8s >=1.24
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
+    # Daemonsets automatically get additional tolerations: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
 
     # Update strategy to role out new daemonset configuration to the nodes.
     updateStrategy: RollingUpdate

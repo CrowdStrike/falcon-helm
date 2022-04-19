@@ -1,90 +1,294 @@
 questions:
+  - variable: node.enabled
+    description: "Deploy the Falcon Sensor to the Kubernetes nodes"
+    required: true
+    type: boolean
+    default: true
+    label: Deploy daemonset to nodes
+    group: "Falcon Node settings"
+
+  - variable: node.daemonset.updateStrategy
+    description: "Update strategy to role out new daemonset configuration to the nodes."
+    required: false
+    type: enum
+    options:
+      - RollingUpdate
+      - OnDelete
+    label: Container Image Repository
+    group: "Falcon Node settings"
+
+  - variable: node.daemonset.maxUnavailable
+    description: "Sets the max unavailable nodes. Default is 1 when no value exists."
+    required: false
+    type: int
+    default: 1
+    label: Max number of unavailable nodes
+    group: "Falcon Node settings"
+
   - variable: node.image.repository
     description: "URL of container image repository holding containerized Falcon sensor. Defaults to 'falcon-node-sensor'."
     required: true
     type: string
     default: falcon-node-sensor
-    label: Container Image Repository
-    group: "Node Container Images"
+    label: Image Repository
+    group: "Falcon Node settings"
 
   - variable: node.image.tag
     description: "Container registry image tag. Defaults to 'latest'."
     required: true
     type: string
     default: "latest"
-    label: Container Image Tag
-    group: "Node Container Images"
-      
-  - variable: falcon.cid
-    description: "CrowdStrike Customer ID (CID). Passed to falconctl as \"--cid=\"{uuid string}\"\""
+    label: Image Tag
+    group: "Falcon Node settings"
+
+  - variable: node.image.pullPolicy
+    description: "The default image pullPolicy. Defaults to 'Always'."
+    required: false
+    type: enum
+    options:
+      - IfNotPresent
+      - Always
+      - Never
+    default: Always
+    label: Image pullPolicy
+    group: "Falcon Node settings"
+
+  - variable: node.image.pullSecrets
+    description: "Name of the pull secret to pull the container image. Conflicts with node.image.registryConfigJSON"
+    required: false
+    type: string
+    label: Pull Secret Name
+    group: "Falcon Node settings"
+
+  - variable: node.image.registryConfigJSON
+    description: "Value must be base64. This setting conflicts with node.image.pullSecrets. The base64 encoded string of the docker config json for the pull secret can be gotten through `$ cat ~/.docker/config.json | base64 -`"
+    required: false
+    type: string
+    label: Pull Secret as a base64 string
+    group: "Falcon Node settings"
+
+  - variable: container.enabled
+    description: "Deploy the Falcon Sensor to the Kubernetes pods as a sidecar"
+    required: true
+    type: boolean
+    default: false
+    label: Deploy sidecar sensor to pods
+    group: "Falcon Container settings"
+
+  - variable: container.image.repository
+    description: "URL of container image repository holding containerized Falcon sensor. Defaults to 'falcon-sensor'."
     required: true
     type: string
-    label: --cid
-    group: "Falcon Sensor Node Settings"
+    default: falcon-sensor
+    label: Image Repository
+    group: "Falcon Container settings"
 
-  - variable: falcon.apd
-    description: "Enable/Disable the Proxy. Passed to falconctl as \"--apd=true\" or \"--apd=false\"."
+  - variable: container.image.tag
+    description: "Container registry image tag. Defaults to 'latest'."
+    required: true
+    type: string
+    default: "latest"
+    label: Image Tag
+    group: "Falcon Container settings"
+
+  - variable: container.image.pullPolicy
+    description: "The default image pullPolicy. Defaults to 'Always'."
+    required: false
+    type: enum
+    options:
+      - IfNotPresent
+      - Always
+      - Never
+    default: Always
+    label: Image pullPolicy
+    group: "Falcon Container settings"
+
+  - variable: container.image.pullSecrets.enable
+    description: "Enable pullSecrets to get container from registry that requires authentication."
     required: false
     type: boolean
     default: false
-    label: --apd
-    group: "Falcon Sensor Node Settings"
+    label: Enable pullSecrets
+    group: "Falcon Container settings"
+
+  - variable: container.image.pullSecrets.namespaces
+    description: "Configure the list of namespaces that should have access to pull the Falcon sensor from a registry that requires authentication. This is a comma separated."
+    required: false
+    type: string
+    show_if: "container.image.pullSecrets.enable=true"
+    label: List of Namespaces for pullSecret
+    group: "Falcon Container settings"
+
+  - variable: container.image.pullSecrets.allNamespaces
+    description: "Attempt to create the Falcon sensor pull secret in all Namespaces instead of using 'container.image.pullSecrets.namespaces'"
+    required: false
+    type: boolean
+    default: false
+    show_if: "container.image.pullSecrets.enable=true"
+    label: Create pullSecret in all Namespaces
+    group: "Falcon Container settings"
+
+  - variable: container.image.pullSecrets.registryConfigJSON
+    description: "Value must be base64. The base64 encoded string of the docker config json for the pull secret can be gotten through `$ cat ~/.docker/config.json | base64 -`"
+    required: false
+    type: string
+    show_if: "container.image.pullSecrets.enable=true"
+    label: Pull Secret as a base64 string
+    group: "Falcon Container settings"
+
+  - variable: container.autoCertificateUpdate
+    description: "Auto-update the certificates every time there is an update"
+    required: false
+    type: boolean
+    default: true
+    label: Auto-update certificates
+    group: "Falcon Container settings"
+
+  - variable: container.autoDeploymentUpdate
+    description: "Update Webhook and roll out new Deployment on upgrade"
+    required: false
+    type: boolean
+    default: true
+    label: Update the webhook on upgrade
+    group: "Falcon Container settings"
+
+  - variable: container.azure.enabled
+    description: "Enable for AKS without the pulltoken option"
+    required: false
+    type: boolean
+    default: false
+    label: Configure AKS registry configuration
+    group: "Falcon Container settings"
+
+  - variable: container.azure.AzureConfig
+    description: "Path to the Kubernetes Azure config file on worker nodes"
+    required: false
+    type: string
+    default: "/etc/kubernetes/azure.json"
+    show_if: "container.azure.enabled=true"
+    label: Deploy sidecar sensor to pods
+    group: "Falcon Container settings"
+
+  - variable: container.disableNSInjection
+    description: "Disable injection for all Namespaces"
+    required: false
+    type: boolean
+    default: false
+    label: Disable Namespace injection
+    group: "Falcon Container settings"
+
+  - variable: container.disablePodInjection
+    description: "Disable injection for all Pods"
+    required: false
+    type: boolean
+    default: false
+    label: Disable Pod injection
+    group: "Falcon Container settings"
+
+  - variable: container.certExpiration
+    description: "Certificate validity duration in number of days"
+    required: false
+    type: int
+    default: 3650
+    label: Certificate validity
+    group: "Falcon Container settings"
+
+  - variable: container.injectorPort
+    description: "Configure the Injector Port"
+    required: false
+    type: int
+    default: 4433
+    label: Injector Port
+    group: "Falcon Container settings"
+
+  - variable: container.domainName
+    description: "For custom DNS configurations when .svc requires a domain for services"
+    required: false
+    type: string
+    label: Custom DNS domain name for webhook
+    group: "Falcon Container settings"
+
+  - variable: falcon.cid
+    description: "Configure your CrowdStrike Customer ID (CID)"
+    required: true
+    type: string
+    label: CrowdStrike Customer ID (CID)
+    group: "Falcon Sensor Settings"
+
+  - variable: falcon.apd
+    description: "Enable the sensor to use a proxy"
+    required: false
+    type: boolean
+    default: false
+    label: Enable using a proxy
+    group: "Falcon Sensor Settings"
 
   - variable: falcon.aph
-    description: "App Proxy Hostname (APH). Uncommon in container-based deployments. Passed to falconctl as \"--aph <app proxy host name>\""
+    description: "App Proxy Hostname (APH). Uncommon in container-based deployments."
     required: false
     type: string
-    label: --aph
-    group: "Falcon Sensor Node Settings"
+    show_if: "falcon.apd=true"
+    label: Configure Proxy Host
+    group: "Falcon Sensor Settings"
 
   - variable: falcon.app
-    description: "App Proxy Port (APP). Uncommon in container-based deployments. Passed to falconctl as \"--app=<app proxy port>\""
+    description: "App Proxy Port (APP). Uncommon in container-based deployments."
     required: false
     type: string
-    label: --app
-    group: "Falcon Sensor Node Settings"
+    show_if: "falcon.apd=true"
+    label: Configure Proxy Port
+    group: "Falcon Sensor Settings"
 
   - variable: falcon.trace
-    description: "Set trace level. Options are [none|err|warn|info|debug]. Passed to falconctl as \"--trace=[none|err|warn|info|debug]\""
+    description: "Options are [none|err|warn|info|debug]."
     required: false
-    type: string
-    label: --trace
-    default: "none"
-    group: "Falcon Sensor Node Settings"
+    type: enum
+    options:
+      - none
+      - err
+      - warn
+      - info
+      - debug
+    label: Set logging trace level
+    default: none
+    group: "Falcon Sensor Settings"
 
   - variable: falcon.feature
     description: "Options to pass to the \"--feature\" flag. Options are [none,[enableLog[,disableLogBuffer[,disableOsfm[,emulateUpdate]]]]]"
     required: false
     type: string
-    label: --feature
-    group: "Falcon Sensor Node Settings"
+    label: Enable or disable certain sensor features
+    group: "Falcon Sensor Settings"
 
   - variable: falcon.message_log
     description: "Enable message log (true/false)"
     required: false
     type: boolean
     default: false
-    label: --message-log
-    group: "Falcon Sensor Node Settings"
+    label: Enable logging
+    group: "Falcon Sensor Settings"
 
   - variable: falcon.billing
-    description: "Utilize default or metered billing."
+    description: "Utilize default or metered billing. Should only be configured when needing to switch between the two."
     required: false
-    type: boolean
-    default: true
-    label: --billing
-    group: "Falcon Sensor Node Settings"
+    type: enum
+    options:
+       - default
+       - metered
+    default: default
+    label: Configure Billing
+    group: "Falcon Sensor Settings"
 
   - variable: falcon.tags
     description: "Comma separated list of tags for sensor grouping. Allowed characters: all alphanumerics, '/', '-', '_', and ','."
     required: false
     type: string
-    label: --tags
-    group: "Falcon Sensor Node Settings"
-      
+    label: Configure tags for sensor grouping
+    group: "Falcon Sensor Settings"
+
   - variable: falcon.provisioning_token
-    description: "Provisioning token value."
+    description: "Used to protect the CID. Provisioning token value."
     required: false
     type: string
-    label: --provisioning-token
-    group: "Falcon Sensor Node Settings"
+    label: Set a provisioning installation token
+    group: "Falcon Sensor Settings"

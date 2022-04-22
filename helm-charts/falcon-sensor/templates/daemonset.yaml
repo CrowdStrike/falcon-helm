@@ -70,15 +70,12 @@ spec:
       {{- end }}
     {{- end }}
     {{- end }}
+    {{- if .Values.node.daemonset.tolerations }}    
       tolerations:
-      # this toleration is to have the daemonset runnable on all nodes
-      - operator: Exists
-        effect: NoExecute
-      - operator: Exists
-        effect: NoSchedule
       {{- with .Values.node.daemonset.tolerations }}
         {{- toYaml . | nindent 6 }}
       {{- end }}
+    {{- end }}  
       nodeSelector:
         kubernetes.io/os: linux
       initContainers:

@@ -48,18 +48,18 @@ helm repo update
 
 The following tables lists the Falcon Sensor configurable parameters and their default values.
 
-| Parameter                   | Description                                          | Default                   |
-|:----------------------------|:-----------------------------------------------------|:------------------------- |
-| `falcon.cid`                | CrowdStrike Customer ID (CID)                        | None       (Required)     |
-| `falcon.apd`                | Enable/Disable the Proxy.                            | None                      |
-| `falcon.aph`                | App Proxy Hostname (APH)                             | None                      |
-| `falcon.app`                | App Proxy Port (APP)                                 | None                      |
-| `falcon.trace`              | Set trace level                                      | `none`                    |
-| `falcon.feature`            | Sensor Feature options                               | None                      |
-| `falcon.message_log`        | Enable message log (true/false)                      | None                      |
-| `falcon.billing`            | Utilize default or metered billing                   | None                      |
-| `falcon.tags`               | Comma separated list of tags for sensor grouping     | None                      |
-| `falcon.provisioning_token` | Provisioning token value                             | None                      |
+| Parameter                   | Description                                           | Default               |
+|--:--------------------------|--:----------------------------------------------------|--:--------------------|
+| `falcon.cid`                | CrowdStrike Customer ID (CID)                         | None       (Required) |
+| `falcon.apd`                | Enable/Disable the Proxy.                             | None                  |
+| `falcon.aph`                | App Proxy Hostname (APH)                              | None                  |
+| `falcon.app`                | App Proxy Port (APP)                                  | None                  |
+| `falcon.trace`              | Set trace level. (`none`,`err`,`warn`,`info`,`debug`) | `none`                |
+| `falcon.feature`            | Sensor Feature options                                | None                  |
+| `falcon.message_log`        | Enable message log (true/false)                       | None                  |
+| `falcon.billing`            | Utilize default or metered billing                    | None                  |
+| `falcon.tags`               | Comma separated list of tags for sensor grouping      | None                  |
+| `falcon.provisioning_token` | Provisioning token value                              | None                  |
 
 
 ## Installing on Kubernetes Cluster Nodes

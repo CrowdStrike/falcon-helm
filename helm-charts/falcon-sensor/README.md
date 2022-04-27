@@ -169,7 +169,7 @@ The following tables lists the more common configurable parameters of the chart 
 | `container.image.pullSecrets.namespaces`         | List of Namespaces to pull the Falcon sensor from an authenticated registry | None                         |
 | `container.image.pullSecrets.allNamespaces`      | Use Helm's lookup function to deploy the pull secret to all namespaces      | `false`                      |
 | `container.image.pullSecrets.registryConfigJSON` | base64 encoded docker config json for the pull secret                       | None                         |
-| `container.image.sensorResources`                | The requests and limits of the sensor (see Note below)                      | None                         |
+| `container.image.sensorResources`                | The requests and limits of the sensor (see [Note below](#note-about-containerimagesensorresources))                      | None                         |
 | `falcon.cid`                                     | CrowdStrike Customer ID (CID)                                               | None       (Required)        |
 
 `falcon.cid` and `container.image.repository` are required values.

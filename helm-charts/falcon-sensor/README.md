@@ -195,11 +195,11 @@ helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
     --set node.enabled=false
     --set container.enabled=true \
     --set falcon.cid="<CrowdStrike_CID>" \
-    --set container.image.repository="<Your_Registry>/falcon-sensor"
+    --set container.image.repository="<Your_Registry>/falcon-sensor" \
     --values values.yaml
 ```
 
-Where `local.yaml` is
+Where `values.yaml` is
 
 ```yaml
 container:
@@ -212,7 +212,7 @@ container:
       memory: 20Mi
 ```
 
-Of course, one could specify all options in the `local.yaml` file and skip the `--set` options altogether:
+Of course, one could specify all options in the `values.yaml` file and skip the `--set` options altogether:
 
 ```yaml
 node:
@@ -239,10 +239,10 @@ helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
     --set node.enabled=false
     --set container.enabled=true \
     --set falcon.cid="<CrowdStrike_CID>" \
-    --set container.image.repository="<Your_Registry>/falcon-sensor"
-    --set container.sensorResources.limits.memory="128Mi"
-    --set container.sensorResources.limits.cpu="100m"
-    --set container.sensorResources.requests.memory="20Mi"
+    --set container.image.repository="<Your_Registry>/falcon-sensor" \
+    --set container.sensorResources.limits.memory="128Mi" \
+    --set container.sensorResources.limits.cpu="100m" \
+    --set container.sensorResources.requests.memory="20Mi" \
     --set container.sensorResources.requests.cpu="10m"
 ```
 

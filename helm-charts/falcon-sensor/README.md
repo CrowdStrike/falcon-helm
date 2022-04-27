@@ -190,7 +190,7 @@ When setting `container.image.sensorResources`, the simplest method would be to 
 
 Example:
 
-```sh
+```bash
 helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
     --set node.enabled=false
     --set container.enabled=true \
@@ -230,6 +230,20 @@ container:
       memory: 20Mi
 falcon:
   cid: "<CrowdStrike_CID>"
+```
+
+If using a local values file is not an option, you could do this:
+
+```bash
+helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
+    --set node.enabled=false
+    --set container.enabled=true \
+    --set falcon.cid="<CrowdStrike_CID>" \
+    --set container.image.repository="<Your_Registry>/falcon-sensor"
+    --set container.sensorResources.limits.memory="128Mi"
+    --set container.sensorResources.limits.cpu="100m"
+    --set container.sensorResources.requests.memory="20Mi"
+    --set container.sensorResources.requests.cpu="10m"
 ```
 
 ### Uninstall Helm Chart

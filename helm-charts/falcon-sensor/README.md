@@ -189,3 +189,8 @@ To uninstall from a custom namespace, run the following command:
 ```
 helm uninstall falcon-helm -n falcon-system
 ```
+
+You may need/want to delete the falcon-system as well since helm will not do it for you:
+```
+kubectl delete ns falcon-system
+```

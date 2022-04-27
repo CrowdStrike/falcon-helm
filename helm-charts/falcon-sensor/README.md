@@ -179,6 +179,10 @@ For a complete listing of configurable parameters, run the following command:
 helm show values crowdstrike/falcon-sensor
 ```
 
+#### Notes about --set
+
+If you need to provide a list of values to a `--set` command, you need to escape the commas between the values e.g. `--set falcon.tags="tag1\,tag2\,tag3"`
+
 ### Uninstall Helm Chart
 To uninstall, run the following command:
 ```

@@ -169,7 +169,7 @@ The following tables lists the more common configurable parameters of the chart 
 | `container.image.pullSecrets.namespaces`         | List of Namespaces to pull the Falcon sensor from an authenticated registry | None                         |
 | `container.image.pullSecrets.allNamespaces`      | Use Helm's lookup function to deploy the pull secret to all namespaces      | `false`                      |
 | `container.image.pullSecrets.registryConfigJSON` | base64 encoded docker config json for the pull secret                       | None                         |
-| `container.image.sensorResources`                | The requests and limits of the sensor (see [Note below](#note-about-containerimagesensorresources))                      | None                         |
+| `container.image.sensorResources`                | The requests and limits of the sensor ([see example below](#example-using-containerimagesensorresources))                      | None                         |
 | `falcon.cid`                                     | CrowdStrike Customer ID (CID)                                               | None       (Required)        |
 
 `falcon.cid` and `container.image.repository` are required values.
@@ -184,7 +184,7 @@ helm show values crowdstrike/falcon-sensor
 
 If you need to provide a list of values to a `--set` command, you need to escape the commas between the values e.g. `--set falcon.tags="tag1\,tag2\,tag3"`
 
-#### Note about container.image.sensorResources
+#### Example using container.image.sensorResources
 
 When setting `container.image.sensorResources`, the simplest method would be to provide a values file to the `helm install` command.
 
@@ -196,7 +196,7 @@ helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
     --set container.enabled=true \
     --set falcon.cid="<CrowdStrike_CID>" \
     --set container.image.repository="<Your_Registry>/falcon-sensor"
-    --values local.yaml
+    --values values.yaml
 ```
 
 Where `local.yaml` is

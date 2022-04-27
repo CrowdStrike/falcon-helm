@@ -155,7 +155,7 @@ helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
 The following tables lists the more common configurable parameters of the chart and their default values for installing the Container sensor as a Sidecar.
 
 | Parameter                                        | Description                                                                 | Default                      |
-|--:-----------------------------------------------|--:--------------------------------------------------------------------------|--:---------------------------|
+| ------------------------------------------------ | --------------------------------------------------------------------------- | ---------------------------- |
 | `container.enabled`                              | Enable installation on the Kubernetes node                                  | `false`                      |
 | `container.azure.enabled`                        | For AKS without the pulltoken option                                        | `false`                      |
 | `container.azure.azureConfig`                    | Path to the Kubernetes Azure config file on worker nodes                    | `/etc/kubernetes/azure.json` |

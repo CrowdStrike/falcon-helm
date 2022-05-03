@@ -48,18 +48,18 @@ helm repo update
 
 The following tables lists the Falcon Sensor configurable parameters and their default values.
 
-| Parameter                   | Description                                          | Default                   |
-|:----------------------------|:-----------------------------------------------------|:------------------------- |
-| `falcon.cid`                | CrowdStrike Customer ID (CID)                        | None       (Required)     |
-| `falcon.apd`                | Enable/Disable the Proxy.                            | None                      |
-| `falcon.aph`                | App Proxy Hostname (APH)                             | None                      |
-| `falcon.app`                | App Proxy Port (APP)                                 | None                      |
-| `falcon.trace`              | Set trace level                                      | `none`                    |
-| `falcon.feature`            | Sensor Feature options                               | None                      |
-| `falcon.message_log`        | Enable message log (true/false)                      | None                      |
-| `falcon.billing`            | Utilize default or metered billing                   | None                      |
-| `falcon.tags`               | Comma separated list of tags for sensor grouping     | None                      |
-| `falcon.provisioning_token` | Provisioning token value                             | None                      |
+| Parameter                   | Description                                           | Default               |
+|:----------------------------|:------------------------------------------------------|:----------------------|
+| `falcon.cid`                | CrowdStrike Customer ID (CID)                         | None       (Required) |
+| `falcon.apd`                | Enable/Disable the Proxy.                             | None                  |
+| `falcon.aph`                | App Proxy Hostname (APH)                              | None                  |
+| `falcon.app`                | App Proxy Port (APP)                                  | None                  |
+| `falcon.trace`              | Set trace level. (`none`,`err`,`warn`,`info`,`debug`) | `none`                |
+| `falcon.feature`            | Sensor Feature options                                | None                  |
+| `falcon.message_log`        | Enable message log (true/false)                       | None                  |
+| `falcon.billing`            | Utilize default or metered billing                    | None                  |
+| `falcon.tags`               | Comma separated list of tags for sensor grouping      | None                  |
+| `falcon.provisioning_token` | Provisioning token value                              | None                  |
 
 
 ## Installing on Kubernetes Cluster Nodes
@@ -154,22 +154,23 @@ helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
 
 The following tables lists the more common configurable parameters of the chart and their default values for installing the Container sensor as a Sidecar.
 
-| Parameter                                        | Description                                                                 | Default                                   |
-|:-------------------------------------------------|:----------------------------------------------------------------------------|:----------------------------------------- |
-| `container.enabled`                              | Enable installation on the Kubernetes node                                  | `false`                                   |
-| `container.azure.enabled`                        | For AKS without the pulltoken option                                        | `false`                                   |
-| `container.azure.azureConfig`                    | Path to the Kubernetes Azure config file on worker nodes                    | `/etc/kubernetes/azure.json`              |
-| `container.disableNSInjection`                   | Disable injection for all Namespaces                                        | `false`                                   |
-| `container.disablePodInjection`                  | Disable injection for all Pods                                              | `false`                                   |
-| `container.certExpiration`                       | Certificate validity duration in number of days                             | `3650`                                    |
-| `container.image.repository`                     | Falcon Sensor Node registry/image name                                      | `falcon-sensor`                           |
-| `container.image.tag`                            | The version of the official image to use                                    | `latest`                                  |
-| `container.image.pullPolicy`                     | Policy for updating images                                                  | `Always`                                  |
-| `container.image.pullSecrets.enable`             | Enable pull secrets for private registry                                    | `false`                                   |
-| `container.image.pullSecrets.namespaces`         | List of Namespaces to pull the Falcon sensor from an authenticated registry | None                                      |
-| `container.image.pullSecrets.allNamespaces`      | Use Helm's lookup function to deploy the pull secret to all namespaces      | `false`                                   |
-| `container.image.pullSecrets.registryConfigJSON` | base64 encoded docker config json for the pull secret                       | None                                      |
-| `falcon.cid`                                     | CrowdStrike Customer ID (CID)                                               | None       (Required)                     |
+| Parameter                                        | Description                                                                 | Default                      |
+|:------------------------------------------------ |:--------------------------------------------------------------------------- |:---------------------------- |
+| `container.enabled`                              | Enable installation on the Kubernetes node                                  | `false`                      |
+| `container.azure.enabled`                        | For AKS without the pulltoken option                                        | `false`                      |
+| `container.azure.azureConfig`                    | Path to the Kubernetes Azure config file on worker nodes                    | `/etc/kubernetes/azure.json` |
+| `container.disableNSInjection`                   | Disable injection for all Namespaces                                        | `false`                      |
+| `container.disablePodInjection`                  | Disable injection for all Pods                                              | `false`                      |
+| `container.certExpiration`                       | Certificate validity duration in number of days                             | `3650`                       |
+| `container.image.repository`                     | Falcon Sensor Node registry/image name                                      | `falcon-sensor`              |
+| `container.image.tag`                            | The version of the official image to use                                    | `latest`                     |
+| `container.image.pullPolicy`                     | Policy for updating images                                                  | `Always`                     |
+| `container.image.pullSecrets.enable`             | Enable pull secrets for private registry                                    | `false`                      |
+| `container.image.pullSecrets.namespaces`         | List of Namespaces to pull the Falcon sensor from an authenticated registry | None                         |
+| `container.image.pullSecrets.allNamespaces`      | Use Helm's lookup function to deploy the pull secret to all namespaces      | `false`                      |
+| `container.image.pullSecrets.registryConfigJSON` | base64 encoded docker config json for the pull secret                       | None                         |
+| `container.image.sensorResources`                | The requests and limits of the sensor ([see example below](#example-using-containerimagesensorresources))                      | None                         |
+| `falcon.cid`                                     | CrowdStrike Customer ID (CID)                                               | None       (Required)        |
 
 `falcon.cid` and `container.image.repository` are required values.
 
@@ -177,6 +178,72 @@ For a complete listing of configurable parameters, run the following command:
 
 ```
 helm show values crowdstrike/falcon-sensor
+```
+
+#### Note about using --set with lists
+
+If you need to provide a list of values to a `--set` command, you need to escape the commas between the values e.g. `--set falcon.tags="tag1\,tag2\,tag3"`
+
+#### Example using container.image.sensorResources
+
+When setting `container.image.sensorResources`, the simplest method would be to provide a values file to the `helm install` command.
+
+Example:
+
+```bash
+helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
+    --set node.enabled=false
+    --set container.enabled=true \
+    --set falcon.cid="<CrowdStrike_CID>" \
+    --set container.image.repository="<Your_Registry>/falcon-sensor" \
+    --values values.yaml
+```
+
+Where `values.yaml` is
+
+```yaml
+container:
+  sensorResources: 
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 10m
+      memory: 20Mi
+```
+
+Of course, one could specify all options in the `values.yaml` file and skip the `--set` options altogether:
+
+```yaml
+node:
+  enabled: false
+container:
+  enabled: true
+  image:
+    repository: "<Your_Registry>/falcon-sensor"
+  sensorResources: 
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 10m
+      memory: 20Mi
+falcon:
+  cid: "<CrowdStrike_CID>"
+```
+
+If using a local values file is not an option, you could do this:
+
+```bash
+helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
+    --set node.enabled=false
+    --set container.enabled=true \
+    --set falcon.cid="<CrowdStrike_CID>" \
+    --set container.image.repository="<Your_Registry>/falcon-sensor" \
+    --set container.sensorResources.limits.memory="128Mi" \
+    --set container.sensorResources.limits.cpu="100m" \
+    --set container.sensorResources.requests.memory="20Mi" \
+    --set container.sensorResources.requests.cpu="10m"
 ```
 
 ### Uninstall Helm Chart
@@ -188,4 +255,9 @@ helm uninstall falcon-helm
 To uninstall from a custom namespace, run the following command:
 ```
 helm uninstall falcon-helm -n falcon-system
+```
+
+You may need/want to delete the falcon-system as well since helm will not do it for you:
+```
+kubectl delete ns falcon-system
 ```

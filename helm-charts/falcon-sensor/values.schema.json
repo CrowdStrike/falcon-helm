@@ -158,12 +158,13 @@
                 "certExpiration": {
                     "type": "integer",
                     "default": "3650",
-                    "pattern": "^[0-9]+$"
+                    "minimum": 0
                 },
                 "injectorPort": {
                     "type": "integer",
                     "default": "4433",
-                    "pattern": "^[0-9]+$"
+                    "minimum": 1024,
+                    "maximum": 32767
                 },
                 "disableNSInjection": {
                     "type": "boolean",

@@ -1,6 +1,9 @@
 name: Lint and Test Helm Charts
 
-on: pull_request
+on:
+  pull_request:
+    paths:
+      - 'helm-charts/**'
 
 jobs:
   lint-test:
@@ -15,10 +18,6 @@ jobs:
         uses: azure/setup-helm@v1
         with:
           version: v3.8.1
-
-      - uses: actions/setup-python@v2
-        with:
-          python-version: '3.10'
 
       - name: Set up chart-testing
         uses: helm/chart-testing-action@v2.2.1

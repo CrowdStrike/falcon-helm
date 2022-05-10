@@ -51,7 +51,7 @@ The following tables lists the Falcon Sensor configurable parameters and their d
 | Parameter                   | Description                                           | Default               |
 |:----------------------------|:------------------------------------------------------|:----------------------|
 | `falcon.cid`                | CrowdStrike Customer ID (CID)                         | None       (Required) |
-| `falcon.apd`                | Enable/Disable the Proxy.                             | None                  |
+| `falcon.apd`                | App Proxy Disable (APD)                               | None                  |
 | `falcon.aph`                | App Proxy Hostname (APH)                              | None                  |
 | `falcon.app`                | App Proxy Port (APP)                                  | None                  |
 | `falcon.trace`              | Set trace level. (`none`,`err`,`warn`,`info`,`debug`) | `none`                |
@@ -203,7 +203,7 @@ Where `values.yaml` is
 
 ```yaml
 container:
-  sensorResources: 
+  sensorResources:
     limits:
       cpu: 100m
       memory: 128Mi
@@ -221,7 +221,7 @@ container:
   enabled: true
   image:
     repository: "<Your_Registry>/falcon-sensor"
-  sensorResources: 
+  sensorResources:
     limits:
       cpu: 100m
       memory: 128Mi

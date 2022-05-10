@@ -216,10 +216,10 @@ questions:
     group: "Falcon Sensor Settings"
 
   - variable: falcon.apd
-    description: "Enable the sensor to use a proxy"
+    description: "App Proxy Disable (APD). Disables the Falcon sensor from using a proxy."
     required: false
     type: boolean
-    default: false
+    default: true
     label: Enable using a proxy
     group: "Falcon Sensor Settings"
 
@@ -227,7 +227,7 @@ questions:
     description: "App Proxy Hostname (APH). Uncommon in container-based deployments."
     required: false
     type: string
-    show_if: "falcon.apd=true"
+    show_if: "falcon.apd=false"
     label: Configure Proxy Host
     group: "Falcon Sensor Settings"
 
@@ -235,7 +235,7 @@ questions:
     description: "App Proxy Port (APP). Uncommon in container-based deployments."
     required: false
     type: string
-    show_if: "falcon.apd=true"
+    show_if: "falcon.apd=false"
     label: Configure Proxy Port
     group: "Falcon Sensor Settings"
 

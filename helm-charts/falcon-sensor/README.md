@@ -150,6 +150,15 @@ helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
     --set container.image.repository="<Your_Registry>/falcon-sensor"
 ```
 
+#### Note about installation namespace
+
+For Kubernetes clusters <1.22 (or 1.21 where the NamespaceDefaultLabelName feature gate is NOT enabled), be sure to label your namespace for injector exclusion before installing the Container sensor: 
+
+```
+kubectl create namespace falcon-system
+kubectl label namespace falcon-system kubernetes.io/metadata.name=falcon-system
+```
+
 ### Container Sensor Configuration
 
 The following tables lists the more common configurable parameters of the chart and their default values for installing the Container sensor as a Sidecar.

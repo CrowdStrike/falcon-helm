@@ -231,6 +231,11 @@
                         }
                     }
                 },
+                "replicas": {
+                    "type": "integer",
+                    "default": 1,
+                    "minimum": 1
+                },
                 "resources": {
                     "type": "object",
                     "properties": {

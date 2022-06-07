@@ -57,6 +57,9 @@ container:
   # When enabled, Helm chart deploys the Falcon Container Sensor to Pods through Webhooks
   enabled: false
 
+  # Configure the number of replicas for the mutating webhook backend
+  replicas: 1
+
   # Auto update the certificates every time there is an update
   autoCertificateUpdate: true
 

@@ -38,7 +38,7 @@ metadata:
     crowdstrike.com/provider: crowdstrike
     helm.sh/chart: {{ include "falcon-sensor.chart" . }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.container.replicas }}
   selector:
     matchLabels:
       app: {{ include "falcon-sensor.name" . }}-injector

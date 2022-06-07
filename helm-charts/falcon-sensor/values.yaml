@@ -97,12 +97,12 @@ container:
   # Otherwise, keep this blank.
   domainName:
 
-  # Provide a ConfigMap containing CA certificate files.
+  # Provide a Secret containing CA certificate files.
   # All CA certificates need to be a valid config map key, and have the extension ".crt"
-  # Example: kubectl create configmap external-registry-cas --from-file=/tmp/thawte-Primary-Root-CA.crt --from-file=/tmp/DigiCert-Global-Root-CA.crt
+  # Example: kubectl create secret generic external-registry-cas --from-file=/tmp/thawte-Primary-Root-CA.crt --from-file=/tmp/DigiCert-Global-Root-CA.crt
   #
-  # registryCertConfigMap: external-registry-cas
-  registryCertConfigMap:
+  # registryCertSecret: external-registry-cas
+  registryCertSecret:
 
   image:
     repository: falcon-sensor

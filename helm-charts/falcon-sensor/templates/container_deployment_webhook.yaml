@@ -113,7 +113,7 @@ spec:
         - name: {{ include "falcon-sensor.name" . }}-tls-certs
           mountPath: /run/secrets/tls
           readOnly: true
-        {{- if or (.Files.Glob "certs/*.crt") (.Values.container.registryCertConfigMap) }}
+        {{- if or (.Files.Glob "certs/*.crt") (.Values.container.registryCertSecret) }}
         - name: {{ include "falcon-sensor.name" . }}-registry-certs
           mountPath: /etc/docker/certs.d/{{ .Release.Namespace }}-certs
           readOnly: true
@@ -147,10 +147,10 @@ spec:
       - name: {{ include "falcon-sensor.name" . }}-registry-certs
         configMap:
           name: {{ include "falcon-sensor.name" . }}-registry-certs-config
-      {{- else if .Values.container.registryCertConfigMap }}
+      {{- else if .Values.container.registryCertSecret }}
       - name: {{ include "falcon-sensor.name" . }}-registry-certs
-        configMap:
-          name: {{ .Values.container.registryCertConfigMap }}
+        secret:
+          name: {{ .Values.container.registryCertSecret }}
       {{- end }}
       {{- if .Values.container.azure.enabled }}
       - emptyDir: {}

@@ -162,7 +162,7 @@ The following tables lists the more common configurable parameters of the chart 
 | `container.disableNSInjection`                   | Disable injection for all Namespaces                                        | `false`                      |
 | `container.disablePodInjection`                  | Disable injection for all Pods                                              | `false`                      |
 | `container.certExpiration`                       | Certificate validity duration in number of days                             | `3650`                       |
-| `container.registryCertConfigMap`                | Name of ConfigMap with additional CAs for external registries               | None                         |
+| `container.registryCertSecret`                   | Name of generic Secret with additional CAs for external registries          | None                         |
 | `container.image.repository`                     | Falcon Sensor Node registry/image name                                      | `falcon-sensor`              |
 | `container.image.tag`                            | The version of the official image to use                                    | `latest`                     |
 | `container.image.pullPolicy`                     | Policy for updating images                                                  | `Always`                     |

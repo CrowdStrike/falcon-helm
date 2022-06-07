@@ -98,7 +98,7 @@ container:
   domainName:
 
   # Provide a Secret containing CA certificate files.
-  # All CA certificates need to be a valid config map key, and have the extension ".crt"
+  # All CA certificates need to be a valid secret key, and have the extension ".crt"
   # Example: kubectl create secret generic external-registry-cas --from-file=/tmp/thawte-Primary-Root-CA.crt --from-file=/tmp/DigiCert-Global-Root-CA.crt
   #
   # registryCertSecret: external-registry-cas

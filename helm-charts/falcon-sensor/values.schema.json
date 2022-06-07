@@ -151,6 +151,12 @@
                     "type": "boolean",
                     "default": "true"
                 },
+                "registryCertSecret": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
                 "autoDeploymentUpdate": {
                     "type": "boolean",
                     "default": "true"

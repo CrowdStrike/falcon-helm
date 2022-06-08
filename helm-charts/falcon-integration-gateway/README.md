@@ -51,8 +51,30 @@ The following tables lists the Falcon Sensor configurable parameters and their d
 
 ### Installation
 
-The helm chart is under active development. Contributors are welcomed to install directly from the git repository
+The helm chart is under active development. Contributors are welcomed to install either directly from the git repository or from the helm repository.
 
+#### Installation from Helm Repository
+
+1. Add the CrowdStrike Falcon Helm repository
+   ```
+   helm repo add crowdstrike https://crowdstrike.github.io/falcon-helm
+   ```
+1. Update the local Helm repository Cache
+   ```
+   helm repo update
+   ```
+1. Exmaple install with Azure Log Analytics enabled:
+   ```
+   helm upgrade --install falcon-fig crowdstrike/falcon-integration-gateway -n falcon-integration-gateway --create-namespace \
+        --set falcon.client_id=$FALCON_CLIENT_ID \
+        --set falcon.client_secret=$FALCON_CLIENT_SECRET \
+        --set falcon.cloud_region=$FALCON_CLOUD \
+        --set push.azure_log_analytics.enabled=true \
+        --set push.azure_log_analytics.workspace_id=1234ab-cdef-abc7d-acdb-82321223 \
+        --set push.azure_log_analytics.primary_key=ASDFzxy/vgC/m6HKOY6bqi5g==
+   ```
+
+#### Installation directly from Git
 Exemplary run with Azure Log Analytics enabled:
 ```
 helm install -n test --create-namespace --generate-name ./falcon-integration-gateway \                                                   

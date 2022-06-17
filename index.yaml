@@ -3,6 +3,31 @@ entries:
   falcon-integration-gateway:
   - apiVersion: v2
     appVersion: 3.0.6
+    created: "2022-06-17T15:52:22.511732828Z"
+    description: Falcon Integration Gateway for cloud
+    digest: f72fded1e8d3b686cd5afc4d8efd169f2e63814bb75a0b4e9af69bc11e1c918a
+    home: https://crowdstrike.com
+    icon: https://raw.githubusercontent.com/CrowdStrike/falcon-helm/main/images/crowdstrike-logo.svg
+    keywords:
+    - CrowdStrike
+    - Falcon
+    - EDR
+    - security
+    - monitoring
+    - alerting
+    kubeVersion: '>1.15.0-0'
+    maintainers:
+    - email: integrations@crowdstrike.com
+      name: CrowdStrike Solutions Architecture
+    name: falcon-integration-gateway
+    sources:
+    - https://github.com/CrowdStrike/falcon-helm
+    type: application
+    urls:
+    - https://github.com/CrowdStrike/falcon-helm/releases/download/falcon-integration-gateway-0.1.2/falcon-integration-gateway-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
+    appVersion: 3.0.6
     created: "2022-06-15T22:24:56.910084767Z"
     description: Falcon Integration Gateway for cloud
     digest: fd63810d8d295ca28718bdf9b68c7ef163091ac91973b7450c574edf0c91420c
@@ -973,4 +998,4 @@ entries:
     urls:
     - https://github.com/CrowdStrike/falcon-helm/releases/download/0.5.0/falcon-sensor-0.5.0.tgz
     version: 0.5.0
-generated: "2022-06-17T15:39:07.579959851Z"
+generated: "2022-06-17T15:52:22.51217233Z"

@@ -77,7 +77,7 @@ The helm chart is under active development. Contributors are welcomed to install
 #### Installation directly from Git
 Exemplary run with Azure Log Analytics enabled:
 ```
-helm install -n test --create-namespace --generate-name ./falcon-integration-gateway \                                                   
+helm install -n test --create-namespace --generate-name ./falcon-integration-gateway \
      --set falcon.client_id=$FALCON_CLIENT_ID \
      --set falcon.client_secret=$FALCON_CLIENT_SECRET \
      --set falcon.cloud_region=$FALCON_CLOUD \

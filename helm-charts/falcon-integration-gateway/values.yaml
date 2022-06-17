@@ -46,7 +46,7 @@ falcon:
 replicaCount: 1
 
 image:
-  repository: gcr.io/crowdstrike-public/falcon-integration-gateway
+  repository: quay.io/crowdstrike/falcon-integration-gateway
   pullPolicy: Always
   tag: latest
 

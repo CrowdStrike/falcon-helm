@@ -17,7 +17,8 @@ metadata:
     {{- end }}
     {{- end }}
   annotations:
-    "helm.sh/hook": pre-delete
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "1"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
   {{- if .Values.node.daemonset.annotations }}
     {{- range $key, $value := .Values.node.daemonset.annotations }}
@@ -99,7 +100,7 @@ spec:
       - name: opt-crowdstrike
         hostPath:
           path: /opt
-      serviceAccountName: {{ .Values.serviceAccount.name }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}-node-cleanup
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
 {{- end }}
 

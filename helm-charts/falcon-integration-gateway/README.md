@@ -36,6 +36,7 @@ The following tables lists the Falcon Sensor configurable parameters and their d
 | `push.vmware_workspace_one.syslog_host`                |                                                        | None                       |
 | `push.vmware_workspace_one.syslog_port`                |                                                        | None                       |
 | `push.vmware_workspace_one.token`                      |                                                        | None                       |
+| `serviceAccount.annotations`                           | Annotations for serviceAccount                         | `{}`                       |
 
 
 ## Installation
@@ -73,6 +74,17 @@ The helm chart is under active development. Contributors are welcomed to install
         --set push.azure_log_analytics.workspace_id=1234ab-cdef-abc7d-acdb-82321223 \
         --set push.azure_log_analytics.primary_key=ASDFzxy/vgC/m6HKOY6bqi5g==
    ```
+
+1. Alternative example install with AWS Security Hub enabled:
+   ```
+   helm upgrade --install falcon-fig crowdstrike/falcon-integration-gateway -n falcon-integration-gateway --create-namespace \
+        --set falcon.client_id=$FALCON_CLIENT_ID \
+        --set falcon.client_secret=$FALCON_CLIENT_SECRET \
+        --set falcon.cloud_region=$FALCON_CLOUD \
+        --set push.aws_security_hub.enabled=true \
+        --set push.aws_security_hub.region="eu-west-2" \
+        --set serviceAccount.annotations."eks.amazonaws.com/role-arn"="arn:aws:iam::12345678910:role/fig-demo-J78KUNY32R1"
+    ```
 
 #### Installation directly from Git
 Exemplary run with Azure Log Analytics enabled:

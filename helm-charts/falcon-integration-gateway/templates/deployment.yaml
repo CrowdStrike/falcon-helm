@@ -23,6 +23,7 @@ spec:
         run: {{ include "falcon-integration-gateway.fullname" . }}
         {{- include "falcon-integration-gateway.selectorLabels" . | nindent 8 }}
     spec:
+      serviceAccount: {{ .Values.serviceAccount.name }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}

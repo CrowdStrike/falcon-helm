@@ -67,6 +67,10 @@ securityContext:
   runAsNonRoot: true
   runAsUser: 1000
 
+serviceAccount:
+  name: falcon-integration-gateway
+  annotations: {}
+
 resources: {}
   #   cpu: 100m
   #   memory: 128Mi

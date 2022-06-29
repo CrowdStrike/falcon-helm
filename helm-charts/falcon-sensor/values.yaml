@@ -10,6 +10,9 @@ node:
     # Annotations to apply to the daemonset
     annotations: {}
 
+    # The key that is used to handle enabling/disabling sensor injection at the pod/node level
+    podAnnotationKey: sensor.falcon-system.crowdstrike.com/injection
+
     # additionals labels
     labels: {}
 
@@ -106,6 +109,9 @@ container:
   #
   # registryCertSecret: external-registry-cas
   registryCertSecret:
+
+  # The key that is used to handle enabling/disabling sensor injection at the namespace level
+  namespaceLabelKey: sensor.falcon-system.crowdstrike.com/injection
 
   image:
     repository: falcon-sensor

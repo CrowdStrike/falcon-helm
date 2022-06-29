@@ -39,6 +39,9 @@
                         "annotations": {
                             "type": "object"
                         },
+                        "podAnnotationKey": {
+                            "type": "string"
+                        },
                         "labels": {
                             "type": "object"
                         },
@@ -156,6 +159,9 @@
                         "null",
                         "string"
                     ]
+                },
+                "namespaceLabelKey": {
+                    "type": "string"
                 },
                 "autoDeploymentUpdate": {
                     "type": "boolean",

@@ -203,11 +203,7 @@ webhooks:
     sideEffects: None
     namespaceSelector:
       matchExpressions:
-      - key: sensor.crowdstrike.com/injection
-        operator: {{ if .Values.container.disableNSInjection }}In{{ else }}NotIn{{- end }}
-        values:
-          - {{ if .Values.container.disableNSInjection }}enabled{{ else }}disabled{{- end }}
-      - key: sensor.falcon-system.crowdstrike.com/injection
+      - key: {{ .Values.container.namespaceLabelKey }}
         operator: {{ if .Values.container.disableNSInjection }}In{{ else }}NotIn{{- end }}
         values:
           - {{ if .Values.container.disableNSInjection }}enabled{{ else }}disabled{{- end }}

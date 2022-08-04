@@ -132,7 +132,7 @@ To ensure a successful deployment, you will want to ensure that:
 
 ```
 helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
-    --set node.enabled=false
+    --set node.enabled=false \
     --set container.enabled=true \
     --set falcon.cid="<CrowdStrike_CID>" \
     --set container.image.repository="<Your_Registry>/falcon-sensor"
@@ -144,7 +144,7 @@ You can install also install into a customized namespace by running the followin
 ```
 helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
     -n falcon-system --create-namespace \
-    --set node.enabled=false
+    --set node.enabled=false \
     --set container.enabled=true \
     --set falcon.cid="<CrowdStrike_CID>" \
     --set container.image.repository="<Your_Registry>/falcon-sensor"
@@ -152,7 +152,7 @@ helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
 
 #### Note about installation namespace
 
-For Kubernetes clusters <1.22 (or 1.21 where the NamespaceDefaultLabelName feature gate is NOT enabled), be sure to label your namespace for injector exclusion before installing the Container sensor: 
+For Kubernetes clusters <1.22 (or 1.21 where the NamespaceDefaultLabelName feature gate is NOT enabled), be sure to label your namespace for injector exclusion before installing the Container sensor:
 
 ```
 kubectl create namespace falcon-system
@@ -202,7 +202,7 @@ Example:
 
 ```bash
 helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
-    --set node.enabled=false
+    --set node.enabled=false \
     --set container.enabled=true \
     --set falcon.cid="<CrowdStrike_CID>" \
     --set container.image.repository="<Your_Registry>/falcon-sensor" \
@@ -246,7 +246,7 @@ If using a local values file is not an option, you could do this:
 
 ```bash
 helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
-    --set node.enabled=false
+    --set node.enabled=false \
     --set container.enabled=true \
     --set falcon.cid="<CrowdStrike_CID>" \
     --set container.image.repository="<Your_Registry>/falcon-sensor" \

@@ -21,7 +21,7 @@ node:
       effect: NoSchedule
 
     nodeSelector:
-      beta.kubernetes.io/os: linux
+      kubernetes.io/os: linux
 
   image:
     repository: falcon-node-sensor

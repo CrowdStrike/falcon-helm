@@ -96,7 +96,7 @@
                         },
                         "pullPolicy": {
                             "type": "string",
-                            "default": "Always",
+                            "default": "IfNotPresent",
                             "pattern": "^(Always|Never|IfNotPresent)$"
                         },
                         "pullSecrets": {
@@ -110,7 +110,7 @@
                         },
                         "tag": {
                             "type": "string",
-                            "default": "latest"
+                            "default": ""
                         }
                     }
                 },
@@ -200,7 +200,7 @@
                     "properties": {
                         "pullPolicy": {
                             "type": "string",
-                            "default": "Always",
+                            "default": "IfNotPresent",
                             "pattern": "^(Always|Never|IfNotPresent)$"
                         },
                         "pullSecrets": {
@@ -233,7 +233,7 @@
                         },
                         "tag": {
                             "type": "string",
-                            "default": "latest"
+                            "default": ""
                         }
                     }
                 },

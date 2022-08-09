@@ -84,8 +84,8 @@ spec:
       {{- if .Values.container.azure.enabled }}
       initContainers:
       - name: {{ include "falcon-sensor.name" . }}-init-container
-        image: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}"
-        imagePullPolicy: Always
+        image: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: "{{ .Values.container.image.pullPolicy }}"
         command: ['bash', '-c', "cp /run/azure.json /tmp/CrowdStrike/; chmod a+r /tmp/CrowdStrike/azure.json"]
         securityContext:
           runAsUser: 0
@@ -100,7 +100,7 @@ spec:
       {{- end }}
       containers:
       - name: {{ include "falcon-sensor.name" . }}-injector
-        image: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}"
+        image: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: "{{ .Values.container.image.pullPolicy }}"
         command: ["injector"]
         envFrom:

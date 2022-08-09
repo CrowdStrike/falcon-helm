@@ -35,11 +35,11 @@ node:
 
   image:
     repository: falcon-node-sensor
-    pullPolicy: Always
-    pullSecrets:
+    pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "latest"
+    tag: ""
 
+    pullSecrets:
     # Value must be base64. This setting conflicts with node.image.pullSecrets
     # The base64 encoded string of the docker config json for the pull secret can be
     # gotten through:
@@ -115,7 +115,9 @@ container:
 
   image:
     repository: falcon-sensor
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
     # Set to true if connecting to a registry that requires authentication
     pullSecrets:
       enable: false
@@ -135,9 +137,6 @@ container:
       # gotten through:
       # $ cat ~/.docker/config.json | base64 -
       registryConfigJSON:
-
-    # Overrides the image tag whose default is the chart appVersion.
-    tag: "latest"
 
   resources:
     # limits:

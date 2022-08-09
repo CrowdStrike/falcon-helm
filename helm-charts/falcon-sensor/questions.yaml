@@ -34,22 +34,22 @@ questions:
     group: "Falcon Node settings"
 
   - variable: node.image.tag
-    description: "Container registry image tag. Defaults to 'latest'."
+    description: "Container registry image tag. Default is the chart appVersion."
     required: true
     type: string
-    default: "latest"
+    default: ""
     label: Image Tag
     group: "Falcon Node settings"
 
   - variable: node.image.pullPolicy
-    description: "The default image pullPolicy. Defaults to 'Always'."
+    description: "The default image pullPolicy. Defaults to 'IfNotPresent'."
     required: false
     type: enum
     options:
       - IfNotPresent
       - Always
       - Never
-    default: Always
+    default: IfNotPresent
     label: Image pullPolicy
     group: "Falcon Node settings"
 
@@ -84,22 +84,22 @@ questions:
     group: "Falcon Container settings"
 
   - variable: container.image.tag
-    description: "Container registry image tag. Defaults to 'latest'."
+    description: "Container registry image tag. Default is the chart appVersion."
     required: true
     type: string
-    default: "latest"
+    default: ""
     label: Image Tag
     group: "Falcon Container settings"
 
   - variable: container.image.pullPolicy
-    description: "The default image pullPolicy. Defaults to 'Always'."
+    description: "The default image pullPolicy. Defaults to 'IfNotPresent'."
     required: false
     type: enum
     options:
       - IfNotPresent
       - Always
       - Never
-    default: Always
+    default: IfNotPresent
     label: Image pullPolicy
     group: "Falcon Container settings"
 

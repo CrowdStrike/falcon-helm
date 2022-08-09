@@ -21,7 +21,7 @@ data:
   {{- if .Values.container.enabled }}
   CP_NAMESPACE: {{ .Release.Namespace }}
   FALCON_IMAGE_PULL_POLICY: "{{ .Values.container.image.pullPolicy }}"
-  FALCON_IMAGE: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}"
+  FALCON_IMAGE: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag | default .Chart.AppVersion }}"
   FALCON_INJECTOR_LISTEN_PORT: "{{ .Values.container.injectorPort }}"
   {{- if .Values.container.image.pullSecrets.enable }}
   FALCON_IMAGE_PULL_SECRET: {{ include "falcon-sensor.fullname" . }}-pull-secret

@@ -77,7 +77,7 @@ spec:
         kubernetes.io/os: linux
       initContainers:
       - name: cleanup-opt-crowdstrike
-        image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag }}"
+        image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag | default .Chart.AppVersion }}"
         command: ["rm", "-rf", "/opt/CrowdStrike"]
         volumeMounts:
           - name: opt-crowdstrike
@@ -89,7 +89,7 @@ spec:
           allowPrivilegeEscalation: true
       containers:
       - name: cleanup-sleep
-        image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag }}"
+        image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag | default .Chart.AppVersion }}"
         command: ["sleep", "10"]
         securityContext:
           runAsUser: 0

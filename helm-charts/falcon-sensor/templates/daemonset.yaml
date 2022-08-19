@@ -86,6 +86,7 @@ spec:
       # restarts.
       - name: init-falconstore
         image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag }}"
+        imagePullPolicy: "{{ .Values.node.image.pullPolicy }}"
         command: ["/bin/bash"]
         args: [-c, 'mkdir -p /opt/CrowdStrike && touch /opt/CrowdStrike/falconstore']
         volumeMounts:

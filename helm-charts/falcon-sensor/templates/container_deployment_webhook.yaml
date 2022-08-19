@@ -85,7 +85,7 @@ spec:
       initContainers:
       - name: {{ include "falcon-sensor.name" . }}-init-container
         image: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}"
-        imagePullPolicy: Always
+        imagePullPolicy: "{{ .Values.container.image.pullPolicy }}"
         command: ['bash', '-c', "cp /run/azure.json /tmp/CrowdStrike/; chmod a+r /tmp/CrowdStrike/azure.json"]
         securityContext:
           runAsUser: 0

@@ -48,6 +48,12 @@
                         "tolerations": {
                             "type": "array"
                         },
+                        "priorityClassName": {
+                            "type": "string"
+                        },
+                        "resources": {
+                            "type": "object"
+                        },
                         "updateStrategy": {
                             "type": "string",
                             "default": "RollingUpdate",

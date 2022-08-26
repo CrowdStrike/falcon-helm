@@ -114,6 +114,10 @@ spec:
         volumeMounts:
           - name: falconstore
             mountPath: /opt/CrowdStrike/falconstore
+      {{- if .Values.node.daemonset.resources }}
+        resources:
+{{ toYaml .Values.node.daemonset.resources | indent 10 }}
+      {{- end }}
       volumes:
         - name: falconstore-dir
           hostPath:
@@ -124,6 +128,9 @@ spec:
             path: /opt/CrowdStrike/falconstore
       serviceAccountName: {{ .Values.serviceAccount.name }}
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
+    {{- if .Values.node.daemonset.priorityClassName }}
+      priorityClassName: {{ .Values.node.daemonset.priorityClassName }}
+    {{- end }}
       hostNetwork: true
       hostPID: true
       hostIPC: true

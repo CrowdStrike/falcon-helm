@@ -16,6 +16,17 @@ node:
     # additionals labels
     labels: {}
 
+    # Assign a PriorityClassName to pods if set
+    priorityClassName: ""
+
+    # Define resources requests and limits for single Pods.
+    # ref: https://kubernetes.io/docs/user-guide/compute-resources/
+    #
+    resources: {}
+      # requests:
+      #   cpu: 10m
+      #   memory: 30Mi
+
     tolerations:
     # We want to schedule on control plane nodes where they are accessible
     - key: "node-role.kubernetes.io/master"

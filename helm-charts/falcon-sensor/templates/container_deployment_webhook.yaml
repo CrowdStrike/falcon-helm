@@ -79,7 +79,7 @@ spec:
         runAsNonRoot: true
       {{- if .Values.container.image.pullSecrets.enable }}
       imagePullSecrets:
-        - name: {{ include "falcon-sensor.fullname" . }}-pull-secret
+        - name: {{ .Values.container.image.pullSecrets.name | default (printf "%s-pull-secret" (include "falcon-sensor.fullname" .)) }}
       {{- end }}
       {{- if .Values.container.azure.enabled }}
       initContainers:

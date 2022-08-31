@@ -27,6 +27,18 @@ node:
       effect: "NoSchedule"
     # Daemonsets automatically get additional tolerations: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
 
+    # https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
+    # Allow setting additional node selections e.g. processor type
+    # nodeAffinity:
+    #   requiredDuringSchedulingIgnoredDuringExecution:
+    #     nodeSelectorTerms:
+    #     - matchExpressions:
+    #       - key: kubernetes.io/arch
+    #         operator: In
+    #         values:
+    #         - amd64
+    nodeAffinity: {}
+    
     # Update strategy to role out new daemonset configuration to the nodes.
     updateStrategy: RollingUpdate
 

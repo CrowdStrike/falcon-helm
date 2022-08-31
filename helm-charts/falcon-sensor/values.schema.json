@@ -48,6 +48,9 @@
                         "tolerations": {
                             "type": "array"
                         },
+                        "nodeAffinity": {
+                            "type": "object"
+                        },
                         "updateStrategy": {
                             "type": "string",
                             "default": "RollingUpdate",

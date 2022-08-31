@@ -75,6 +75,13 @@ spec:
     {{- end }}  
       nodeSelector:
         kubernetes.io/os: linux
+    {{- if .Values.node.daemonset.nodeAffinity }}
+      affinity:
+        nodeAffinity:
+        {{- with .Values.node.daemonset.nodeAffinity }}
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+    {{- end }}  
       initContainers:
       - name: cleanup-opt-crowdstrike
         image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag }}"

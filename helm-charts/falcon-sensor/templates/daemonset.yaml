@@ -84,7 +84,7 @@ spec:
         {{- with .Values.node.daemonset.nodeAffinity }}
           {{- toYaml . | nindent 10 }}
         {{- end }}
-    {{- end }}  
+    {{- end }}
       initContainers:
       # This init container creates empty falconstore file so that when
       # it's mounted into the sensor-node-container, k8s would just use it

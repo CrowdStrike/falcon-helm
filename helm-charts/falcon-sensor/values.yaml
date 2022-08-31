@@ -38,7 +38,7 @@ node:
     #         values:
     #         - amd64
     nodeAffinity: {}
-    
+
     # Update strategy to role out new daemonset configuration to the nodes.
     updateStrategy: RollingUpdate
 

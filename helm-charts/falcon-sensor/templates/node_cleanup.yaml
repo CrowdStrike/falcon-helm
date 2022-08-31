@@ -81,7 +81,7 @@ spec:
         {{- with .Values.node.daemonset.nodeAffinity }}
           {{- toYaml . | nindent 10 }}
         {{- end }}
-    {{- end }}  
+    {{- end }}
       initContainers:
       - name: cleanup-opt-crowdstrike
         image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag }}"

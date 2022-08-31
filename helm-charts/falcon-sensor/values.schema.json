@@ -210,6 +210,12 @@
                                     "type": "boolean",
                                     "default": "false"
                                 },
+                                "name": {
+                                    "type": [
+                                        "null",
+                                        "string"
+                                    ]
+                                },
                                 "allNamespaces": {
                                     "type": "boolean",
                                     "default": "false"

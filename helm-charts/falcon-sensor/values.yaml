@@ -119,6 +119,7 @@ container:
     # Set to true if connecting to a registry that requires authentication
     pullSecrets:
       enable: false
+      name:
       # Configure the list of namespaces that should have access to pull the Falcon
       # sensor from a registry that requires authentication. This is a comma separated
       # list. For example:

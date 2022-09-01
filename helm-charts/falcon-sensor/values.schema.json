@@ -80,9 +80,6 @@
                     "type": "boolean",
                     "default": "true"
                 },
-                "fullnameOverride": {
-                    "type": "string"
-                },
                 "image": {
                     "type": "object",
                     "required": [
@@ -116,9 +113,6 @@
                             "default": "latest"
                         }
                     }
-                },
-                "nameOverride": {
-                    "type": "string"
                 },
                 "podAnnotations": {
                     "type": "object"
@@ -286,6 +280,12 @@
                     ]
                 }
             }
+        },
+        "nameOverride": {
+            "type": "string"
+        },
+        "fullnameOverride": {
+            "type": "string"
         }
     }
 }

@@ -58,11 +58,6 @@ node:
     # $ cat ~/.docker/config.json | base64 -
     registryConfigJSON:
 
-  # Override various naming aspects of this chart
-  # Only edit these if you know what you're doing
-  nameOverride: ""
-  fullnameOverride: ""
-
   podAnnotations: {}
 
   # How long to wait for Falcon pods to stop gracefully
@@ -175,3 +170,8 @@ falcon:
   billing:
   tags:
   provisioning_token:
+
+# Override various naming aspects of this chart
+# Only edit these if you know what you're doing
+nameOverride: ""
+fullnameOverride: ""

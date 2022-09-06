@@ -48,6 +48,9 @@
                         "tolerations": {
                             "type": "array"
                         },
+                        "nodeAffinity": {
+                            "type": "object"
+                        },
                         "updateStrategy": {
                             "type": "string",
                             "default": "RollingUpdate",
@@ -76,9 +79,6 @@
                 "enabled": {
                     "type": "boolean",
                     "default": "true"
-                },
-                "fullnameOverride": {
-                    "type": "string"
                 },
                 "image": {
                     "type": "object",
@@ -113,9 +113,6 @@
                             "default": "latest"
                         }
                     }
-                },
-                "nameOverride": {
-                    "type": "string"
                 },
                 "podAnnotations": {
                     "type": "object"
@@ -283,6 +280,12 @@
                     ]
                 }
             }
+        },
+        "nameOverride": {
+            "type": "string"
+        },
+        "fullnameOverride": {
+            "type": "string"
         }
     }
 }

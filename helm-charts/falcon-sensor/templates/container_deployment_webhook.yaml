@@ -82,6 +82,7 @@ spec:
         - name: {{ .Values.container.image.pullSecrets.name | default (printf "%s-pull-secret" (include "falcon-sensor.fullname" .)) }}
       {{- end }}
       {{- if .Values.container.azure.enabled }}
+      {{- if not .Values.container.gcp.enabled }}
       initContainers:
       - name: {{ include "falcon-sensor.name" . }}-init-container
         image: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}"
@@ -97,6 +98,24 @@ spec:
         - name: {{ include "falcon-sensor.name" . }}-azure-config
           mountPath: /run/azure.json
           readOnly: true
+      {{- end }}
+      {{- end }}
+      {{- if not .Values.container.azure.enabled }}
+      {{- if .Values.container.gcp.enabled }}
+      initContainers:
+      - name: {{ include "falcon-sensor.name" . }}-init-container
+        image: "gcr.io/google.com/cloudsdktool/cloud-sdk:alpine"
+        imagePullPolicy: "Always"
+        command: 
+        - '/bin/bash'
+        - '-c'
+        - |
+          curl -sS -H 'Metadata-Flavor: Google' 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token' --retry 30 --retry-connrefused --retry-max-time 60 --connect-timeout 3 --fail --retry-all-errors > /dev/null && exit 0 || echo 'Retry limit exceeded. Failed to wait for metadata server to be available. Check if the gke-metadata-server Pod in the kube-system namespace is healthy.' >&2; exit 1
+        securityContext:
+          runAsUser: 0
+          runAsNonRoot: false
+          privileged: false
+      {{- end }}
       {{- end }}
       containers:
       - name: {{ include "falcon-sensor.name" . }}-injector

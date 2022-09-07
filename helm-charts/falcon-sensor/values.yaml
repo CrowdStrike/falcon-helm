@@ -83,6 +83,10 @@ container:
     # Path to the Kubernetes Azure config file on worker nodes
     azureConfig: /etc/kubernetes/azure.json
 
+  # GCP GKE workload identity init container
+  gcp:
+    enabled: false
+
   # Disable injection for all Namespaces
   disableNSInjection: false
 

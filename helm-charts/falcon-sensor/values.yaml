@@ -151,6 +151,8 @@ container:
     # Overrides the image tag whose default is the chart appVersion.
     tag: "latest"
 
+  tolerations: []
+
   resources:
     # limits:
     #   cpu: 100m

@@ -130,6 +130,9 @@
                 "enabled"
             ],
             "properties": {
+                "tolerations": {
+                    "type": "array"
+                },
                 "azure": {
                     "type": "object",
                     "required": [

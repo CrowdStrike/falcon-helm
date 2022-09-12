@@ -158,6 +158,12 @@ spec:
           periodSeconds: 10
         resources:
             {{- toYaml .Values.resources | nindent 12 }}
+    {{- if .Values.container.tolerations }}    
+      tolerations:
+      {{- with .Values.container.tolerations }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+    {{- end }}
       volumes:
       - name: {{ include "falcon-sensor.name" . }}-tls-certs
         secret:

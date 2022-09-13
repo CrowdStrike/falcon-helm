@@ -14,6 +14,10 @@ push:
     enabled: false
     region:
     security_key:
+  cloudtrail_lake:
+    enabled: false
+    channel_arn:
+    region:
   gcp_security_command_center:
     enabled: false
   vmware_workspace_one:

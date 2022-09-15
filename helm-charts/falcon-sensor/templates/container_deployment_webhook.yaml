@@ -82,7 +82,6 @@ spec:
         - name: {{ .Values.container.image.pullSecrets.name | default (printf "%s-pull-secret" (include "falcon-sensor.fullname" .)) }}
       {{- end }}
       {{- if .Values.container.azure.enabled }}
-      {{- if not .Values.container.gcp.enabled }}
       initContainers:
       - name: {{ include "falcon-sensor.name" . }}-init-container
         image: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}"
@@ -99,8 +98,6 @@ spec:
           mountPath: /run/azure.json
           readOnly: true
       {{- end }}
-      {{- end }}
-      {{- if not .Values.container.azure.enabled }}
       {{- if .Values.container.gcp.enabled }}
       initContainers:
       - name: {{ include "falcon-sensor.name" . }}-init-container
@@ -115,7 +112,6 @@ spec:
           runAsUser: 0
           runAsNonRoot: false
           privileged: false
-      {{- end }}
       {{- end }}
       containers:
       - name: {{ include "falcon-sensor.name" . }}-injector

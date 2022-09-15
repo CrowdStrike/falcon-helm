@@ -130,6 +130,9 @@
                 "enabled"
             ],
             "properties": {
+                "tolerations": {
+                    "type": "array"
+                },
                 "azure": {
                     "type": "object",
                     "required": [
@@ -144,6 +147,18 @@
                         "azureConfig": {
                             "type": "string",
                             "default": "/etc/kubernetes/azure.json"
+                        }
+                    }
+                },
+                "gcp": {
+                    "type": "object",
+                    "required": [
+                        "enabled"
+                    ],
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": "false"
                         }
                     }
                 },

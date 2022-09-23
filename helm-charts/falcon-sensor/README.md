@@ -10,10 +10,10 @@ more.
 The Falcon Helm chart has been tested to deploy on the following Kubernetes distributions:
 
 * Amazon Elastic Kubernetes Service (EKS)
-* Azure Kubernetes Service (AKS) - Linux Nodes Only
-* Google Kubernetes Engine (GKE)
+* Azure Kubernetes Service (AKS)
+* Google Kubernetes Engine (GKE) - DaemonSet support for Ubuntu nodes only, Container sensor for GCOS nodes.
 * Rancher K3s
-* Red Hat OpenShift Container Platform 4.6+ - Falcon Container sensor only
+* Red Hat OpenShift Container Platform 4.6+
 
 # Dependencies
 
@@ -67,13 +67,28 @@ The following tables lists the Falcon Sensor configurable parameters and their d
 ### Deployment Considerations
 
 To ensure a successful deployment, you will want to ensure that:
-1. By default, the Helm Chart installs in the `default` namespace. Best practices for deploying to Kubernetes is to create a new namespace. This can be done by adding `-n falcon-system --create-namespace` to your `helm install` command.
+1. By default, the Helm Chart installs in the `default` namespace. Best practices for deploying to Kubernetes is to create a new namespace. This can be done by adding `-n falcon-system --create-namespace` to your `helm install` command. The namespace can be any name that you wish to use.
 1. The Falcon Linux Sensor (not the Falcon Container) should be used as the container image to deploy to Kubernetes nodes.
 1. You must be a cluster administrator to deploy Helm Charts to the cluster.
 1. When deploying the Falcon Linux Sensor (container image) to Kubernetes nodes, it is a requirement that the Falcon Sensor run as a privileged container so that the Sensor can properly work with the kernel. This is a requirement for any kernel module that gets deployed to any container-optimized operating system regardless of whether it is a security sensor, graphics card driver, etc.
 1. The Falcon Linux Sensor should be deployed to Kubernetes environments that allow node access or installation via a Kubernetes DaemonSet.
 1. The Falcon Linux Sensor will create `/opt/CrowdStrike` on the Kubernetes nodes. DO NOT DELETE this folder.
 1. CrowdStrike's Helm Chart is a project, not a product, and released to the community as a way to automate sensor deployment to kubernetes clusters. The upstream repository for this project is [https://github.com/CrowdStrike/falcon-helm](https://github.com/CrowdStrike/falcon-helm).
+
+### Pod Security Standards
+
+Starting with Kubernetes 1.25, Pod Security Standards will be enforced. Setting the appropriate Pod Security Standards policy needs to be performed by adding a label to the namespace. Run the following command replacing `my-existing-namespace` with the namespace that you have installed the falcon sensors e.g. `falcon-system`..
+```
+kubectl label --overwrite ns my-existing-namespace \
+  pod-security.kubernetes.io/enforce=restricted
+```
+
+If your cluster is OpenShift version 4.11+, you will need to add an additional label to disable added OpenShift functionality that will sync Pod Security Standard policies based on the default Security Context Constraints (SCC).
+Run the following command replacing `my-existing-namespace` with the namespace that you have installed the falcon sensors e.g. `falcon-system`.
+```
+kubectl label --overwrite ns my-existing-namespace \
+  security.openshift.io/scc.podSecurityLabelSync=false
+```
 
 ### Install CrowdStrike Falcon Helm Chart on Kubernetes Nodes
 

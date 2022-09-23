@@ -78,6 +78,13 @@ spec:
     {{- end }}  
       nodeSelector:
         kubernetes.io/os: linux
+    {{- if .Values.node.daemonset.nodeAffinity }}
+      affinity:
+        nodeAffinity:
+        {{- with .Values.node.daemonset.nodeAffinity }}
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+    {{- end }}
       initContainers:
       # This init container creates empty falconstore file so that when
       # it's mounted into the sensor-node-container, k8s would just use it

@@ -54,6 +54,9 @@
                         "resources": {
                             "type": "object"
                         },
+                        "nodeAffinity": {
+                            "type": "object"
+                        },
                         "updateStrategy": {
                             "type": "string",
                             "default": "RollingUpdate",
@@ -82,9 +85,6 @@
                 "enabled": {
                     "type": "boolean",
                     "default": "true"
-                },
-                "fullnameOverride": {
-                    "type": "string"
                 },
                 "image": {
                     "type": "object",
@@ -120,9 +120,6 @@
                         }
                     }
                 },
-                "nameOverride": {
-                    "type": "string"
-                },
                 "podAnnotations": {
                     "type": "object"
                 },
@@ -139,6 +136,9 @@
                 "enabled"
             ],
             "properties": {
+                "tolerations": {
+                    "type": "array"
+                },
                 "azure": {
                     "type": "object",
                     "required": [
@@ -153,6 +153,18 @@
                         "azureConfig": {
                             "type": "string",
                             "default": "/etc/kubernetes/azure.json"
+                        }
+                    }
+                },
+                "gcp": {
+                    "type": "object",
+                    "required": [
+                        "enabled"
+                    ],
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": "false"
                         }
                     }
                 },
@@ -215,6 +227,12 @@
                                 "enable": {
                                     "type": "boolean",
                                     "default": "false"
+                                },
+                                "name": {
+                                    "type": [
+                                        "null",
+                                        "string"
+                                    ]
                                 },
                                 "allNamespaces": {
                                     "type": "boolean",
@@ -283,6 +301,12 @@
                     ]
                 }
             }
+        },
+        "nameOverride": {
+            "type": "string"
+        },
+        "fullnameOverride": {
+            "type": "string"
         }
     }
 }

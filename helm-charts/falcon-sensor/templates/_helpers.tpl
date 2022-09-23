@@ -60,3 +60,27 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{- define "falcon-sensor.image" -}}
+{{- if .Values.node.enabled -}}
+{{- if .Values.node.image.digest -}}
+{{- if contains "sha256:" .Values.node.image.digest -}}
+{{- printf "%s@%s" .Values.node.image.repository .Values.node.image.digest -}}
+{{- else -}}
+{{- printf "%s@%s:%s" .Values.node.image.repository "sha256" .Values.node.image.digest -}}
+{{- end -}}
+{{- else -}}
+{{- printf "%s:%s" .Values.node.image.repository .Values.node.image.tag -}}
+{{- end -}}
+{{- else -}}
+{{- if .Values.container.image.digest -}}
+{{- if contains "sha256:" .Values.container.image.digest -}}
+{{- printf "%s@%s" .Values.container.image.repository .Values.container.image.digest -}}
+{{- else -}}
+{{- printf "%s@%s:%s" .Values.container.image.repository "sha256" .Values.container.image.digest -}}
+{{- end -}}
+{{- else -}}
+{{- printf "%s:%s" .Values.container.image.repository .Values.container.image.tag -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

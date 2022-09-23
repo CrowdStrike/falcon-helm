@@ -120,15 +120,16 @@ For more details please see the [falcon-helm](https://github.com/CrowdStrike/fal
 
 The following tables lists the more common configurable parameters of the chart and their default values for installing on a Kubernetes node.
 
-| Parameter                       | Description                                                          | Default                                                   |
-|:--------------------------------|:---------------------------------------------------------------------|:--------------------------------------------------------- |
-| `node.enabled`                  | Enable installation on the Kubernetes node                           | `true`                                                    |
-| `node.image.repository`         | Falcon Sensor Node registry/image name                               | `falcon-node-sensor`                                      |
-| `node.image.tag`                | The version of the official image to use                             | `latest`                                                  |
-| `node.image.pullPolicy`         | Policy for updating images                                           | `Always`                                                  |
-| `node.image.pullSecrets`        | Pull secrets for private registry                                    | None       (Conflicts with node.image.registryConfigJSON) |
-| `node.image.registryConfigJSON` | base64 encoded docker config json for the pull secret                | None       (Conflicts with node.image.pullSecrets)        |
-| `falcon.cid`                    | CrowdStrike Customer ID (CID)                                        | None       (Required)                                     |
+| Parameter                       | Description                                                          | Default                                                                |
+|:--------------------------------|:---------------------------------------------------------------------|:---------------------------------------------------------------------- |
+| `node.enabled`                  | Enable installation on the Kubernetes node                           | `true`                                                                 |
+| `node.image.repository`         | Falcon Sensor Node registry/image name                               | `falcon-node-sensor`                                                   |
+| `node.image.tag`                | The version of the official image to use                             | `latest`   (Use node.image.digest instead for security and production) |
+| `node.image.digest`             | The sha256 digest of the official image to use                       | None       (Use instead of the image tag for security and production)  |
+| `node.image.pullPolicy`         | Policy for updating images                                           | `Always`                                                               |
+| `node.image.pullSecrets`        | Pull secrets for private registry                                    | None       (Conflicts with node.image.registryConfigJSON)              |
+| `node.image.registryConfigJSON` | base64 encoded docker config json for the pull secret                | None       (Conflicts with node.image.pullSecrets)                     |
+| `falcon.cid`                    | CrowdStrike Customer ID (CID)                                        | None       (Required)                                                  |
 
 `falcon.cid` and `node.image.repository` are required values.
 
@@ -194,7 +195,8 @@ The following tables lists the more common configurable parameters of the chart 
 | `container.certExpiration`                       | Certificate validity duration in number of days                             | `3650`                       |
 | `container.registryCertSecret`                   | Name of generic Secret with additional CAs for external registries          | None                         |
 | `container.image.repository`                     | Falcon Sensor Node registry/image name                                      | `falcon-sensor`              |
-| `container.image.tag`                            | The version of the official image to use                                    | `latest`                     |
+| `container.image.tag`                            | The version of the official image to use.                                   | `latest` (Use container.image.digest instead for security and production.) |
+| `container.image.digest`                         | The sha256 digest of the official image to use.                             | None     (Use instead of image tag for security and production.)           |
 | `container.image.pullPolicy`                     | Policy for updating images                                                  | `Always`                     |
 | `container.image.pullSecrets.enable`             | Enable pull secrets for private registry                                    | `false`                      |
 | `container.image.pullSecrets.namespaces`         | List of Namespaces to pull the Falcon sensor from an authenticated registry | None                         |

@@ -80,7 +80,7 @@ To ensure a successful deployment, you will want to ensure that:
 Starting with Kubernetes 1.25, Pod Security Standards will be enforced. Setting the appropriate Pod Security Standards policy needs to be performed by adding a label to the namespace. Run the following command replacing `my-existing-namespace` with the namespace that you have installed the falcon sensors e.g. `falcon-system`..
 ```
 kubectl label --overwrite ns my-existing-namespace \
-  pod-security.kubernetes.io/enforce=restricted
+  pod-security.kubernetes.io/enforce=privileged
 ```
 
 If your cluster is OpenShift version 4.11+, you will need to add an additional label to disable added OpenShift functionality that will sync Pod Security Standard policies based on the default Security Context Constraints (SCC).
@@ -88,6 +88,12 @@ Run the following command replacing `my-existing-namespace` with the namespace t
 ```
 kubectl label --overwrite ns my-existing-namespace \
   security.openshift.io/scc.podSecurityLabelSync=false
+```
+
+If desired to silence the warning and change the auditing level for the Pod Security Standard, add the following labels
+```
+kubectl label ns --overwrite my-existing-namespace pod-security.kubernetes.io/audit=privileged
+kubectl label ns --overwrite my-existing-namespace pod-security.kubernetes.io/warn=privileged
 ```
 
 ### Install CrowdStrike Falcon Helm Chart on Kubernetes Nodes

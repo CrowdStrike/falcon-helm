@@ -111,6 +111,13 @@
                         "tag": {
                             "type": "string",
                             "default": "latest"
+                        },
+                        "digest":{
+                            "type": [
+                                "null",
+                                "string"
+                            ],
+                            "pattern": "^sha256:[0-9a-f]{64}$"
                         }
                     }
                 },
@@ -252,6 +259,13 @@
                         "tag": {
                             "type": "string",
                             "default": "latest"
+                        },
+                        "digest":{
+                            "type": [
+                                "null",
+                                "string"
+                            ],
+                            "pattern": "^sha256:[0-9a-f]{64}$"
                         }
                     }
                 },

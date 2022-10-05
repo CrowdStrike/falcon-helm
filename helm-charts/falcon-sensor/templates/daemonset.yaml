@@ -92,7 +92,7 @@ spec:
       # a file volume ensures that AID is preserved across container
       # restarts.
       - name: init-falconstore
-        image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag }}"
+        image: "{{ include "falcon-sensor.image" . }}"
         imagePullPolicy: "{{ .Values.node.image.pullPolicy }}"
         command: ["/bin/bash"]
         args: [-c, 'mkdir -p /opt/CrowdStrike && touch /opt/CrowdStrike/falconstore']
@@ -101,7 +101,7 @@ spec:
             mountPath: /opt
       containers:
       - name: falcon-node-sensor
-        image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag }}"
+        image: "{{ include "falcon-sensor.image" . }}"
         imagePullPolicy: "{{ .Values.node.image.pullPolicy }}"
         # Various pod security context settings. Bear in mind that many of these have an impact
         # on the Falcon Sensor working correctly.

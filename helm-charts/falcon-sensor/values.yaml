@@ -49,8 +49,14 @@ node:
     repository: falcon-node-sensor
     pullPolicy: Always
     pullSecrets:
-    # Overrides the image tag whose default is the chart appVersion.
+    # Overrides the image tag. In general, tags should not be used (including semver tags or `latest`). This variable is provided for those
+    # who have yet to move off of using tags. The sha256 digest should be used in place of tags for increased security and image immutability.
     tag: "latest"
+    # Setting a digest will override any tag and should be used instead of tags.
+    #
+    # Example digest variable configuration:
+    # digest: sha256:ffdc91f66ef8570bd7612cf19145563a787f552656f5eec43cd80ef9caca0398
+    digest:
 
     # Value must be base64. This setting conflicts with node.image.pullSecrets
     # The base64 encoded string of the docker config json for the pull secret can be
@@ -148,8 +154,14 @@ container:
       # $ cat ~/.docker/config.json | base64 -
       registryConfigJSON:
 
-    # Overrides the image tag whose default is the chart appVersion.
+    # Overrides the image tag. In general, tags should not be used (including semver tags or `latest`). This variable is provided for those
+    # who have yet to move off of using tags. The sha256 digest should be used in place of tags for increased security and image immutability.
     tag: "latest"
+    # Setting a digest will override any tag and should be used instead of tags.
+    #
+    # Example digest variable configuration:
+    # digest: sha256:ffdc91f66ef8570bd7612cf19145563a787f552656f5eec43cd80ef9caca0398
+    digest:
 
   tolerations: []
 

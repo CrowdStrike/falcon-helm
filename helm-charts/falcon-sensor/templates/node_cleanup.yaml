@@ -84,7 +84,7 @@ spec:
     {{- end }}
       initContainers:
       - name: cleanup-opt-crowdstrike
-        image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag }}"
+        image: "{{ include "falcon-sensor.image" . }}"
         imagePullPolicy: "{{ .Values.node.image.pullPolicy }}"
         command: ["rm", "-rf", "/opt/CrowdStrike"]
         volumeMounts:
@@ -97,7 +97,7 @@ spec:
           allowPrivilegeEscalation: true
       containers:
       - name: cleanup-sleep
-        image: "{{ .Values.node.image.repository }}:{{ .Values.node.image.tag }}"
+        image: "{{ include "falcon-sensor.image" . }}"
         imagePullPolicy: "{{ .Values.node.image.pullPolicy }}"
         command: ["sleep", "10"]
         securityContext:

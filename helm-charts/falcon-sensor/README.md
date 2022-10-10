@@ -56,6 +56,7 @@ The following tables lists the Falcon Sensor configurable parameters and their d
 | `falcon.app`                | App Proxy Port (APP)                                  | None                  |
 | `falcon.trace`              | Set trace level. (`none`,`err`,`warn`,`info`,`debug`) | `none`                |
 | `falcon.feature`            | Sensor Feature options                                | None                  |
+| `falcon.backend`            | Choose sensor backend (`auto`,`kernel`,`bpf`)         | None                  |
 | `falcon.message_log`        | Enable message log (true/false)                       | None                  |
 | `falcon.billing`            | Utilize default or metered billing                    | None                  |
 | `falcon.tags`               | Comma separated list of tags for sensor grouping      | None                  |

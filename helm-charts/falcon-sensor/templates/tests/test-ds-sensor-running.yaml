@@ -1,0 +1,37 @@
+{{- if .Values.node.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "falcon-sensor.fullname" . }}-test-ds-sensor-running"
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "falcon-sensor.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: kubectl
+      image: docker.io/bitnami/kubectl
+      command:
+      - /bin/sh
+      - -c
+      - |
+        echo "Waiting 10 seconds to allow pod time to initialize before running test"
+        sleep 10
+        KUBECMD=$(kubectl get pods -n "{{ .Release.Namespace }}" -l "app.kubernetes.io/component=kernel_sensor" --field-selector=status.phase!=Running --no-headers 2>&1)
+        if ! echo "${KUBECMD}" | grep -q "No resources found"; then
+            echo "[\033[0;31mFAIL\033[0m]: Not all sensor pods are running"
+            echo "${KUBECMD}"
+            exit 1
+        else
+            echo "[\033[0;32mOK\033[0m]: Sensor pods are running"
+            exit 0
+        fi
+      securityContext:
+        runAsUser: 0
+        privileged: true
+        readOnlyRootFilesystem: false
+        allowPrivilegeEscalation: true
+  serviceAccountName: {{ .Values.serviceAccount.name }}
+  restartPolicy: Never
+{{- end -}}

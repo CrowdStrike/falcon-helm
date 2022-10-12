@@ -1,5 +1,7 @@
 target-branch: main
 chart-dirs: helm-charts
 validate-maintainers: false
+validate-chart-schema: true
+validate-yaml: true
 namespace: default
-release-label: app
+release-label: "app.kubernetes.io/instance"

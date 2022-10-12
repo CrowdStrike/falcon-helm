@@ -1,0 +1,70 @@
+name: Lint and Test Falcon Sidecar Sensor
+
+on:
+  push:
+    paths:
+      - 'helm-charts/falcon-sensor/**'
+      - '.github/workflows/helm-sidecar-sensor.yaml'
+
+  pull_request_target:
+    types: [ labeled ]
+    paths:
+      - 'helm-charts/falcon-sensor/**'
+      - '.github/workflows/helm-sidecar-sensor.yaml'
+
+jobs:
+  lint-test:
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request_target' &&
+      github.event.label.name == 'ok-to-test')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+        if: github.event_name != 'pull_request_target'
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{github.event.pull_request.head.sha}}
+          fetch-depth: 0
+        if: github.event_name == 'pull_request_target'
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.8.1
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          check-latest: true
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.3.1
+
+      - name: Run chart-testing (list-changed)
+        id: list-changed
+        run: |
+          changed=$(ct list-changed --config tests/ct.yaml)
+          if [[ -n "$changed" ]]; then
+            echo "::set-output name=changed::true"
+          fi
+
+      - name: Run chart-testing (lint)
+        run: ct lint --config tests/ct.yaml
+
+      - name: Configure Sidecar Chart values
+        run: |
+          rm -f helm-charts/falcon-sensor/ci/cid-values.yaml
+          cp tests/sidecar-values.yaml helm-charts/falcon-sensor/ci/sidecar-values.yaml
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.4.0
+        if: steps.list-changed.outputs.changed == 'true'
+
+      - name: Run chart-testing (install) using Sidecar sensor
+        run: ct install --config tests/ct.yaml --helm-extra-set-args "--set container.image.tag=${{ secrets.FALCON_SIDECAR_TAG }} --set container.image.pullSecrets.registryConfigJSON=${{ secrets.FALCON_REGISTRY_TOKEN }} --set falcon.cid=${{ secrets.FALCON_CID }}"

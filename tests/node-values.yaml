@@ -1,0 +1,8 @@
+falcon:
+  trace: none
+node:
+  enabled: true
+  image:
+    repository: registry.crowdstrike.com/falcon-sensor/us-2/release/falcon-sensor
+container:
+  enabled: false

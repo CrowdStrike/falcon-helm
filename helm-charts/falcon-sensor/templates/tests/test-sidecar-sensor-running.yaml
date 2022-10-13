@@ -1,0 +1,59 @@
+{{- if .Values.container.enabled }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: busybox
+  namespace: busybox
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "falcon-sensor.fullname" . }}-test-sidecar-sensor-running"
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "falcon-sensor.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: kubectl
+      image: docker.io/bitnami/kubectl
+      command:
+      - /bin/sh
+      - -c
+      - |
+        echo "Waiting 10 seconds to allow pod time to initialize before running test"
+        sleep 10
+        KUBECMD=$(kubectl get pods -n "{{ .Release.Namespace }}" -l "app.kubernetes.io/component=container_sensor" --field-selector=status.phase!=Running --no-headers 2>&1)
+        if ! echo "${KUBECMD}" | grep -q "No resources found"; then
+            echo "[\033[0;31mFAIL\033[0m]: Injector pod is NOT running"
+            echo "${KUBECMD}"
+            exit 1
+        fi
+        
+        echo "[\033[0;32mOK\033[0m]: Injector pod is running"
+
+        echo "Running test pod to verify sidecar injection"
+        kubectl run busybox -n busybox --image=busybox --restart=Never --command sleep 120
+
+        echo "Waiting 15 seconds to allow pod time to initialize before running test"
+        sleep 15
+        KUBECMD2=$(kubectl get pods -n busybox --field-selector=status.phase!=Running -o jsonpath="{.items[*].spec.containers[*].name}")
+        if echo "${KUBECMD2}" | grep -q "crowdstrike-falcon-container"; then
+            echo "[\033[0;31mFAIL\033[0m]: crowdstrike-falcon-container sidecar container is NOT injected"
+            echo "${KUBECMD2}"
+            exit 1
+        fi
+        
+        echo "[\033[0;32mOK\033[0m]: crowdstrike-falcon-container sidecar container is injected"
+        exit 0
+        
+      securityContext:
+        runAsUser: 0
+        privileged: true
+        readOnlyRootFilesystem: false
+        allowPrivilegeEscalation: true
+  serviceAccountName: {{ .Values.serviceAccount.name }}
+  restartPolicy: Never
+{{- end -}}

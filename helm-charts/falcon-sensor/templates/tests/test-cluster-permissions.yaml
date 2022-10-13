@@ -1,0 +1,38 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "falcon-sensor.fullname" . }}-test-access-role
+  labels:
+    {{- include "falcon-sensor.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - namespaces
+  verbs:
+  - get
+  - list
+  - create
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "falcon-sensor.fullname" . }}-test-access-binding
+  labels:
+    {{- include "falcon-sensor.labels" . | nindent 4 }}
+subjects:
+{{- if .Values.container.enabled }}
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: system:authenticated
+{{- end }}
+- kind: ServiceAccount
+  name: {{ .Values.serviceAccount.name }}
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ include "falcon-sensor.fullname" . }}-test-access-role
+  apiGroup: rbac.authorization.k8s.io

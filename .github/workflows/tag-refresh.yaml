@@ -39,11 +39,11 @@ jobs:
 
           if [ "${FALCON_NODE_TAG}" != "${NODE_TAG}" ]; then
             echo "Updating FALCON_NODE_TAG"
-            gh secret set FALCON_NODE_TAG --body "${NODE_TAG}"
+            gh secret set -a actions FALCON_NODE_TAG --body "${NODE_TAG}"
           fi
 
           if [ "${FALCON_SIDECAR_TAG}" != "${SIDECAR_TAG}" ]; then
             echo "Updating FALCON_SIDECAR_TAG"
-            gh secret set FALCON_SIDECAR_TAG --body "${SIDECAR_TAG}"
+            gh secret set -a actions FALCON_SIDECAR_TAG --body "${SIDECAR_TAG}"
           fi
           exit 0

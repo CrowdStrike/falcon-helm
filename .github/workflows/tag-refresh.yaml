@@ -1,6 +1,7 @@
 name: Refresh Container Image Tags
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: "0 6 * * *"
 

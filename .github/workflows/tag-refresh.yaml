@@ -20,20 +20,24 @@ jobs:
         run: |
           FALCON_CID=$(echo "${FALCON_CID}" | cut -d'-' -f1 | tr '[:upper:]' '[:lower:]')
 
+          echo "Connecting to Falcon Cloud"
           BEARER=$(curl --data "client_id=${FALCON_CLIENT_ID}&client_secret=${FALCON_CLIENT_SECRET}" \
           --request POST --silent https://api.us-2.crowdstrike.com/oauth2/token | jq -r '.access_token')
 
           ART_PASSWORD=$(echo "authorization: Bearer ${BEARER}" | curl -s -L \
             https://api.us-2.crowdstrike.com/container-security/entities/image-registry-credentials/v1 -H @- | jq -r '.resources[].token')
 
+          echo "Connecting to CrowdStrike Registry and getting container tags"
           echo "$ART_PASSWORD" | skopeo login --username "fc-${FALCON_CID}" registry.crowdstrike.com --password-stdin
           NODE_TAG=$(skopeo list-tags docker://registry.crowdstrike.com/falcon-sensor/us-2/release/falcon-sensor | jq -r '.Tags[]' | tail -1)
           SIDECAR_TAG=$(skopeo list-tags docker://registry.crowdstrike.com/falcon-container/us-2/release/falcon-sensor | jq -r '.Tags[]' | tail -1)
 
           if [ "${FALCON_NODE_TAG}" != "${NODE_TAG}" ]; then
+            echo "Updating FALCON_NODE_TAG"
             gh secret set FALCON_NODE_TAG --body "${NODE_TAG}"
           fi
 
           if [ "${FALCON_SIDECAR_TAG}" != "${SIDECAR_TAG}" ]; then
+            echo "Updating FALCON_SIDECAR_TAG"
             gh secret set FALCON_SIDECAR_TAG --body "${SIDECAR_TAG}"
           fi

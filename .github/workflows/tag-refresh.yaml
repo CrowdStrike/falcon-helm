@@ -16,6 +16,7 @@ jobs:
           FALCON_CID: ${{ secrets.FALCON_CID }}
           FALCON_NODE_TAG: ${{ secrets.FALCON_NODE_TAG }}
           FALCON_SIDECAR_TAG: ${{ secrets.FALCON_SIDECAR_TAG }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           FALCON_CID=$(echo "${FALCON_CID}" | cut -d'-' -f1 | tr '[:upper:]' '[:lower:]')
 

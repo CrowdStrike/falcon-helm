@@ -9,7 +9,12 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     steps:
-      - name: Refresh the tags
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Refreshing the tags
         env:
           FALCON_CLIENT_ID: ${{ secrets.FALCON_CLIENT_ID }}
           FALCON_CLIENT_SECRET: ${{ secrets.FALCON_CLIENT_SECRET }}

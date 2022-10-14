@@ -9,7 +9,7 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Refresh the tags
         env:
           FALCON_CLIENT_ID: ${{ secrets.FALCON_CLIENT_ID }}
           FALCON_CLIENT_SECRET: ${{ secrets.FALCON_CLIENT_SECRET }}
@@ -41,3 +41,4 @@ jobs:
             echo "Updating FALCON_SIDECAR_TAG"
             gh secret set FALCON_SIDECAR_TAG --body "${SIDECAR_TAG}"
           fi
+          exit 0

@@ -131,6 +131,9 @@ spec:
             path: /opt/CrowdStrike/falconstore
       serviceAccountName: {{ .Values.serviceAccount.name }}
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
+    {{- if .Values.node.daemonset.priorityClassName }}
+      priorityClassName: {{ .Values.node.daemonset.priorityClassName }}
+    {{- end }}
       hostNetwork: true
       hostPID: true
       hostIPC: true

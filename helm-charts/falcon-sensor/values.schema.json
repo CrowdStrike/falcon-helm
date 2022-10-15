@@ -51,6 +51,9 @@
                         "nodeAffinity": {
                             "type": "object"
                         },
+                        "priorityClassName": {
+                            "type": "string"
+                        },
                         "updateStrategy": {
                             "type": "string",
                             "default": "RollingUpdate",

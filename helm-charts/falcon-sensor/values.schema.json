@@ -20,7 +20,7 @@
                         "null",
                         "string"
                     ],
-                    "pattern": "^(|kernel|bpf)$"
+                    "pattern": "^(kernel|bpf)$"
                 },
                 "trace": {
                     "type": [

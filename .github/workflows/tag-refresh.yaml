@@ -1,0 +1,48 @@
+name: Refresh Container Image Tags
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Refreshing the tags
+        env:
+          FALCON_CLIENT_ID: ${{ secrets.FALCON_CLIENT_ID }}
+          FALCON_CLIENT_SECRET: ${{ secrets.FALCON_CLIENT_SECRET }}
+          FALCON_CID: ${{ secrets.FALCON_CID }}
+          FALCON_NODE_TAG: ${{ secrets.FALCON_NODE_TAG }}
+          FALCON_SIDECAR_TAG: ${{ secrets.FALCON_SIDECAR_TAG }}
+          GITHUB_TOKEN: ${{ secrets.FALCON_TOKEN_REFRESH }}
+        run: |
+          FALCON_CID=$(echo "${FALCON_CID}" | cut -d'-' -f1 | tr '[:upper:]' '[:lower:]')
+
+          echo "Connecting to Falcon Cloud"
+          BEARER=$(curl --data "client_id=${FALCON_CLIENT_ID}&client_secret=${FALCON_CLIENT_SECRET}" \
+          --request POST --silent https://api.us-2.crowdstrike.com/oauth2/token | jq -r '.access_token')
+
+          ART_PASSWORD=$(echo "authorization: Bearer ${BEARER}" | curl -s -L \
+            https://api.us-2.crowdstrike.com/container-security/entities/image-registry-credentials/v1 -H @- | jq -r '.resources[].token')
+
+          echo "Connecting to CrowdStrike Registry and getting container tags"
+          echo "$ART_PASSWORD" | skopeo login --username "fc-${FALCON_CID}" registry.crowdstrike.com --password-stdin
+          NODE_TAG=$(skopeo list-tags docker://registry.crowdstrike.com/falcon-sensor/us-2/release/falcon-sensor | jq -r '.Tags[]' | tail -1)
+          SIDECAR_TAG=$(skopeo list-tags docker://registry.crowdstrike.com/falcon-container/us-2/release/falcon-sensor | jq -r '.Tags[]' | tail -1)
+
+          if [ "${FALCON_NODE_TAG}" != "${NODE_TAG}" ]; then
+            echo "Updating FALCON_NODE_TAG"
+            gh secret set -a actions FALCON_NODE_TAG --body "${NODE_TAG}"
+          fi
+
+          if [ "${FALCON_SIDECAR_TAG}" != "${SIDECAR_TAG}" ]; then
+            echo "Updating FALCON_SIDECAR_TAG"
+            gh secret set -a actions FALCON_SIDECAR_TAG --body "${SIDECAR_TAG}"
+          fi
+          exit 0

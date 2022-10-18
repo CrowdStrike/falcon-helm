@@ -16,6 +16,9 @@ node:
     # additionals labels
     labels: {}
 
+    # Assign a PriorityClassName to pods if set
+    priorityClassName: ""
+
     tolerations:
     # We want to schedule on control plane nodes where they are accessible
     - key: "node-role.kubernetes.io/master"

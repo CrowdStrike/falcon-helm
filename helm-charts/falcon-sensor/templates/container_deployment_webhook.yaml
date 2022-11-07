@@ -37,6 +37,17 @@ metadata:
     app.kubernetes.io/component: "container_sensor"
     crowdstrike.com/provider: crowdstrike
     helm.sh/chart: {{ include "falcon-sensor.chart" . }}
+    {{- if .Values.container.labels }}
+    {{- range $key, $value := .Values.container.labels }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    {{- end }}
+  {{- if .Values.container.annotations }}
+  annotations:
+    {{- range $key, $value := .Values.container.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
 spec:
   replicas: {{ .Values.container.replicas }}
   selector:
@@ -55,9 +66,21 @@ spec:
         app.kubernetes.io/component: "container_sensor"
         crowdstrike.com/provider: crowdstrike
         crowdstrike.com/component: crowdstrike-falcon-injector
-    {{- if .Values.container.autoDeploymentUpdate }}
+        {{- if .Values.container.labels }}
+        {{- range $key, $value := .Values.container.labels }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
+    {{- if or (.Values.container.autoDeploymentUpdate) (.Values.container.podAnnotations) }}
       annotations:
+        {{- if .Values.container.autoDeploymentUpdate }}
         rollme: {{ randAlphaNum 5 | quote }}
+        {{- end }}
+        {{- if .Values.container.podAnnotations }}
+        {{- range $key, $value := .Values.container.podAnnotations }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
     {{- end }}
     spec:
       affinity:

@@ -143,6 +143,15 @@
                 "tolerations": {
                     "type": "array"
                 },
+                "annotations": {
+                    "type": "object"
+                },
+                "podAnnotations": {
+                    "type": "object"
+                },
+                "labels": {
+                    "type": "object"
+                },
                 "azure": {
                     "type": "object",
                     "required": [

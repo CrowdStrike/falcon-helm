@@ -30,6 +30,15 @@ node:
       effect: "NoSchedule"
     # Daemonsets automatically get additional tolerations: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
 
+    resources: {}
+      # limits:
+      #   cpu: 100m
+      #   memory: 128Mi
+      # requests:
+      #   cpu: 10m
+      #   memory: 20Mi
+
+
     # https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
     # Allow setting additional node selections e.g. processor type
     # nodeAffinity:

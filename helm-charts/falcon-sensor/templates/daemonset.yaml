@@ -118,6 +118,8 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "falcon-sensor.fullname" . }}-config
+        resources:
+            {{- toYaml .Values.node.daemonset.resources | nindent 12 }}
         volumeMounts:
           - name: falconstore
             mountPath: /opt/CrowdStrike/falconstore

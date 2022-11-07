@@ -153,7 +153,7 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 10
         resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+          {{- toYaml .Values.container.resources | nindent 10 }}
     {{- if .Values.container.tolerations }}    
       tolerations:
       {{- with .Values.container.tolerations }}

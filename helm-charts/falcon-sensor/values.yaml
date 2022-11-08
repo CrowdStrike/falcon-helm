@@ -175,6 +175,15 @@ container:
     # digest: sha256:ffdc91f66ef8570bd7612cf19145563a787f552656f5eec43cd80ef9caca0398
     digest:
 
+  # Annotations to apply to the injector deployment
+  annotations: {}
+
+  # additionals labels to apply to the injector deployment
+  labels: {}
+
+  # Annotations to apply to the injector deployment
+  podAnnotations: {}
+
   tolerations: []
 
   resources:

@@ -95,7 +95,7 @@ spec:
         image: "{{ include "falcon-sensor.image" . }}"
         imagePullPolicy: "{{ .Values.node.image.pullPolicy }}"
         command: ["/bin/bash"]
-        args: [-c, 'mkdir -p /opt/CrowdStrike && touch /opt/CrowdStrike/falconstore']
+        args: [-c, 'if [ -d "/opt/CrowdStrike/falconstore" ] ; then echo "Re-creating /opt/CrowdStrike/falconstore as it is a directory instead of a file"; rm -rf /opt/CrowdStrike/falconstore; fi; mkdir -p /opt/CrowdStrike && touch /opt/CrowdStrike/falconstore']
         volumeMounts:
           - name: falconstore-dir
             mountPath: /opt

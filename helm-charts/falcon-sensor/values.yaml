@@ -200,7 +200,7 @@ falcon:
   app:
   trace: none
   feature:
-  backend:
+  backend: kernel
   message_log:
   billing:
   tags:

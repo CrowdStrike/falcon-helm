@@ -6,3 +6,5 @@ node:
     repository: registry.crowdstrike.com/falcon-sensor/us-2/release/falcon-sensor
 container:
   enabled: false
+testing:
+  enabled: true

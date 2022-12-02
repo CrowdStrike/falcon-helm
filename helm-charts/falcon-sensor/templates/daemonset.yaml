@@ -99,6 +99,11 @@ spec:
         volumeMounts:
           - name: falconstore-dir
             mountPath: /opt
+        securityContext:
+          runAsUser: 0
+          privileged: true
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: true
       containers:
       - name: falcon-node-sensor
         image: "{{ include "falcon-sensor.image" . }}"

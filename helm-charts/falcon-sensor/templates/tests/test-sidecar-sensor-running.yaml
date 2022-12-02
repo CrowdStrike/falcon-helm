@@ -1,3 +1,4 @@
+{{- if .Values.testing.enabled -}}
 {{- if .Values.container.enabled }}
 ---
 apiVersion: v1
@@ -56,4 +57,5 @@ spec:
         allowPrivilegeEscalation: true
   serviceAccountName: {{ .Values.serviceAccount.name }}
   restartPolicy: Never
+{{- end -}}
 {{- end -}}

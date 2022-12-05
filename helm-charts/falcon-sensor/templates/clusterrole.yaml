@@ -35,7 +35,7 @@ rules:
   - securitycontextconstraints
   resourceNames:
 {{- if .Values.node.enabled }}
-  - {{ include "falcon-sensor.fullname" . }}-node
+  - privileged
 {{- end }}
   {{- if .Values.container.enabled }}
   - {{ include "falcon-sensor.fullname" . }}-container

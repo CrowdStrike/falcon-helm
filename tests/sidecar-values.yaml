@@ -16,3 +16,5 @@ container:
       requests:
         cpu: 50m
         memory: 128Mi
+testing:
+  enabled: true

@@ -25,10 +25,11 @@ The Falcon Helm chart has been tested to deploy on the following Kubernetes dist
 
 ## Helm Chart Support for Falcon Sensor Versions
 
-| Helm chart Version | Falcon Sensor Version |
-|:-------------------|:----------------------|
-| `<= 1.6.x`         | `<= 6.34.x`           |
-| `>= 1.7.x`         | `>= 6.35.x`           |
+| Helm chart Version      | Falcon Sensor Version             |
+|:------------------------|:----------------------------------|
+| `<= 1.6.x`              | `<= 6.34.x`                       |
+| `>= 1.7.x && <= 1.17.x` | `>= 6.35.x && < 6.49.x`           |
+| `>= 1.18.x`             | `>= 6.49.x`                       |
 
 # Installation
 

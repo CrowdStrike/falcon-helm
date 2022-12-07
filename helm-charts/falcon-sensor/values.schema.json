@@ -115,7 +115,7 @@
                             "type": "string",
                             "default": "latest"
                         },
-                        "digest":{
+                        "digest": {
                             "type": [
                                 "null",
                                 "string"
@@ -272,7 +272,7 @@
                             "type": "string",
                             "default": "latest"
                         },
-                        "digest":{
+                        "digest": {
                             "type": [
                                 "null",
                                 "string"
@@ -319,6 +319,15 @@
                             "iam.gke.io/gcp-service-account": "my-service-account@my-project.iam.gserviceaccount.com"
                         }
                     ]
+                }
+            }
+        },
+        "testing": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "default": "false"
                 }
             }
         },

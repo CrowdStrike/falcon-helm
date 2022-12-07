@@ -1,3 +1,4 @@
+{{- if .Values.testing.enabled -}}
 {{- if .Values.node.enabled }}
 apiVersion: v1
 kind: Pod
@@ -34,4 +35,5 @@ spec:
         allowPrivilegeEscalation: true
   serviceAccountName: {{ .Values.serviceAccount.name }}
   restartPolicy: Never
+{{- end -}}
 {{- end -}}

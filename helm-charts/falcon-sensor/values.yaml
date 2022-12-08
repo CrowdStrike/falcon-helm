@@ -28,6 +28,10 @@ node:
       - key: "node-role.kubernetes.io/control-plane"
         operator: "Exists"
         effect: "NoSchedule"
+      - key: "kubernetes.azure.com/scalesetpriority"
+        operator: "Equal"
+        value: "spot"
+        effect: "NoSchedule"
       # Daemonsets automatically get additional tolerations: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
 
     # https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
@@ -94,6 +98,10 @@ container:
 
   # GCP GKE workload identity init container
   gcp:
+    enabled: false
+
+  # Enable Network Policies within the Injector namespace to allow ingress
+  networkPolicy:
     enabled: false
 
   # Disable injection for all Namespaces

@@ -25,10 +25,11 @@ The Falcon Helm chart has been tested to deploy on the following Kubernetes dist
 
 ## Helm Chart Support for Falcon Sensor Versions
 
-| Helm chart Version | Falcon Sensor Version |
-|:-------------------|:----------------------|
-| `<= 1.6.x`         | `<= 6.34.x`           |
-| `>= 1.7.x`         | `>= 6.35.x`           |
+| Helm chart Version      | Falcon Sensor Version             |
+|:------------------------|:----------------------------------|
+| `<= 1.6.x`              | `<= 6.34.x`                       |
+| `>= 1.7.x && <= 1.17.x` | `>= 6.35.x && < 6.49.x`           |
+| `>= 1.18.x`             | `>= 6.49.x`                       |
 
 # Installation
 
@@ -48,18 +49,19 @@ helm repo update
 
 The following tables lists the Falcon Sensor configurable parameters and their default values.
 
-| Parameter                   | Description                                           | Default               |
-|:----------------------------|:------------------------------------------------------|:----------------------|
-| `falcon.cid`                | CrowdStrike Customer ID (CID)                         | None       (Required) |
-| `falcon.apd`                | App Proxy Disable (APD)                               | None                  |
-| `falcon.aph`                | App Proxy Hostname (APH)                              | None                  |
-| `falcon.app`                | App Proxy Port (APP)                                  | None                  |
-| `falcon.trace`              | Set trace level. (`none`,`err`,`warn`,`info`,`debug`) | `none`                |
-| `falcon.feature`            | Sensor Feature options                                | None                  |
-| `falcon.message_log`        | Enable message log (true/false)                       | None                  |
-| `falcon.billing`            | Utilize default or metered billing                    | None                  |
-| `falcon.tags`               | Comma separated list of tags for sensor grouping      | None                  |
-| `falcon.provisioning_token` | Provisioning token value                              | None                  |
+| Parameter                   | Description                                               | Default               |
+|:----------------------------|:----------------------------------------------------------|:----------------------|
+| `falcon.cid`                | CrowdStrike Customer ID (CID)                             | None       (Required) |
+| `falcon.apd`                | App Proxy Disable (APD)                                   | None                  |
+| `falcon.aph`                | App Proxy Hostname (APH)                                  | None                  |
+| `falcon.app`                | App Proxy Port (APP)                                      | None                  |
+| `falcon.trace`              | Set trace level. (`none`,`err`,`warn`,`info`,`debug`)     | `none`                |
+| `falcon.feature`            | Sensor Feature options                                    | None                  |
+| `falcon.backend`            | Choose sensor backend (`kernel`,`bpf`). Sensor 6.49+ only | None                  |
+| `falcon.message_log`        | Enable message log (true/false)                           | None                  |
+| `falcon.billing`            | Utilize default or metered billing                        | None                  |
+| `falcon.tags`               | Comma separated list of tags for sensor grouping          | None                  |
+| `falcon.provisioning_token` | Provisioning token value                                  | None                  |
 
 
 ## Installing on Kubernetes Cluster Nodes

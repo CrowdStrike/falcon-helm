@@ -23,18 +23,16 @@ spec:
   - SYS_CHROOT
   - AUDIT_WRITE
   - CHOWN
-  - DAC_OVERRIDE
   - FOWNER
   - FSETID
   - NET_BIND_SERVICE
   - NET_RAW
-  - SETGID
   - SETPCAP
-  - SETUID
-  defaultAddCapabilities:
-  - SYS_PTRACE
   allowedCapabilities:
   - SYS_PTRACE
+  - DAC_OVERRIDE
+  - SETUID
+  - SETGID
   fsGroup:
     rule: RunAsAny
   hostIPC: false

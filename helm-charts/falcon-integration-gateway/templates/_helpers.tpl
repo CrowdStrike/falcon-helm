@@ -1,10 +1,11 @@
 {{- define "falcon-integration-gateway.backends" -}}
-{{-   $aws          := ternary "AWS"          "" .Values.push.aws_security_hub.enabled }}
-{{-   $azure        := ternary "AZURE"        "" .Values.push.azure_log_analytics.enabled }}
-{{-   $chronicle    := ternary "CHRONICLE"    "" .Values.push.chronicle.enabled }}
-{{-   $gcp          := ternary "GCP"          "" .Values.push.gcp_security_command_center.enabled }}
-{{-   $workspaceone := ternary "WORKSPACEONE" "" .Values.push.vmware_workspace_one.enabled }}
-{{-   $backends     := list $aws $azure $chronicle $gcp $workspaceone | compact }}
+{{-   $aws                  := ternary "AWS"                "" .Values.push.aws_security_hub.enabled }}
+{{-   $azure                := ternary "AZURE"              "" .Values.push.azure_log_analytics.enabled }}
+{{-   $chronicle            := ternary "CHRONICLE"          "" .Values.push.chronicle.enabled }}
+{{-   $cloudtrail_lake      := ternary "CLOUDTRAIL_LAKE"    "" .Values.push.cloudtrail_lake.enabled }}
+{{-   $gcp                  := ternary "GCP"                "" .Values.push.gcp_security_command_center.enabled }}
+{{-   $workspaceone         := ternary "WORKSPACEONE"       "" .Values.push.vmware_workspace_one.enabled }}
+{{-   $backends             := list $aws $azure $chronicle $cloudtrail_lake $gcp $workspaceone | compact }}
 {{-   $_ := first $backends | required "at least one push backend must be enabled" }}
 {{-   join "," $backends }}
 {{- end }}

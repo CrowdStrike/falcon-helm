@@ -31,6 +31,9 @@ The following tables lists the Falcon Sensor configurable parameters and their d
 | `push.chronicle.enabled`                               | Enable event forwarding to Google Chronicle            | `false`                    |
 | `push.chronicle.region`                                |                                                        | None                       |
 | `push.chronicle.security_key`                          |                                                        | None                       |
+| `push.cloudtrail_lake.enabled`                         | Enable event forwarding to AWS CloudTrail Lake         | `false`                    |
+| `push.cloudtrail_lake.channel_arn`                     | CloudTrail Lake Channel for sending events             | None                       |
+| `push.cloudtrail_lake.region`                          | AWS Region                                             | None                       |
 | `push.gcp_security_command_center.enabled`             | Enable event forwarding to GCP Security Command Center | `false`                    |
 | `push.vmware_workspace_one.enabled`                    | Enable event forwarding to VMware Workspace ONE        | `false`                    |
 | `push.vmware_workspace_one.syslog_host`                |                                                        | None                       |

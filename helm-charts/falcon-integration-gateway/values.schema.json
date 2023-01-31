@@ -156,6 +156,25 @@
                         }
                     }
                 },
+                "cloudtrail_lake": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        }
+                    },
+                    "if": { "properties": { "enabled": { "const": true } } },
+                    "then": {
+                        "properties": {
+                            "region": {
+                                "type": "string"
+                            },
+                            "channel_arn": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
                 "gcp_security_command_center": {
                     "type": "object",
                     "properties": {

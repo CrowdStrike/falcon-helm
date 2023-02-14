@@ -5,11 +5,11 @@ platform purpose-built to stop breaches via a unified set of cloud-delivered
 technologies that prevent all types of attacks — including malware and much
 more.
 
-# Kubernetes Cluster Compatability
+# Kubernetes Cluster Compatibility
 
 The Falcon Helm chart has been tested to deploy on the following Kubernetes distributions:
 
-* Amazon Elastic Kubernetes Service (EKS)
+* Amazon Elastic Kubernetes Service (EKS) - DaemonSet support for EKS/EC2 nodes, Container sensor for EKS-Fargate nodes.
 * Azure Kubernetes Service (AKS)
 * Google Kubernetes Engine (GKE) - DaemonSet support for Ubuntu nodes only, Container sensor for GCOS nodes.
 * Rancher K3s

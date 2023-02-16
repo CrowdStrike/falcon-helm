@@ -6,6 +6,9 @@ node:
   # When enabled, Helm chart deploys the Falcon Sensors to Kubernetes nodes
   enabled: true
 
+  # Overrides the backend leveraged by the Falcon Sensor (kernel, bpf)
+  backend: kernel
+
   daemonset:
     # Annotations to apply to the daemonset
     annotations: {}
@@ -208,7 +211,6 @@ falcon:
   app:
   trace: none
   feature:
-  backend: kernel
   message_log:
   billing:
   tags:

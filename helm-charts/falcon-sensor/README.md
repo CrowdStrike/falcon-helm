@@ -57,7 +57,6 @@ The following tables lists the Falcon Sensor configurable parameters and their d
 | `falcon.app`                | App Proxy Port (APP)                                      | None                  |
 | `falcon.trace`              | Set trace level. (`none`,`err`,`warn`,`info`,`debug`)     | `none`                |
 | `falcon.feature`            | Sensor Feature options                                    | None                  |
-| `falcon.backend`            | Choose sensor backend (`kernel`,`bpf`). Sensor 6.49+ only | None                  |
 | `falcon.message_log`        | Enable message log (true/false)                           | None                  |
 | `falcon.billing`            | Utilize default or metered billing                        | None                  |
 | `falcon.tags`               | Comma separated list of tags for sensor grouping          | None                  |
@@ -122,16 +121,17 @@ For more details please see the [falcon-helm](https://github.com/CrowdStrike/fal
 
 The following tables lists the more common configurable parameters of the chart and their default values for installing on a Kubernetes node.
 
-| Parameter                       | Description                                                          | Default                                                                |
-|:--------------------------------|:---------------------------------------------------------------------|:---------------------------------------------------------------------- |
-| `node.enabled`                  | Enable installation on the Kubernetes node                           | `true`                                                                 |
-| `node.image.repository`         | Falcon Sensor Node registry/image name                               | `falcon-node-sensor`                                                   |
-| `node.image.tag`                | The version of the official image to use                             | `latest`   (Use node.image.digest instead for security and production) |
-| `node.image.digest`             | The sha256 digest of the official image to use                       | None       (Use instead of the image tag for security and production)  |
-| `node.image.pullPolicy`         | Policy for updating images                                           | `Always`                                                               |
-| `node.image.pullSecrets`        | Pull secrets for private registry                                    | None       (Conflicts with node.image.registryConfigJSON)              |
-| `node.image.registryConfigJSON` | base64 encoded docker config json for the pull secret                | None       (Conflicts with node.image.pullSecrets)                     |
-| `falcon.cid`                    | CrowdStrike Customer ID (CID)                                        | None       (Required)                                                  |
+| Parameter                         | Description                                                            | Default                                                                 |
+| :-------------------------------- | :--------------------------------------------------------------------- | :---------------------------------------------------------------------- |
+| `node.enabled`                    | Enable installation on the Kubernetes node                             | `true`                                                                  |
+| `node.backend`                    | Choose sensor backend (`kernel`,`bpf`). Sensor 6.49+ only              | kernel                                                                  |
+| `node.image.repository`           | Falcon Sensor Node registry/image name                                 | `falcon-node-sensor`                                                    |
+| `node.image.tag`                  | The version of the official image to use                               | `latest`   (Use node.image.digest instead for security and production)  |
+| `node.image.digest`               | The sha256 digest of the official image to use                         | None       (Use instead of the image tag for security and production)   |
+| `node.image.pullPolicy`           | Policy for updating images                                             | `Always`                                                                |
+| `node.image.pullSecrets`          | Pull secrets for private registry                                      | None       (Conflicts with node.image.registryConfigJSON)               |
+| `node.image.registryConfigJSON`   | base64 encoded docker config json for the pull secret                  | None       (Conflicts with node.image.pullSecrets)                      |
+| `falcon.cid`                      | CrowdStrike Customer ID (CID)                                          | None       (Required)                                                   |
 
 `falcon.cid` and `node.image.repository` are required values.
 

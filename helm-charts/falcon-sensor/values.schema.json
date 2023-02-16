@@ -15,13 +15,6 @@
                         "1234567890ABCDEF1234567890ABCDEF-12"
                     ]
                 },
-                "backend": {
-                    "type": [
-                        "null",
-                        "string"
-                    ],
-                    "pattern": "^(kernel|bpf)$"
-                },
                 "trace": {
                     "type": [
                         "null",
@@ -37,6 +30,13 @@
                 "enabled"
             ],
             "properties": {
+                "backend": {
+                    "type": [
+                        "null",
+                        "string"
+                    ],
+                    "pattern": "^(kernel|bpf)$"
+                },
                 "daemonset": {
                     "type": "object",
                     "required": [

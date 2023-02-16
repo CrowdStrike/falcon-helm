@@ -18,6 +18,9 @@ data:
   FALCONCTL_OPT_{{ $key | upper }}: {{ $value | quote }}
   {{- end }}
   {{- end }}
+  {{- if and .Values.node.enabled .Values.node.backend }}
+  FALCONCTL_OPT_BACKEND: "{{ .Values.node.backend }}"
+  {{- end }}
   {{- if .Values.container.enabled }}
   CP_NAMESPACE: {{ .Release.Namespace }}
   FALCON_IMAGE_PULL_POLICY: "{{ .Values.container.image.pullPolicy }}"

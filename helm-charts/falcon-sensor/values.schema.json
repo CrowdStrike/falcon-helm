@@ -21,6 +21,9 @@
                         "string"
                     ],
                     "pattern": "^(|none|err|warn|info|debug)$"
+                },
+                "backend": {
+                    "type": "null"
                 }
             }
         },

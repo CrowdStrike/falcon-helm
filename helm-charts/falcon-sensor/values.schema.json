@@ -305,8 +305,11 @@
                 },
                 "replicas": {
                     "type": "integer",
-                    "default": 1,
+                    "default": 2,
                     "minimum": 1
+                },
+                "topologySpreadConstraints": {
+                    "type": "array"
                 },
                 "resources": {
                     "type": "object",

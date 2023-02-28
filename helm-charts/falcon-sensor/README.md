@@ -190,6 +190,8 @@ The following tables lists the more common configurable parameters of the chart 
 | Parameter                                        | Description                                                                 | Default                      |
 |:------------------------------------------------ |:--------------------------------------------------------------------------- |:---------------------------- |
 | `container.enabled`                              | Enable installation on the Kubernetes node                                  | `false`                      |
+| `container.replicas`                             | Configure replica count                                                     | `2`                          |
+| `container.topologySpreadConstraints`            | Defines the way pods are spread across nodes                                | maxSkew: 1<br>topologyKey: kubernetes.io/hostname<br>whenUnsatisfiable: ScheduleAnyway<br>labelSelector:<br>&nbsp;&nbsp;&nbsp;matchLabels:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;crowdstrike.com/component:&nbsp;crowdstrike-falcon-injector                                               |
 | `container.azure.enabled`                        | For AKS without the pulltoken option                                        | `false`                      |
 | `container.azure.azureConfig`                    | Path to the Kubernetes Azure config file on worker nodes                    | `/etc/kubernetes/azure.json` |
 | `container.disableNSInjection`                   | Disable injection for all Namespaces                                        | `false`                      |

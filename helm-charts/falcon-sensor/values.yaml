@@ -84,7 +84,16 @@ container:
   enabled: false
 
   # Configure the number of replicas for the mutating webhook backend
-  replicas: 1
+  replicas: 2
+
+  # Configure PodTopologySpread constraints to allow pods run on different nodes
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        crowdstrike.com/component: crowdstrike-falcon-injector
 
   # Auto update the certificates every time there is an update
   autoCertificateUpdate: true

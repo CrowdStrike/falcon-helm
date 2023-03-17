@@ -8,6 +8,10 @@ The following need to be installed to develop and test the Helm Operator and the
 * [Helm 3.x](https://helm.sh/docs/intro/install/)
 * [The Operator SDK CLI](https://sdk.operatorframework.io/docs/installation/)
 * A working Kubernetes cluster
+* Your Kubernetes cluster is either an ARM64 or x86_64 cluster 
+
+  > Note: The Falcon Helm chart does not support multi-architecture clusters.
+  
 * The [Operator Lifecycle Manager (OLM)](https://olm.operatorframework.io/docs/getting-started/) if using OLM in your cluster.
   **Note:** For OpenShift, this should already be installed.
 

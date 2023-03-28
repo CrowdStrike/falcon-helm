@@ -70,9 +70,18 @@
                             "pattern": "^(RollingUpdate|OnDelete)$"
                         },
                         "maxUnavailable": {
-                            "type": "integer",
-                            "default": "1",
-                            "pattern": "^[0-9]+$"
+                            "oneOf": [
+                                {
+                                    "type": "string",
+                                    "default": "10%",
+                                    "pattern": "^[0-9]+%$"
+                                },
+                                {
+                                    "type": "integer",
+                                    "default": "1",
+                                    "pattern": "^[0-9]+$"
+                                }
+                            ]
                         },
                         "serviceAccountName": {
                             "type": "object",

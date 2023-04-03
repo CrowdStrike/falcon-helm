@@ -4,6 +4,7 @@ node:
   enabled: false
 container:
   enabled: true
+  replicas: 1
   image:
     repository: "registry.crowdstrike.com/falcon-container/us-2/release/falcon-sensor"
     pullSecrets:

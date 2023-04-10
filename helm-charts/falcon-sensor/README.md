@@ -33,6 +33,7 @@ The Falcon Helm chart has been tested to deploy on the following Kubernetes dist
 | `<= 1.6.x`              | `<= 6.34.x`                       |
 | `>= 1.7.x && <= 1.17.x` | `>= 6.35.x && < 6.49.x`           |
 | `>= 1.18.x`             | `>= 6.49.x`                       |
+| `>= 1.19.x`             | `>= 6.54.x`                       |
 
 # Installation
 

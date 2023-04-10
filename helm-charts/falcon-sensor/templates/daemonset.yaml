@@ -90,15 +90,15 @@ spec:
       # it's mounted into the sensor-node-container, k8s would just use it
       # rather than creating a directory.  Mounting falconstore file as
       # a file volume ensures that AID is preserved across container
-      # restarts.
+      # restarts.  Sensor versions 6.54+ have a helper binary to initialize falconstore.
       - name: init-falconstore
         image: "{{ include "falcon-sensor.image" . }}"
         imagePullPolicy: "{{ .Values.node.image.pullPolicy }}"
         command: ["/bin/bash"]
-        args: [-c, 'if [ -d "/opt/CrowdStrike/falconstore" ] ; then echo "Re-creating /opt/CrowdStrike/falconstore as it is a directory instead of a file"; rm -rf /opt/CrowdStrike/falconstore; fi; mkdir -p /opt/CrowdStrike && touch /opt/CrowdStrike/falconstore']
+        args: ['-c', 'if [ -x "/opt/CrowdStrike/falcon-daemonset-init" ]; then echo "Running falcon-daemonset-init -i" ; /opt/CrowdStrike/falcon-daemonset-init -i ; else if [ -d "/host_opt/CrowdStrike/falconstore" ] ; then echo "Re-creating /opt/CrowdStrike/falconstore as it is a directory instead of a file"; rm -rf /host_opt/CrowdStrike/falconstore; fi; mkdir -p /host_opt/CrowdStrike && touch /host_opt/CrowdStrike/falconstore; fi']
         volumeMounts:
           - name: falconstore-dir
-            mountPath: /opt
+            mountPath: /host_opt
         securityContext:
           runAsUser: 0
           privileged: true

@@ -86,10 +86,12 @@ spec:
       - name: cleanup-opt-crowdstrike
         image: "{{ include "falcon-sensor.image" . }}"
         imagePullPolicy: "{{ .Values.node.image.pullPolicy }}"
-        command: ["rm", "-rf", "/opt/CrowdStrike"]
+        command: ["/bin/bash"]
+        # Sensor versions 6.53+ have a helper binary to clean-up /opt/CrowdStrike upon removal of the helm release
+        args: ['-c', 'if [ -x "/opt/CrowdStrike/falcon-daemonset-init" ]; then echo "Running /opt/CrowdStrike/falcon-daemonset-init -u"; /opt/CrowdStrike/falcon-daemonset-init -u ; else rm -rf "/host_opt/CrowdStrike"; fi']
         volumeMounts:
           - name: opt-crowdstrike
-            mountPath: /opt
+            mountPath: /host_opt
         securityContext:
           runAsUser: 0
           privileged: true
@@ -111,5 +113,6 @@ spec:
           path: /opt
       serviceAccountName: {{ .Values.serviceAccount.name }}-node-cleanup
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
+      hostPID: true
 {{- end }}
 

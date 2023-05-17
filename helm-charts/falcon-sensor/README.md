@@ -13,9 +13,8 @@ The Falcon Helm chart has been tested to deploy on the following Kubernetes dist
   * Daemonset (node) sensor supprt for EKS nodes
   * Container sensor support for EKS Fargate nodes
 * Azure Kubernetes Service (AKS)
-* Google Kubernetes Engine (GKE) - DaemonSet support for Ubuntu nodes only, Container sensor for GCOS nodes.
+* Google Kubernetes Engine (GKE)
 * Rancher K3s
-* Red Hat OpenShift Container Platform 4.6+
 
 # Dependencies
 

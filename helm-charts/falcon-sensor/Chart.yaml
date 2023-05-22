@@ -15,12 +15,12 @@ type: application
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 1.19.0
+version: 1.19.1
 
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
 # follow Semantic Versioning. They should reflect the version the application is using.
-appVersion: 1.19.0
+appVersion: 1.19.1
 
 keywords:
   - CrowdStrike
@@ -41,4 +41,4 @@ maintainers:
     email: integrations@crowdstrike.com
 
 icon: https://raw.githubusercontent.com/CrowdStrike/falcon-helm/main/images/crowdstrike-logo.svg
-kubeVersion: ">1.15.0-0"
+kubeVersion: ">1.22.0-0"

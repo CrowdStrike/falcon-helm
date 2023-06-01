@@ -95,6 +95,23 @@ container:
       matchLabels:
         crowdstrike.com/component: crowdstrike-falcon-injector
 
+  # Configure affinity to restrict container to certain nodes
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/os
+            operator: In
+            values:
+            - linux
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: node-role.kubernetes.io/master
+            operator: DoesNotExist
+
   # Auto update the certificates every time there is an update
   autoCertificateUpdate: true
 

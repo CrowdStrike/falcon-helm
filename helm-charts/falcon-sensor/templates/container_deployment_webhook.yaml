@@ -83,21 +83,10 @@ spec:
         {{- end }}
     {{- end }}
     spec:
+      {{- if .Values.container.affinity }}
       affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/os
-                operator: In
-                values:
-                - linux
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 1
-            preference:
-              matchExpressions:
-              - key: node-role.kubernetes.io/master
-                operator: DoesNotExist
+        {{- toYaml .Values.container.affinity | nindent 6 }}
+      {{- end }}
       {{- if .Values.container.topologySpreadConstraints }}
       topologySpreadConstraints:
         {{- toYaml .Values.container.topologySpreadConstraints | nindent 6 }}

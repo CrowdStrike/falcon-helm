@@ -1,0 +1,4 @@
+Thank you for installing the CrowdStrike Falcon Kubernetes Admission Controller!
+
+Access to the Falcon Kubernetes Admissions Controller container image is
+required to complete the install of this Helm chart.

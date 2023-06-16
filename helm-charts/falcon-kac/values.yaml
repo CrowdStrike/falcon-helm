@@ -1,0 +1,96 @@
+# Default values for falcon-kac.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+image:
+  repository: falcon-kac
+  pullPolicy: Always
+
+  # These two values could be set if using registry with authentication
+  pullSecrets:
+  # Value must be base64. This setting conflicts with image.pullSecrets
+  # The base64 encoded string of the docker config json for the pull secret can be
+  # gotten through:
+  # $ cat ~/.docker/config.json | base64 -w 0
+  registryConfigJSON:
+
+  # Overrides the image tag. In general, tags should not be used (including semver tags or `latest`). This variable is provided for those
+  # who have yet to move off of using tags. The sha256 digest should be used in place of tags for increased security and image immutability.
+  tag: latest
+  # Setting a digest will override any tag and should be used instead of tags.
+  #
+  # Example digest variable configuration:
+  # digest: sha256:ffdc91f66ef8570bd7612cf19145563a787f552656f5eec43cd80ef9caca0398
+  digest:
+
+# Configure the number of replicas for the validation webhook backend
+# Not supported now will be used in future
+replicas: 1
+
+# Configure the webhook Port
+webhookPort: 4443
+
+# Auto update the certificates every time there is an update
+autoCertificateUpdate: true
+
+# Certificate validity duration in number of days
+certExpiration: 3650
+
+# For custom DNS configurations when .svc requires a domain for services
+# For example if service.my-namespace.svc doesn't resolve and the cluster uses
+# service.my-namespace.svc.testing.io, you would add testing.io as the value below.
+# Otherwise, keep this blank.
+domainName:
+
+serviceAccount:
+  name: falcon-kac-sa
+  annotations: {}
+
+falcon:
+  cid:
+  apd:
+  aph:
+  app:
+  trace: none
+  feature:
+  billing:
+  tags:
+  provisioning_token:
+
+# Annotations to apply to the webhook deployment
+annotations: {}
+
+# additionals labels to apply to the webhook deployment
+labels: {}
+
+# Annotations to apply to the webhook deployment
+podAnnotations: {}
+
+tolerations: []
+
+falconClientResources:
+  limits:
+    cpu: 750m
+    memory: 256Mi
+  requests:
+    cpu: 500m
+    memory: 256Mi
+
+falconAcResources:
+  limits:
+    cpu: 300m
+    memory: 512Mi
+  requests:
+    cpu: 300m
+    memory: 512Mi
+
+# Update Webhook and roll out new Deployment on helm upgrade
+autoDeploymentUpdate: true
+
+# Override various naming aspects of this chart
+# Only edit these if you know what you're doing
+nameOverride: ""
+fullnameOverride: ""
+webhook:
+  failurePolicy: Ignore
+  # Comma sparated list of namespaces in which we need to disable validation e.g test1,test2
+  disableNamespaces:

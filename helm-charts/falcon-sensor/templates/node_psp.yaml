@@ -1,4 +1,3 @@
-{{- if not (.Capabilities.APIVersions.Has "security.openshift.io/v1") }}
 {{- if .Capabilities.APIVersions.Has "policy/v1beta1/PodSecurityPolicy" }}
 {{- if lt (int (semver .Capabilities.KubeVersion.Version).Minor) 25 }}
 {{- if .Values.node.enabled }}
@@ -33,7 +32,6 @@ spec:
     rule: RunAsAny
   volumes:
   - '*'
-{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

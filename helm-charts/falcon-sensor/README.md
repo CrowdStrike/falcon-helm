@@ -87,13 +87,6 @@ kubectl label --overwrite ns my-existing-namespace \
   pod-security.kubernetes.io/enforce=privileged
 ```
 
-If your cluster is OpenShift version 4.11+, you will need to add an additional label to disable added OpenShift functionality that will sync Pod Security Standard policies based on the default Security Context Constraints (SCC).
-Run the following command replacing `my-existing-namespace` with the namespace that you have installed the falcon sensors e.g. `falcon-system`.
-```
-kubectl label --overwrite ns my-existing-namespace \
-  security.openshift.io/scc.podSecurityLabelSync=false
-```
-
 If desired to silence the warning and change the auditing level for the Pod Security Standard, add the following labels
 ```
 kubectl label ns --overwrite my-existing-namespace pod-security.kubernetes.io/audit=privileged
@@ -207,7 +200,7 @@ The following tables lists the more common configurable parameters of the chart 
 | `container.image.pullPolicy`                     | Policy for updating images                                                  | `Always`                     |
 | `container.image.pullSecrets.enable`             | Enable pull secrets for private registry                                    | `false`                      |
 | `container.image.pullSecrets.namespaces`         | List of Namespaces to pull the Falcon sensor from an authenticated registry | None                         |
-| `container.image.pullSecrets.allNamespaces`      | Use Helm's lookup function to deploy the pull secret to all namespaces      | `false`                      |
+| `container.image.pullSecrets.allNamespaces`      | Use Helm's lookup function to deploy the pull secret to all namespaces. Helm chart must be re-run everytime a new namespace is created. | `false`  |
 | `container.image.pullSecrets.registryConfigJSON` | base64 encoded docker config json for the pull secret                       | None                         |
 | `container.image.sensorResources`                | The requests and limits of the sensor ([see example below](#example-using-containerimagesensorresources))                      | None                         |
 | `falcon.cid`                                     | CrowdStrike Customer ID (CID)                                               | None       (Required)        |

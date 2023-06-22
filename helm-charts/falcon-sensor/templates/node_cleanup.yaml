@@ -63,7 +63,7 @@ spec:
         - name: {{ .Values.node.image.pullSecrets }}
       {{- end }}
       {{- if .Values.node.image.registryConfigJSON }}
-        - name: {{ include "falcon-sensor.fullname" . }}-pull-secret
+        - name: {{ include "falcon-sensor.fullname" . }}-pull-secret-cleanup
       {{- end }}
     {{- end }}
     {{- end }}

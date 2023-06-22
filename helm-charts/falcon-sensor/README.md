@@ -137,6 +137,70 @@ For a complete listing of configurable parameters, run the following command:
 helm show values crowdstrike/falcon-sensor
 ```
 
+#### Example using node.daemonset.sensorDaemonsetResources
+
+When setting `node.daemonset.sensorDaemonsetResources`, the simplest method would be to provide a values file to the `helm install` command.
+
+Example:
+
+```bash
+helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
+    --set node.enabled=true \
+    --set container.enabled=false \
+    --set falcon.cid="<CrowdStrike_CID>" \
+    --set node.image.repository="<Your_Registry>/falcon-sensor" \
+    --values values.yaml
+```
+
+Where `values.yaml` is
+
+```yaml
+node:
+  daemonset:
+    sensorDaemonsetResources:
+      limits:
+        cpu: 1000m
+        memory: 1024Mi
+      requests:
+        cpu: 100m
+        memory: 200Mi
+```
+
+Of course, one could specify all options in the `values.yaml` file and skip the `--set` options altogether:
+
+```yaml
+node:
+  enabled: true
+  image:
+    repository: "<Your_Registry>/falcon-sensor"
+  daemonset:
+    sensorDaemonsetResources:
+      limits:
+        cpu: 1000m
+        memory: 1024Mi
+      requests:
+        cpu: 100m
+        memory: 200Mi
+container:
+  enabled: false
+falcon:
+  cid: "<CrowdStrike_CID>"
+```
+
+If using a local values file is not an option, you could do this:
+
+```bash
+helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
+    --set node.enabled=true \
+    --set container.enabled=false \
+    --set falcon.cid="<CrowdStrike_CID>" \
+    --set node.image.repository="<Your_Registry>/falcon-sensor" \
+    --set node.daemonset.sensorDaemonsetResources.limits.memory="1024Mi" \
+    --set node.daemonset.sensorDaemonsetResources.limits.cpu="1000m" \
+    --set node.daemonset.sensorDaemonsetResources.requests.memory="200Mi" \
+    --set node.daemonset.sensorDaemonsetResources.requests.cpu="100m"
+```
+
 ## Installing in Kubernetes Cluster as a Sidecar
 
 ### Deployment Considerations

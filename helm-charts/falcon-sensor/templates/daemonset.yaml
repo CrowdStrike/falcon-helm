@@ -115,6 +115,8 @@ spec:
         # - Runs the Falcon Sensor containers as privileged containers. This is required when
         #   running the Falcon Linux Sensor on Kubernetes nodes to properly run in the node's
         #   kernel and to actually protect the node.
+        resources:
+          {{- toYaml .Values.node.daemonset.sensorDaemonsetResources | nindent 10 }}
         securityContext:
           runAsUser: 0
           privileged: true

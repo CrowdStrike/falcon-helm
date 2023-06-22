@@ -49,6 +49,15 @@ node:
     #         - amd64
     nodeAffinity: {}
 
+    # Configure the requests and limits of the sensor
+    sensorDaemonsetResources: {}
+    # limits:
+    #   cpu: 1000m
+    #   memory: 1024Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 200Mi
+
     # Update strategy to role out new daemonset configuration to the nodes.
     updateStrategy: RollingUpdate
 

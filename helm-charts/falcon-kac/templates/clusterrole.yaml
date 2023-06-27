@@ -5,9 +5,20 @@ metadata:
   labels:
     {{- include "falcon-kac.labels" . | nindent 4 }}
 rules:
-- apiGroups: [""]
-  resources: ["namespaces", "nodes"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["apps"]
-  resources: ["daemonsets"]
-  verbs: ["get", "list", "watch"]
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  verbs:
+  - get
+  - list
+  - watch

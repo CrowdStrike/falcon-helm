@@ -34,7 +34,7 @@ keywords:
 home: https://crowdstrike.com
 
 sources:
-  - https://artifactory.cicd.dc/artifactory/eng-xdr-crp-helm-dev-virtual
+  - https://github.com/CrowdStrike/falcon-helm
 
 maintainers:
   - name: CrowdStrike Deployment Engineering

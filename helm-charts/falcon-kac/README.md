@@ -121,7 +121,7 @@ The Falcon KAC does not monitor these namespaces:
   **Tip**: An AID is assigned to the Falcon KAC when it communicates with the Falcon cloud. If the Falcon KAC has an AID that is not all zeros, it is installed and running properly.
 
 ## Update Falcon KAC
-When a new container image is available, you can update your Falcon KAC by passing the new container image to the Helm chart. Falcon KAC does not support auto-update. You must manually update the Falcon KAC on your cluster.
+When a new container image is available, you can update your Falcon KAC by passing the new container image to the Helm chart and then running a `helm upgrade` command. In general, Helm charts do not support auto-updating running resources. Falcon KAC does not support auto-update. You must manually update the Falcon KAC on your cluster or update through a GitOps or CI/CD pipeline per Kubernetes Best Operational and Security practices.
 - Set a new variable for the Falcon KAC container image tag:
   ```
   export KAC_IMAGE_TAG=<KAC_version>.container.x86_64.Release.<cloud_region>

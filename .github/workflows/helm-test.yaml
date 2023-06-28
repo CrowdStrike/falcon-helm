@@ -6,6 +6,7 @@ on:
       - 'helm-charts/**'
       - '!helm-charts/falcon-sensor/**'
       - '!helm-charts/cs-k8s-protection-agent/**'
+      - '!helm-charts/falcon-kac/**'
 
 jobs:
   lint-test:

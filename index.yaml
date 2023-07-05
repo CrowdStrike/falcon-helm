@@ -2,6 +2,17 @@ apiVersion: v1
 entries:
   cs-k8s-protection-agent:
   - apiVersion: v2
+    appVersion: 0.43.9
+    created: "2023-07-05T16:29:43.873141666Z"
+    description: A Helm chart for Crowdstrike Kubernetes Protection Agent
+    digest: 2d96ff20e63eacc2d5b6808048d6180cc8312b8f6d255761fba582b3419e9070
+    icon: https://www.crowdstrike.com/wp-content/uploads/2020/08/FalconPremium@2x.svg
+    name: cs-k8s-protection-agent
+    type: application
+    urls:
+    - https://github.com/CrowdStrike/falcon-helm/releases/download/cs-k8s-protection-agent-0.43.9/cs-k8s-protection-agent-0.43.9.tgz
+    version: 0.43.9
+  - apiVersion: v2
     appVersion: 0.43.8
     created: "2023-07-05T14:51:50.237570196Z"
     description: A Helm chart for Crowdstrike Kubernetes Protection Agent
@@ -1735,4 +1746,4 @@ entries:
     urls:
     - https://github.com/CrowdStrike/falcon-helm/releases/download/0.5.0/falcon-sensor-0.5.0.tgz
     version: 0.5.0
-generated: "2023-07-05T14:51:50.237731098Z"
+generated: "2023-07-05T16:29:43.873339867Z"

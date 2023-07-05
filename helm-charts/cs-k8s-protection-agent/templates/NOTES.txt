@@ -1,0 +1,3 @@
+The Crowdstrike Kubernetes Agent is now deployed to your cluster under the {{ .Release.Namespace }} namespace as {{ include "cs-k8s-protection-agent.fullname" . }}. You can now check if the agent is running by running the following command:
+
+"kubectl -n {{ .Release.Namespace}} get pods"

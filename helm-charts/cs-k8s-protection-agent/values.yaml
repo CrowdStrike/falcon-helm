@@ -1,0 +1,45 @@
+# Default values for cs-k8s-protection-agent.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: registry.crowdstrike.com/kubernetes_protection/kpagent
+  tag:
+  pullPolicy: IfNotPresent
+  envFrom:
+    - configMapRef:
+        name: agent-config
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Annotations to add to the service account
+  name: ""
+  annotations: {}
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+nodeSelector: {}
+
+resources: {}
+
+tolerations: []
+
+affinity: {}
+
+crowdstrikeConfig:
+  clusterName: ""
+  enableDebug: ""
+  clientID: ""
+  clientSecret: ""
+  env: ""
+  cid: ""
+  dockerAPIToken: ""
+  existingSecret: ""

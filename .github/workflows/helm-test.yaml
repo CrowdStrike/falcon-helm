@@ -5,6 +5,7 @@ on:
     paths:
       - 'helm-charts/**'
       - '!helm-charts/falcon-sensor/**'
+      - '!helm-charts/cs-k8s-protection-agent/**'
 
 jobs:
   lint-test:

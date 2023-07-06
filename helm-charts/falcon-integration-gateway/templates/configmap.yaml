@@ -30,6 +30,11 @@ data:
     {{- if .Values.falcon.integration_gateway.older_than_days_threshold }}
     older_than_days_threshold = {{ .Values.falcon.integration_gateway.older_than_days_threshold }}
     {{- end }}
+    # Exclude events originating from certain cloud environments (AWS, Azure, GCP, or unrecognized)
+    # detections_exclude_clouds =
+    {{- if .Values.falcon.integration_gateway.detections_exclude_clouds }}
+    detections_exclude_clouds = {{ .Values.falcon.integration_gateway.detections_exclude_clouds }}
+    {{- end }}
 
     [logging]
     # Uncomment to request logging level (ERROR, WARN, INFO, DEBUG)

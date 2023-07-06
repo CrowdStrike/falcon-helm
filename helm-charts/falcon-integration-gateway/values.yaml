@@ -10,6 +10,7 @@ push:
     enabled: false
     workspace_id:
     primary_key:
+    arc_autodiscovery: false
   chronicle:
     enabled: false
     region:
@@ -40,6 +41,9 @@ falcon:
 
     # Filter out events based on number of days past the event (default 14)
     older_than_days_threshold: 14
+
+    # Exclude events originating from certain cloud environments (AWS, Azure, GCP, or unrecognized)
+    detections_exclude_clouds:
 
     # Configure logging level (ERROR, WARN, INFO, DEBUG)
     level: INFO

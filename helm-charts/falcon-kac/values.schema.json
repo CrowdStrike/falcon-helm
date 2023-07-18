@@ -1,0 +1,262 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "type": "object",
+    "properties": {
+        "image": {
+            "type": "object",
+            "required": [
+                "repository",
+                "pullPolicy",
+                "tag"
+            ],
+            "properties": {
+                "pullPolicy": {
+                    "type": "string",
+                    "default": "Always",
+                    "pattern": "^(Always|Never|IfNotPresent)$"
+                },
+                "pullSecrets": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "registryConfigJSON": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "repository": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": "string",
+                    "default": "latest"
+                },
+                "digest": {
+                    "type": [
+                        "null",
+                        "string"
+                    ],
+                    "pattern": "^sha256:[0-9a-f]{64}$"
+                }
+            }
+        },
+        "replicas": {
+            "type": "integer",
+            "default": 1,
+            "minimum": 1
+        },
+        "webhookPort": {
+            "type": "integer",
+            "default": "4433",
+            "minimum": 1024,
+            "maximum": 32767
+        },
+        "autoCertificateUpdate": {
+            "type": "boolean",
+            "default": "true"
+        },
+        "certExpiration": {
+            "type": "integer",
+            "default": "3650",
+            "minimum": 0
+        },
+        "domainName": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "serviceAccount": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "default": "falcon-kac-sa"
+                },
+                "annotations": {
+                    "type": "object",
+                    "default": {},
+                    "examples": [
+                        {
+                            "iam.gke.io/gcp-service-account": "my-service-account@my-project.iam.gserviceaccount.com"
+                        }
+                    ]
+                }
+            }
+        },
+        "falcon": {
+            "type": "object",
+            "required": [
+                "cid"
+            ],
+            "properties": {
+                "cid": {
+                    "type": "string",
+                    "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$",
+                    "example": [
+                        "1234567890ABCDEF1234567890ABCDEF-12"
+                    ]
+                },
+                "trace": {
+                    "type": [
+                        "null",
+                        "string"
+                    ],
+                    "pattern": "^(|none|err|warn|info|debug)$"
+                },
+                "apd": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "aph": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "app": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "feature": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "message_log": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "billing": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "tags": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "provisioning_token": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                }
+            }
+        },
+        "annotations": {
+            "type": "object",
+            "default": {}
+        },
+        "labels": {
+            "type": "object",
+            "default": {}
+        },
+        "podAnnotations": {
+            "type": "object",
+            "default": {}
+        },
+        "tolerations": {
+            "type": "array"
+        },
+        "falconClientResources": {
+            "type": "object",
+            "properties": {
+                "requests": {
+                    "type": "object",
+                    "properties": {
+                        "cpu": {
+                            "type": "string"
+                        },
+                        "memory": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "limits": {
+                    "type": "object",
+                    "properties": {
+                        "cpu": {
+                            "type": "string"
+                        },
+                        "memory": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "falconAcResources": {
+            "type": "object",
+            "properties": {
+                "requests": {
+                    "type": "object",
+                    "properties": {
+                        "cpu": {
+                            "type": "string"
+                        },
+                        "memory": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "limits": {
+                    "type": "object",
+                    "properties": {
+                        "cpu": {
+                            "type": "string"
+                        },
+                        "memory": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "autoDeploymentUpdate": {
+            "type": "boolean",
+            "default": "true"
+        },
+        "nameOverride": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "fullnameOverride": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "webhook": {
+            "type": "object",
+            "properties": {
+                "failurePolicy": {
+                    "type": "string",
+                    "default": "Ignore",
+                    "pattern": "^(Ignore|Fail)$"
+                },
+                "disableNamespaces": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                }
+            }
+        }
+    }
+}

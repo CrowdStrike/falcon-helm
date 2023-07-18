@@ -262,6 +262,7 @@ webhooks:
       - kube-system
       - kube-public
       - falcon-system
+      - falcon-kubernetes-protection
       {{- if $myns }}
       {{- range $ns := $myns }}
       - {{ $ns }}
@@ -310,6 +311,7 @@ webhooks:
       - kube-system
       - kube-public
       - falcon-system
+      - falcon-kubernetes-protection
       {{- if $myns }}
       {{- range $ns := $myns }}
       - {{ $ns }}

@@ -54,16 +54,16 @@ The Falcon KAC does not monitor these namespaces:
    ```
    helm repo update
    ```
-- Set a variable for the Falcon KAC image:  
+- Set a variable for the Falcon KAC image repository:  
    ```
-   export KAC_IMAGE_NAME=<registry_name>/<repo_name>/falcon-kac<br/><br/> 
+   export KAC_IMAGE_REPO=<registry_name>/falcon-kac
    ``` 
 - Set a variable for the Falcon KAC image tag:    
    ```
-   export KAC_IMAGE_TAG=<KAC_version>.container.x86_64.Release.
-   <cloud_region>
+   export KAC_IMAGE_TAG=<KAC_version>.container.x86_64.Release.<cloud_region>
    ```
-   Example: The Falcon KAC image tag has this format falcon-kac:0.13-99.container.x86_64.Release.US1
+   Example: The Falcon KAC image tag has this format `7.01.0-103.container.x86_64.Release.US-1`
+   
 - Set a Falcon CID variable:  
    ```
    export FALCON_CID=<your_CID_with_checksum>
@@ -77,7 +77,7 @@ The Falcon KAC does not monitor these namespaces:
    helm install falcon-kac crowdstrike/falcon-kac \
     -n falcon-kac --create-namespace \
     --set falcon.cid=$FALCON_CID \
-    --set image.repository=$KAC_IMAGE_NAME \
+    --set image.repository=$KAC_IMAGE_REPO \
     --set image.tag=$KAC_IMAGE_TAG
   ```  
   **Tip**: Use the --set flag to pass individual values to the values file when running helm install. For a complete list and description of configurable parameters, run  
@@ -99,7 +99,7 @@ The Falcon KAC does not monitor these namespaces:
    helm install falcon-kac crowdstrike/falcon-kac \
       -n falcon-kac --create-namespace \
       --set falcon.cid=$FALCON_CID \
-      --set image.repository=$KAC_IMAGE_NAME \
+      --set image.repository=$KAC_IMAGE_REPO \
       --set image.tag=$KAC_IMAGE_TAG \
       --set image.registryConfigJSON=$IMAGE_PULL_TOKEN
     ```
@@ -132,7 +132,7 @@ When a new container image is available, you can update your Falcon KAC by passi
     helm upgrade --install falcon-kac $KAC_HELM_REPO \
        -n falcon-kac --create-namespace \
        --set falcon.cid=$FALCON_CID \
-       --set image.repository=$KAC_IMAGE_NAME \
+       --set image.repository=$KAC_IMAGE_REPO \
        --set image.tag=$KAC_IMAGE_TAG
   ```
   **Note**: Your deployment will update only when you change the inputs for helm upgrade, for example by changing the image reference. 
@@ -143,9 +143,9 @@ When a new container image is available, you can update your Falcon KAC by passi
   ```
 
    The output looks similar to the example below and shows that version  
-   falcon-kac:3.0.0-572.container.x86_64.Release.US is running on both Falcon KAC pods.
+   falcon-kac:7.01.0-103.container.x86_64.Release.US-1 is running on both Falcon KAC pods.
    ```
-   falcon-kac-5bd6986f6f-x86vw: falcon-kac:3.0.0-572.container.x86_64.Release.US, falcon-kac:3.0.0-572.container.x86_64.Release.US,
+   falcon-kac-5bd6986f6f-x86vw: falcon-kac:7.01.0-103.container.x86_64.Release.US-1, falcon-kac:7.01.0-103.container.x86_64.Release.US-1,
    ```
 
 ## Uninstall Falcon KAC

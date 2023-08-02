@@ -63,6 +63,15 @@ Create the name of the service account to use
 
 {{- define "falcon-sensor.image" -}}
 {{- if .Values.node.enabled -}}
+{{ include "falcon-sensor-node.image" . }}
+{{- else -}}
+{{ include "falcon-sensor-container.image" . }}
+{{- end -}}
+{{- end -}}
+
+
+{{- define "falcon-sensor-node.image" -}}
+{{- if .Values.node.enabled -}}
 {{- if .Values.node.image.digest -}}
 {{- if contains "sha256:" .Values.node.image.digest -}}
 {{- printf "%s@%s" .Values.node.image.repository .Values.node.image.digest -}}
@@ -72,7 +81,11 @@ Create the name of the service account to use
 {{- else -}}
 {{- printf "%s:%s" .Values.node.image.repository .Values.node.image.tag -}}
 {{- end -}}
-{{- else -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "falcon-sensor-container.image" -}}
+{{- if .Values.container.enabled -}}
 {{- if .Values.container.image.digest -}}
 {{- if contains "sha256:" .Values.container.image.digest -}}
 {{- printf "%s@%s" .Values.container.image.repository .Values.container.image.digest -}}

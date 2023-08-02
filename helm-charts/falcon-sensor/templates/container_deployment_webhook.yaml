@@ -142,7 +142,7 @@ spec:
       {{- end }}
       containers:
       - name: {{ include "falcon-sensor.name" . }}-injector
-        image: "{{ include "falcon-sensor.image" . }}"
+        image: "{{ include "falcon-sensor-container.image" . }}"
         imagePullPolicy: "{{ .Values.container.image.pullPolicy }}"
         command: ["injector"]
         envFrom:

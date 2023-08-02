@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "falcon-kac.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "falcon-kac.labels" . | nindent 4 }}
+data:
+  FALCONCTL_OPT_CID: {{ .Values.falcon.cid }}
+  {{- range $key, $value := .Values.falcon }}
+  {{- if and ($value) (ne $key "cid") }}
+  FALCONCTL_OPT_{{ $key | upper }}: {{ $value | quote }}
+  {{- end }}
+  {{- end }}
+

@@ -1,4 +1,3 @@
-{{- if not (.Capabilities.APIVersions.Has "security.openshift.io/v1") }}
 {{- if lt (int (semver .Capabilities.KubeVersion.Version).Minor) 25 }}
 {{- if .Capabilities.APIVersions.Has "policy/v1beta1/PodSecurityPolicy" }}
 {{- if .Values.container.enabled }}
@@ -52,7 +51,6 @@ spec:
   - persistentVolumeClaim
   - projected
   - secret
-{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

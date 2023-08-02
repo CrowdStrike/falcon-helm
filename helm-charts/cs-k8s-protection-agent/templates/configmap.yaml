@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cs-k8s-protection-agent.fullname" . }}
+  labels:
+  {{- include "cs-k8s-protection-agent.labels" . | nindent 4 }}
+data:
+  AGENT_CLUSTER_NAME: {{ required "A cluster name must be provided for the agent" .Values.crowdstrikeConfig.clusterName | quote }}
+  AGENT_DEBUG: {{ .Values.crowdstrikeConfig.enableDebug | default "false" | quote }}
+  AGENT_CLIENT_ID: {{ required "A valid crowdstrike client ID is required" .Values.crowdstrikeConfig.clientID | quote }}
+  AGENT_ENV: {{ required "An environment for the agent to call into is required" .Values.crowdstrikeConfig.env | quote }}
+  AGENT_HELM_VERSION: {{ .Chart.Version | quote }}

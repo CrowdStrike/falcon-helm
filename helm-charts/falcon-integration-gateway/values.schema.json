@@ -57,6 +57,13 @@
                         "older_than_days_threshold": {
                             "type": "integer"
                         },
+                        "detections_exclude_clouds": {
+                            "type": "string",
+                            "enum": ["AWS", "Azure", "GCP", "unrecognized"],
+                            "example": [
+                                "GCP"
+                            ]
+                        },
                         "severity_threshold": {
                             "type": "integer"
                         },
@@ -133,6 +140,9 @@
                             },
                             "workspace_id": {
                                 "type": "string"
+                            },
+                            "arc_autodiscovery": {
+                                "type": "boolean"
                             }
                         }
                     }

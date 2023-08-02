@@ -1,0 +1,35 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "cs-k8s-protection-agent.fullname" . }}
+  labels:
+  {{- include "cs-k8s-protection-agent.labels" . | nindent 4 }}
+rules:
+  - verbs: [ "watch", "list" ]
+    apiGroups: [ "batch" ]
+    resources:
+      - "cronjobs"
+      - "jobs"
+  - verbs: [ "watch", "list" ]
+    apiGroups: [ "networking.k8s.io" ]
+    resources:
+      - "networkpolicies"
+      - "ingresses"
+  - verbs: [ "watch", "list" ]
+    apiGroups: [ "apps", "extensions" ]
+    resources:
+      - "daemonsets"
+      - "deployments"
+      - "replicasets"
+      - "statefulsets"
+  - verbs: [ "watch", "list" ]
+    apiGroups: [ "" ]
+    resources:
+      - "nodes"
+      - "pods"
+      - "services"
+  - verbs: [ "get", "list", "watch" ]
+    apiGroups: [ "" ]
+    resources:
+      - "namespaces"
+

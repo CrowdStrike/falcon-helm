@@ -40,6 +40,7 @@ This is the controller process that is responsible for admission control policy 
 
 The Falcon KAC does not monitor these namespaces:
 - falcon-kac
+- falcon-system
 - kube-system
 - kube-public
 

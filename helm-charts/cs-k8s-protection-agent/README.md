@@ -6,7 +6,7 @@ The Kubernetes Protection Agent allows for the discovery of Kubernetes objects b
 
 ## Requirements
 
-‌**Subscription:** 
+‌**Subscription:**
 
 - Falcon Cloud Workload Protection (FCWP)
 - Falcon Cloud Security with Containers (FCSC)

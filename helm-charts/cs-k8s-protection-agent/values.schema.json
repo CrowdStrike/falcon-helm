@@ -1,0 +1,170 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "type": "object",
+    "properties": {
+        "replicaCount": {
+            "type": "integer",
+            "default": 1,
+            "minimum": 1
+        },
+        "image": {
+            "type": "object",
+            "required": [
+                "repository",
+                "pullPolicy",
+                "tag"
+            ],
+            "properties": {
+                "pullPolicy": {
+                    "type": "string",
+                    "default": "Always",
+                    "pattern": "^(Always|Never|IfNotPresent)$"
+                },
+                "repository": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": "string",
+                    "default": "latest"
+                },
+                "envFrom": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "configMapRef": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "nameOverride": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "fullnameOverride": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "serviceAccount": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "annotations": {
+                    "type": "object",
+                    "default": {},
+                    "examples": [
+                        {
+                            "iam.gke.io/gcp-service-account": "my-service-account@my-project.iam.gserviceaccount.com"
+                        }
+                    ]
+                }
+            }
+        },
+        "podAnnotations": {
+            "type": "object",
+            "default": {}
+        },
+        "podSecurityContext": {
+            "type": "object",
+            "default": {}
+        },
+        "securityContext": {
+            "type": "object",
+            "default": {}
+        },
+        "nodeSelector": {
+            "type": "object",
+            "default": {}
+        },
+        "resources": {
+            "type": "object",
+            "default": {}
+        },
+        "tolerations": {
+            "type": "array"
+        },
+        "affinity": {
+            "type": "object",
+            "default": {}
+        },
+        "priorityClassName": {
+            "type": "string"
+        },
+        "crowdstrikeConfig": {
+            "type": "object",
+            "required": [
+                "clusterName",
+                "env",
+                "clientID"
+            ],
+            "dependentRequired": {
+                "clientID": [
+                    "clientSecret"
+                ]
+            },
+            "properties": {
+                "clusterName": {
+                    "type": "string"
+                },
+                "enableDebug": {
+                    "type": "string"
+                },
+                "clientID": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{32}$"
+                },
+                "clientSecret": {
+                    "type": "string"
+                },
+                "env": {
+                    "type": "string",
+                    "default": "us-1",
+                    "enum": [
+                        "us-1",
+                        "us-2",
+                        "eu-1",
+                        "us-gov-1",
+                        "us-gov-2"
+                    ]
+                },
+                "cid": {
+                    "type": "string"
+                },
+                "dockerAPIToken": {
+                    "type": "string"
+                },
+                "existingSecret": {
+                    "type": "string"
+                }
+            },
+            "if": {
+                "properties": {
+                    "existingSecret": {
+                        "const": ""
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "clientSecret": {
+                        "pattern": "^[a-zA-Z0-9]{40}$"
+                    }
+                }
+            }
+        }
+    }
+}

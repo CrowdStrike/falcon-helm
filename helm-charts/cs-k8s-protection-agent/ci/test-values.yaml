@@ -1,0 +1,7 @@
+image:
+  tag: 1.2.3
+
+crowdstrikeConfig:
+  clientID: "abcedf0123456789abcdef0123456789"
+  env: "us-1"
+  clientSecret: "abcedf0123456789abcdef0123456789ABCDEFGH"

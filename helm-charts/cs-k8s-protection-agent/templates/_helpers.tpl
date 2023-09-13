@@ -66,7 +66,7 @@ Create the name of the service account to use
 {{- if eq .env "us-gov-1" }}
 {{- printf "{\"auths\":{\"registry.laggar.gcw.crowdstrike.com\":{\"username\":\"kp-%s\",\"password\":\"%s\",\"email\":\"kubernetes-protection@crowdstrike.com\",\"auth\":\"%s\"}}}" .cid .dockerAPIToken (printf "kp-%s:%s" .cid .dockerAPIToken | b64enc) | b64enc }}
 {{- else if eq .env "us-gov-2" }}
-{{- printf "{\"auths\":{\"registry.us-gov-2.crowdstrike.com\":{\"username\":\"kp-%s\",\"password\":\"%s\",\"email\":\"kubernetes-protection@crowdstrike.com\",\"auth\":\"%s\"}}}" .cid .dockerAPIToken (printf "kp-%s:%s" .cid .dockerAPIToken | b64enc) | b64enc }}
+{{- printf "{\"auths\":{\"registry.us-gov-2.crowdstrike.mil\":{\"username\":\"kp-%s\",\"password\":\"%s\",\"email\":\"kubernetes-protection@crowdstrike.com\",\"auth\":\"%s\"}}}" .cid .dockerAPIToken (printf "kp-%s:%s" .cid .dockerAPIToken | b64enc) | b64enc }}
 {{- else }}
 {{- printf "{\"auths\":{\"registry.crowdstrike.com\":{\"username\":\"kp-%s\",\"password\":\"%s\",\"email\":\"kubernetes-protection@crowdstrike.com\",\"auth\":\"%s\"}}}" .cid .dockerAPIToken (printf "kp-%s:%s" .cid .dockerAPIToken | b64enc) | b64enc }}
 {{- end }}

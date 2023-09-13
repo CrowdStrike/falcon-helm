@@ -34,6 +34,8 @@ tolerations: []
 
 affinity: {}
 
+priorityClassName: ""
+
 crowdstrikeConfig:
   clusterName: ""
   enableDebug: ""

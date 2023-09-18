@@ -110,7 +110,7 @@
                 "apd": {
                     "type": [
                         "null",
-                        "string"
+                        "boolean"
                     ]
                 },
                 "aph": {
@@ -122,8 +122,10 @@
                 "app": {
                     "type": [
                         "null",
-                        "string"
-                    ]
+                        "integer"
+                    ],
+                    "minimum": 0,
+                    "maximum": 65535
                 },
                 "feature": {
                     "type": [

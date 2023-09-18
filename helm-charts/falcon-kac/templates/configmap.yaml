@@ -8,7 +8,7 @@ metadata:
 data:
   FALCONCTL_OPT_CID: {{ .Values.falcon.cid }}
   {{- range $key, $value := .Values.falcon }}
-  {{- if and ($value) (ne $key "cid") }}
+  {{- if and (or $value (eq ($value | toString) "false")) (ne $key "cid") }}
   FALCONCTL_OPT_{{ $key | upper }}: {{ $value | quote }}
   {{- end }}
   {{- end }}

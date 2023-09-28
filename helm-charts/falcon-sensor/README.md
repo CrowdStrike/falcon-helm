@@ -10,7 +10,7 @@ more.
 The Falcon Helm chart has been tested to deploy on the following Kubernetes distributions:
 
 * Amazon Elastic Kubernetes Service (EKS)
-  * Daemonset (node) sensor supprt for EKS nodes
+  * Daemonset (node) sensor support for EKS nodes
   * Container sensor support for EKS Fargate nodes
 * Azure Kubernetes Service (AKS)
 * Google Kubernetes Engine (GKE)

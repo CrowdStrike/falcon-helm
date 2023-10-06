@@ -1,4 +1,16 @@
 Thank you for installing the CrowdStrike Falcon Kubernetes Admission Controller!
 
-Access to the Falcon Kubernetes Admissions Controller container image is
-required to complete the install of this Helm chart.
+Note that in order for the Falcon Kubernetes Admissions Controller to run, the
+falcon-kac image must be present in a container registry accessible to the 
+kubernetes deployment.
+
+When utilizing your own registry, a common error on installation is forgetting
+to add your containerized sensor to your local image registry prior to 
+executing `helm install`. Please read the Helm Chart's readme for more 
+deployment considerations.
+
+To check the status of Falcon Kubernetes Admissions Controller pods, run the 
+following command:
+
+  kubectl -n {{ .Release.Namespace }} get pods
+

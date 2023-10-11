@@ -21,7 +21,6 @@ volumeMounts:
   - mountPath: /etc/containers/storage.conf
     name: crio-conf
 
-
 # This is a mandatory mount for daemon set.
 # this is used as a tmp working space for image storage
 volumes:
@@ -48,7 +47,6 @@ volumes:
     hostPath:
       path: /etc/containers/storage.conf # Change It if different from default path
       type: File
-
 
 crowdstrikeConfig:
   agentRuntime: crio

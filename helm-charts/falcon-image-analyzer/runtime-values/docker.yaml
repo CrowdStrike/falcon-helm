@@ -25,7 +25,6 @@ volumes:
       path: /run/docker.sock # Change It if different from default path
       type: Socket
 
-
 crowdstrikeConfig:
   agentRuntime: docker
   agentRuntimeSocket: "unix:///run/docker.sock"

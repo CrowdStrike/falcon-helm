@@ -2,14 +2,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "cs-image-analyzer-agent.fullname" . }}
+  name: {{ include "falcon-image-analyzer.fullname" . }}
   labels:
-    {{- include "cs-image-analyzer-agent.labels" . | nindent 4 }}
+    {{- include "falcon-image-analyzer.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-  {{- include "cs-image-analyzer-agent.selectorLabels" . | nindent 6 }}
+  {{- include "falcon-image-analyzer.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
@@ -19,13 +19,13 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
       labels:
-    {{- include "cs-image-analyzer-agent.labels" . | nindent 8 }}
+    {{- include "falcon-image-analyzer.labels" . | nindent 8 }}
     spec:
       {{ if .Values.crowdstrikeConfig.dockerAPIToken }}
       imagePullSecrets:
-        - name: {{ include "cs-image-analyzer-agent.fullname" . }}-regsecret
+        - name: {{ include "falcon-image-analyzer.fullname" . }}-regsecret
       {{- end }}
-      serviceAccountName: {{ .Values.serviceAccount.name | default ( include "cs-image-analyzer-agent.fullname" . ) }}
+      serviceAccountName: {{ .Values.serviceAccount.name | default ( include "falcon-image-analyzer.fullname" . ) }}
       securityContext:
       {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -39,12 +39,12 @@ spec:
           args: ["-runmode", "watcher"]
           envFrom:
             - configMapRef:
-                name: {{ include "cs-image-analyzer-agent.fullname" . }}
+                name: {{ include "falcon-image-analyzer.fullname" . }}
             - secretRef:
                 {{- if .Values.crowdstrikeConfig.existingSecret }}
                 name: {{ .Values.crowdstrikeConfig.existingSecret }}
                 {{- else }}
-                name: {{ include "cs-image-analyzer-agent.fullname" . }}
+                name: {{ include "falcon-image-analyzer.fullname" . }}
                 {{- end }}
           volumeMounts:
            {{- toYaml .Values.volumeMounts | default "" | nindent 12 }}

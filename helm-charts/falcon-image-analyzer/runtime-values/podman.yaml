@@ -25,7 +25,6 @@ volumes:
       path: /run/podman/podman.sock # Change It if different from default path
       type: Socket
 
-
 crowdstrikeConfig:
   agentRuntime: podman
   agentRuntimeSocket: "unix:///run/podman/podman.sock"

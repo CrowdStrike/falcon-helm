@@ -25,7 +25,6 @@ volumes:
       path: /run/containerd/containerd.sock # Change It if different from default path
       type: Socket
 
-
 crowdstrikeConfig:
   agentRuntime: containerd
   agentRuntimeSocket: "unix:///run/containerd/containerd.sock"

@@ -1,0 +1,65 @@
+# Default values for cs-image-analyzer-agent.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+daemonset:
+  enabled: false
+
+deployment:
+  enabled: false
+
+replicaCount: 1
+image:
+  repository: eng-cloud-docker-sandbox-local.artifactory.crwd.dev/cloud/cs-imageanalyzer
+  tag:
+  pullPolicy: IfNotPresent
+  envFrom:
+    - configMapRef:
+        name: agent-config
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Annotations to add to the service account
+  name: ""
+  annotations: {}
+
+volumeMounts:
+  - mountPath: /tmp
+    name: tmp-volume
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+nodeSelector: {}
+
+resources: {}
+
+tolerations: []
+
+affinity: {}
+
+# This is a mandatory mount for both deployment and daemon set.
+# this is used as a tmp working space for image storage
+volumes:
+  - name: tmp-volume
+    emptyDir:
+      sizeLimit: 20Gi
+
+crowdstrikeConfig:
+  clusterName: ""
+  enableDebug: ""
+  clientID: ""
+  clientSecret: ""
+  cid: ""
+  dockerAPIToken: ""
+  existingSecret: ""
+  agentRunmode: ""
+  agentRegion: ""
+  agentRuntime: ""
+  agentRuntimeSocket: ""
+  agentMaxConsumerThreads: ""

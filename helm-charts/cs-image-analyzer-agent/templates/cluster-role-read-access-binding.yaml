@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "cs-image-analyzer-agent.fullname" . }}
+  labels:
+  {{- include "cs-image-analyzer-agent.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.serviceAccount.name | default ( include "cs-image-analyzer-agent.fullname" . ) }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "cs-image-analyzer-agent.fullname" . }}

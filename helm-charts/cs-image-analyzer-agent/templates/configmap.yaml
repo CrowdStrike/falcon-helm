@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cs-image-analyzer-agent.fullname" . }}
+  labels:
+  {{- include "cs-image-analyzer-agent.labels" . | nindent 4 }}
+data:
+  AGENT_CID: {{ required "Customer cid should be provided" .Values.crowdstrikeConfig.cid | quote }}
+  AGENT_CLUSTER_NAME: {{ required "A cluster name must be provided for the agent" .Values.crowdstrikeConfig.clusterName | quote }}
+  AGENT_DEBUG: {{ .Values.crowdstrikeConfig.enableDebug | default "false" | quote }}
+  AGENT_RUNMODE: {{ .Values.crowdstrikeConfig.runMode | default "watcher" | quote }} #( watcher / socket )
+  AGENT_REGION: {{ .Values.crowdstrikeConfig.agentRegion | quote }}
+  AGENT_RUNTIME: {{ .Values.crowdstrikeConfig.agentRuntime | quote }} # not used in watcher mode
+  AGENT_RUNTIME_SOCKET: {{ .Values.crowdstrikeConfig.agentRuntimeSocket | quote }} #( have defaults constants for docker/podman/crio/ctrd )
+  AGENT_MAX_CONSUMER_THREADS: {{ .Values.crowdstrikeConfig.maxConsumerThreads | default "1" | quote }}

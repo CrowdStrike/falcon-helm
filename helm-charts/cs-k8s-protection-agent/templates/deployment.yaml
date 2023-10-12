@@ -20,10 +20,18 @@ spec:
       labels:
     {{- include "cs-k8s-protection-agent.labels" . | nindent 8 }}
     spec:
-      {{- if .Values.crowdstrikeConfig.dockerAPIToken }}
+    {{- if or (.Values.image.pullSecrets) (.Values.image.registryConfigJSON) (.Values.crowdstrikeConfig.dockerAPIToken) }}
       imagePullSecrets:
+        {{ if .Values.crowdstrikeConfig.dockerAPIToken }}
         - name: {{ include "cs-k8s-protection-agent.fullname" . }}-regsecret
-      {{- end }}
+        {{- end }}
+        {{ if .Values.image.pullSecrets }}
+        - name: {{ .Values.image.pullSecrets }}
+        {{- end }}
+        {{ if .Values.image.registryConfigJSON }}
+        - name: {{ include "cs-k8s-protection-agent.fullname" . }}-regsecret-registryconfigjson
+        {{- end }}
+    {{- end }}
       serviceAccountName: {{ .Values.serviceAccount.name | default ( include "cs-k8s-protection-agent.fullname" . ) }}
       securityContext:
       {{- toYaml .Values.podSecurityContext | nindent 8 }}

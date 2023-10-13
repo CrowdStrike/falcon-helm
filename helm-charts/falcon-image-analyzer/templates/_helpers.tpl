@@ -62,17 +62,12 @@ Create the name of the service account to use
 {{- end }}
 
 {{- define "falcon-image-analyzer.securityContext" -}}
-{{- if eq .Values.crowdstrikeConfig.agentRunmode "socket" }}
+{{- if eq .Values.crowdstrikeConfig.agentRunmode "socket" -}}
 privileged: {{ .Values.securityContext.privileged | default true }}
 allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation | default true }}
 runAsUser: {{ .Values.securityContext.runAsUser | default 0 }}
 runAsGroup: {{ .Values.securityContext.runAsGroup | default 0 }}
 {{- end }}
-{{- end }}
-
-{{- define "falcon-image-analyzer.defaultVolumeMounts" -}}
-
-
 {{- end }}
 
 {{- define "falcon-image-analyzer.volumeMounts" -}}
@@ -137,6 +132,8 @@ runAsGroup: {{ .Values.securityContext.runAsGroup | default 0 }}
 {{- else if eq .Values.crowdstrikeConfig.agentRuntime "podman" -}}
 {{- printf "%s" "unix:///run/podman/podman.sock" }}
 {{- end }}
+{{- else -}}
+{{- .Values.crowdstrikeConfig.agentRuntimeSocket }}
 {{- end }}
 {{- end }}
 {{- end }}

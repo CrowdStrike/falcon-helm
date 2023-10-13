@@ -5,9 +5,13 @@ metadata:
   labels:
   {{- include "falcon-image-analyzer.labels" . | nindent 4 }}
 rules:
-  - verbs: [ "get", "watch", "list" ]
-    apiGroups: [ "" ]
+  - apiGroups:
+    - ""
     resources:
-      - "pods"
-      - "secrets"
-      - "namespaces"
+    - pods
+    - secrets
+    - namespaces
+    verbs:
+    - get
+    - watch
+    - list

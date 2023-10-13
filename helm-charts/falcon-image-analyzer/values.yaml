@@ -11,7 +11,14 @@ deployment:
 replicaCount: 1
 image:
   repository: eng-cloud-docker-sandbox-local.artifactory.crwd.dev/cloud/cs-imageanalyzer
+  # Overrides the image tag. In general, tags should not be used (including semver tags or `latest`). This variable is provided for those
+  # who have yet to move off of using tags. The sha256 digest should be used in place of tags for increased security and image immutability.
   tag:
+  # Setting a digest will override any tag and should be used instead of tags.
+  #
+  # Example digest variable configuration:
+  # digest: sha256:ffdc91f66ef8570bd7612cf19145563a787f552656f5eec43cd80ef9caca0398
+  digest:
   pullPolicy: IfNotPresent
   envFrom:
     - configMapRef:
@@ -43,6 +50,8 @@ tolerations: []
 
 affinity: {}
 
+priorityClassName: ""
+
 # This is a mandatory mount for both deployment and daemon set.
 # this is used as a tmp working space for image storage
 volumes:
@@ -52,14 +61,14 @@ volumes:
 
 crowdstrikeConfig:
   clusterName: ""
-  enableDebug: ""
+  enableDebug: "false"
   clientID: ""
   clientSecret: ""
   cid: ""
   dockerAPIToken: ""
   existingSecret: ""
-  agentRunmode: ""
-  agentRegion: ""
+  agentRunmode: "watcher"
+  agentRegion: "us-1"
   agentRuntime: ""
   agentRuntimeSocket: ""
-  agentMaxConsumerThreads: ""
+  agentMaxConsumerThreads: "1"

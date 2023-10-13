@@ -61,15 +61,106 @@ Create the name of the service account to use
 {{- end }}
 {{- end }}
 
+{{- define "falcon-image-analyzer.securityContext" -}}
+{{- if eq .Values.crowdstrikeConfig.agentRunmode "socket" }}
+privileged: {{ .Values.securityContext.privileged | default true }}
+allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation | default true }}
+runAsUser: {{ .Values.securityContext.runAsUser | default 0 }}
+runAsGroup: {{ .Values.securityContext.runAsGroup | default 0 }}
+{{- end }}
+{{- end }}
 
-{{- define "imagePullSecret" }}
+{{- define "falcon-image-analyzer.defaultVolumeMounts" -}}
+
+
+{{- end }}
+
+{{- define "falcon-image-analyzer.volumeMounts" -}}
+{{- if lt (len .Values.volumeMounts) 2 -}}
+{{- .Values.volumeMounts | toYaml }}
+{{- if eq .Values.crowdstrikeConfig.agentRunmode "socket" }}
+- name: var-run
+  mountPath: {{ trimPrefix "unix://" (include "falcon-image-analyzer.agentRuntimeSocket" . ) }}
+{{- if eq .Values.crowdstrikeConfig.agentRuntime "crio" }}
+- name: storage
+  mountPath: /run/containers/storage
+- name: containers
+  mountPath: /var/lib/containers
+- name: fuse-overlay
+  mountPath: /usr/bin/fuse-overlayfs
+- name: crio-conf
+  mountPath: /etc/containers/storage.conf
+{{- end }}
+{{- end }}
+{{- else -}}
+{{- .Values.volumeMounts | toYaml -}}
+{{- end }}
+{{- end }}
+
+{{- define "falcon-image-analyzer.volumes" -}}
+{{- if lt (len .Values.volumes) 2 -}}
+{{- .Values.volumes | toYaml -}}
+{{- if eq .Values.crowdstrikeConfig.agentRunmode "socket" }}
+- name: var-run
+  hostPath:
+    path: {{ trimPrefix "unix://" (include "falcon-image-analyzer.agentRuntimeSocket" . ) }}
+    type: Socket
+{{- if eq .Values.crowdstrikeConfig.agentRuntime "crio" }}
+- name: storage
+  hostPath:
+    path: /run/containers/storage
+    type: Directory
+- name: containers
+  hostPath:
+    path: /var/lib/containers
+    type: Directory
+- name: crio-conf
+  hostPath:
+    path: /etc/containers/storage.conf
+    type: File
+{{- end }}
+{{- end }}
+{{- else -}}
+{{- .Values.volumes | toYaml -}}
+{{- end }}
+{{- end }}
+
+{{- define "falcon-image-analyzer.agentRuntimeSocket" -}}
+{{- if eq .Values.crowdstrikeConfig.agentRunmode "socket" }}
+{{- if not .Values.crowdstrikeConfig.agentRuntimeSocket }}
+{{- if eq .Values.crowdstrikeConfig.agentRuntime "docker" }}
+{{- printf "%s" "unix:///run/docker.sock" }}
+{{- else if eq .Values.crowdstrikeConfig.agentRuntime "containerd" -}}
+{{- printf "%s" "unix:///run/containerd/containerd.sock" }}
+{{- else if eq .Values.crowdstrikeConfig.agentRuntime "crio" -}}
+{{- printf "%s" "unix:///run/crio/crio.sock" }}
+{{- else if eq .Values.crowdstrikeConfig.agentRuntime "podman" -}}
+{{- printf "%s" "unix:///run/podman/podman.sock" }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- define "falcon-image-analyzer.imagePullSecret" }}
 {{- with .Values.crowdstrikeConfig }}
-{{- if eq .env "us-gov-1" }}
+{{- if eq .Values.crowdstrikeConfig.agentRegion "us-gov-1" }}
 {{- printf "{\"auths\":{\"registry.laggar.gcw.crowdstrike.com\":{\"username\":\"ia-%s\",\"password\":\"%s\",\"email\":\"image-assessment@crowdstrike.com\",\"auth\":\"%s\"}}}" .cid .dockerAPIToken (printf "ia-%s:%s" .cid .dockerAPIToken | b64enc) | b64enc }}
-{{- else if eq .env "us-gov-2" }}
+{{- else if eq .Values.crowdstrikeConfig.agentRegion "us-gov-2" }}
 {{- printf "{\"auths\":{\"registry.us-gov-2.crowdstrike.com\":{\"username\":\"ia-%s\",\"password\":\"%s\",\"email\":\"image-assessment@crowdstrike.com\",\"auth\":\"%s\"}}}" .cid .dockerAPIToken (printf "ia-%s:%s" .cid .dockerAPIToken | b64enc) | b64enc }}
 {{- else }}
 {{- printf "{\"auths\":{\"registry.crowdstrike.com\":{\"username\":\"ia-%s\",\"password\":\"%s\",\"email\":\"image-assessment@crowdstrike.com\",\"auth\":\"%s\"}}}" .cid .dockerAPIToken (printf "ia-%s:%s" .cid .dockerAPIToken | b64enc) | b64enc }}
 {{- end }}
 {{- end }}
 {{- end }}
+
+{{- define "falcon-image-analyzer.image" -}}
+{{- if .Values.image.digest -}}
+{{- if contains "sha256:" .Values.image.digest -}}
+{{- printf "%s@%s" .Values.image.repository .Values.image.digest -}}
+{{- else -}}
+{{- printf "%s@%s:%s" .Values.image.repository "sha256" .Values.image.digest -}}
+{{- end -}}
+{{- else -}}
+{{- printf "%s:%s" .Values.image.repository .Values.image.tag -}}
+{{- end -}}
+{{- end -}}

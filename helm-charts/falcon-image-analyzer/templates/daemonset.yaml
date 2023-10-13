@@ -3,12 +3,13 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: {{ include "falcon-image-analyzer.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "falcon-image-analyzer.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
-  {{- include "falcon-image-analyzer.selectorLabels" . | nindent 6 }}
+    {{- include "falcon-image-analyzer.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
@@ -20,20 +21,24 @@ spec:
       labels:
     {{- include "falcon-image-analyzer.labels" . | nindent 8 }}
     spec:
-      {{ if .Values.crowdstrikeConfig.dockerAPIToken }}
+      {{- if .Values.crowdstrikeConfig.dockerAPIToken }}
       imagePullSecrets:
-        - name: {{ include "falcon-image-analyzer.fullname" . }}-regsecret
+        - name: {{ include "falcon-image-analyzer.fullname" . }}-pull-secret
       {{- end }}
       serviceAccountName: {{ .Values.serviceAccount.name | default ( include "falcon-image-analyzer.fullname" . ) }}
       securityContext:
+      {{- if .Values.podSecurityContext }}
       {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
-          {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- include "falcon-image-analyzer.securityContext" . | nindent 12 }}
           resources:
+          {{- if .Values.resources }}
           {{- toYaml .Values.resources | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          {{- end }}
+          image: {{ include "falcon-image-analyzer.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args: ["-runmode", "socket"]
           envFrom:
@@ -46,15 +51,13 @@ spec:
                 name: {{ include "falcon-image-analyzer.fullname" . }}
                 {{- end }}
           volumeMounts:
-           {{- toYaml .Values.volumeMounts | default "" | nindent 12 }}
+          {{- (include "falcon-image-analyzer.volumeMounts" .) | nindent 12 }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
       {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.volumes }}
       volumes:
-        {{- toYaml . | default "" | nindent 8 }}
-      {{- end}}
+        {{- include "falcon-image-analyzer.volumes" . | nindent 8 }}
       {{- with .Values.affinity }}
       affinity:
       {{- toYaml . | nindent 8 }}
@@ -62,5 +65,8 @@ spec:
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.crowdstrikeConfig.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
       {{- end }}
  {{- end }}

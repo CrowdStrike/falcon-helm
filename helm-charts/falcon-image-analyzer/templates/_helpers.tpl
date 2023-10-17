@@ -113,6 +113,10 @@ runAsGroup: {{ .Values.securityContext.runAsGroup | default 0 }}
   hostPath:
     path: /etc/containers/storage.conf
     type: File
+- name: fuse-overlay
+  hostPath:
+    path: /usr/bin/fuse-overlayfs
+    type: File
 {{- end }}
 {{- end }}
 {{- else -}}

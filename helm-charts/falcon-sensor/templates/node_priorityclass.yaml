@@ -1,0 +1,19 @@
+{{- if .Values.node.enabled }}
+{{- if or .Values.node.daemonset.priorityClassName .Values.node.gke.autopilot }}
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: {{ include "falcon-sensor.priorityClassName" . }}
+  labels:
+    app: {{ include "falcon-sensor.name" . }}
+    app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/component: "kernel_sensor"
+    crowdstrike.com/provider: crowdstrike
+    helm.sh/chart: {{ include "falcon-sensor.chart" . }}
+value: {{ .Values.node.daemonset.priorityClassValue }}
+globalDefault: false
+description: "This priority class would be used to deploy CrowdStrike node sensor for GKE Autopilot clusters."
+{{- end }}
+{{- end }}

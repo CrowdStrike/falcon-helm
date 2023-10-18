@@ -9,6 +9,10 @@ node:
   # Overrides the backend leveraged by the Falcon Sensor (kernel, bpf)
   backend: kernel
 
+  # Enable for use on Google's GKE Autopilot clusters
+  gke:
+    autopilot: false
+
   daemonset:
     # Annotations to apply to the daemonset
     annotations: {}
@@ -21,6 +25,7 @@ node:
 
     # Assign a PriorityClassName to pods if set
     priorityClassName: ""
+    priorityClassValue: 1000000000
 
     tolerations:
       # We want to schedule on control plane nodes where they are accessible
@@ -48,6 +53,17 @@ node:
     #         values:
     #         - amd64
     nodeAffinity: {}
+
+    # Resource settings that can be set with backend is set to bpf only. Cannot be used when backend is set to kernel.
+    # This will be ignored if backend is set to kernel. Purposefully. The defaults are set to the minimum requirements.
+    # Depending on the size of your cluster and the node types, you may need to increase these values.
+    # resources:
+    #   limits:
+    #     cpu: 250m
+    #     memory: 500Mi
+    #   requests:
+    #     cpu: 250m
+    #     memory: 500Mi
 
     # Update strategy to role out new daemonset configuration to the nodes.
     updateStrategy: RollingUpdate
@@ -88,12 +104,12 @@ container:
 
   # Configure PodTopologySpread constraints to allow pods run on different nodes
   topologySpreadConstraints:
-  - maxSkew: 1
-    topologyKey: kubernetes.io/hostname
-    whenUnsatisfiable: ScheduleAnyway
-    labelSelector:
-      matchLabels:
-        crowdstrike.com/component: crowdstrike-falcon-injector
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          crowdstrike.com/component: crowdstrike-falcon-injector
 
   # Auto update the certificates every time there is an update
   autoCertificateUpdate: true

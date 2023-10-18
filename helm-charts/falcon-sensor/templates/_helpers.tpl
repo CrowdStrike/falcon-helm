@@ -84,3 +84,38 @@ Create the name of the service account to use
 {{- end -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "falcon-sensor.priorityClassName" -}}
+{{- printf "%s" .Values.node.daemonset.priorityClassName -}}
+{{- if not .Values.node.daemonset.priorityClassName -}}
+{{- printf "%s" "falcon-helm-node-security-critical" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "falcon-sensor.daemonsetResources" -}}
+{{- if .Values.node.gke.autopilot -}}
+{{- if .Values.node.daemonset.resources -}}
+resources:
+  {{- if .Values.node.daemonset.resources.limits -}}
+  limits:
+    cpu: {{ .Values.node.daemonset.resources.limits.cpu | default "750m" }}
+    memory: {{ .Values.node.daemonset.resources.limits.memory | default "1.5Gi" }}
+  {{- end }}
+  requests:
+    cpu: {{ .Values.node.daemonset.resources.requests.cpu | default "750m" }}
+    memory: {{ .Values.node.daemonset.resources.requests.memory | default "1.5Gi" }}
+{{- else -}}
+resources:
+  limits:
+    cpu: "750m"
+    memory: "1.5Gi"
+  requests:
+    cpu: "750m"
+    memory: "1.5Gi"
+{{- end -}}
+{{- else -}}
+{{- if .Values.node.daemonset.resources -}}
+{{- toYaml .Values.node.daemonset.resources -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

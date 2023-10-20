@@ -121,12 +121,14 @@ The following tables lists the more common configurable parameters of the chart 
 | :-------------------------------- | :--------------------------------------------------------------------- | :---------------------------------------------------------------------- |
 | `node.enabled`                    | Enable installation on the Kubernetes node                             | `true`                                                                  |
 | `node.backend`                    | Choose sensor backend (`kernel`,`bpf`). Sensor 6.49+ only              | kernel                                                                  |
+| `node.gke.autopilot`              | Enable if running on GKE Autopilot clusters                            | `false`                                                                 |
 | `node.image.repository`           | Falcon Sensor Node registry/image name                                 | `falcon-node-sensor`                                                    |
 | `node.image.tag`                  | The version of the official image to use                               | `latest`   (Use node.image.digest instead for security and production)  |
 | `node.image.digest`               | The sha256 digest of the official image to use                         | None       (Use instead of the image tag for security and production)   |
 | `node.image.pullPolicy`           | Policy for updating images                                             | `Always`                                                                |
 | `node.image.pullSecrets`          | Pull secrets for private registry                                      | None       (Conflicts with node.image.registryConfigJSON)               |
 | `node.image.registryConfigJSON`   | base64 encoded docker config json for the pull secret                  | None       (Conflicts with node.image.pullSecrets)                      |
+| `node.daemonset.resources`        | Configure Node sensor resource requests and limits (eBPF mode only)    | None       (Minimum setting of 250m CPU and 500Mi memory allowed). Default for GKE Autopilot is 750m CPU and 1.5Gi memory.<br><br><div class="warning">:warning: **Warning**:<br>If you configure resources, you must configure the CPU and Memory Resource requests and limits correctly for your node instances for the node sensor to run properly!</div> |
 | `falcon.cid`                      | CrowdStrike Customer ID (CID)                                          | None       (Required)                                                   |
 
 `falcon.cid` and `node.image.repository` are required values.

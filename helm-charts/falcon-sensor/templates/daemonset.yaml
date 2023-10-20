@@ -59,7 +59,7 @@ spec:
     spec:
     {{- if and (.Values.node.image.pullSecrets) (.Values.node.image.registryConfigJSON) }}
       {{- fail "node.image.pullSecrets and node.image.registryConfigJSON cannot be used together." }}
-    {{- else -}}
+    {{- else }}
     {{- if or (.Values.node.image.pullSecrets) (.Values.node.image.registryConfigJSON) }}
       imagePullSecrets:
       {{- if .Values.node.image.pullSecrets }}
@@ -70,12 +70,12 @@ spec:
       {{- end }}
     {{- end }}
     {{- end }}
-    {{- if .Values.node.daemonset.tolerations }}    
+    {{- if .Values.node.daemonset.tolerations }}
       tolerations:
       {{- with .Values.node.daemonset.tolerations }}
         {{- toYaml . | nindent 6 }}
       {{- end }}
-    {{- end }}  
+    {{- end }}
       nodeSelector:
         kubernetes.io/os: linux
     {{- if .Values.node.daemonset.nodeAffinity }}
@@ -94,16 +94,35 @@ spec:
       - name: init-falconstore
         image: "{{ include "falcon-sensor.image" . }}"
         imagePullPolicy: "{{ .Values.node.image.pullPolicy }}"
-        command: ["/bin/bash"]
+        command:
+          - /bin/bash
+        {{- if .Values.node.gke.autopilot }}
+        args:
+          - '-c'
+          - >-
+            echo "Running /opt/CrowdStrike/falcon-daemonset-init -i";
+            /opt/CrowdStrike/falcon-daemonset-init -i
+        {{- else }}
         args: ['-c', 'if [ -x "/opt/CrowdStrike/falcon-daemonset-init" ]; then echo "Running falcon-daemonset-init -i" ; /opt/CrowdStrike/falcon-daemonset-init -i ; else if [ -d "/host_opt/CrowdStrike/falconstore" ] ; then echo "Re-creating /opt/CrowdStrike/falconstore as it is a directory instead of a file"; rm -rf /host_opt/CrowdStrike/falconstore; fi; mkdir -p /host_opt/CrowdStrike && touch /host_opt/CrowdStrike/falconstore; fi']
         volumeMounts:
           - name: falconstore-dir
             mountPath: /host_opt
+        {{- end }}
         securityContext:
           runAsUser: 0
           privileged: true
-          readOnlyRootFilesystem: false
           allowPrivilegeEscalation: true
+        {{- if .Values.node.gke.autopilot }}
+          readOnlyRootFilesystem: true
+          capabilities:
+            add:
+              - SYS_ADMIN
+              - SYS_PTRACE
+              - SYS_CHROOT
+              - DAC_READ_SEARCH
+        {{- else }}
+          readOnlyRootFilesystem: false
+        {{- end }}
       containers:
       - name: falcon-node-sensor
         image: "{{ include "falcon-sensor.image" . }}"
@@ -120,6 +139,26 @@ spec:
           privileged: true
           readOnlyRootFilesystem: false
           allowPrivilegeEscalation: true
+        {{- if .Values.node.gke.autopilot }}
+          capabilities:
+            add:
+              - SYS_ADMIN
+              - SETGID
+              - SETUID
+              - SYS_PTRACE
+              - SYS_CHROOT
+              - DAC_OVERRIDE
+              - SETPCAP
+              - DAC_READ_SEARCH
+              - BPF
+              - PERFMON
+              - SYS_RESOURCE
+              - NET_RAW
+              - CHOWN
+        {{- end }}
+        {{- if (eq .Values.node.backend "bpf") }}
+        {{- include "falcon-sensor.daemonsetResources" . | nindent 8 }}
+        {{- end }}
         envFrom:
         - configMapRef:
             name: {{ include "falcon-sensor.fullname" . }}-config
@@ -127,17 +166,19 @@ spec:
           - name: falconstore
             mountPath: /opt/CrowdStrike/falconstore
       volumes:
+      {{- if not .Values.node.gke.autopilot }}
         - name: falconstore-dir
           hostPath:
             path: /opt
             type: DirectoryOrCreate
+      {{- end }}
         - name: falconstore
           hostPath:
             path: /opt/CrowdStrike/falconstore
       serviceAccountName: {{ .Values.serviceAccount.name }}
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
-    {{- if .Values.node.daemonset.priorityClassName }}
-      priorityClassName: {{ .Values.node.daemonset.priorityClassName }}
+    {{- if or .Values.node.daemonset.priorityClassName .Values.node.gke.autopilot }}
+      priorityClassName: {{ include "falcon-sensor.priorityClassName" . }}
     {{- end }}
       hostNetwork: true
       hostPID: true

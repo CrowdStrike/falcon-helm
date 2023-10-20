@@ -40,6 +40,15 @@
                     ],
                     "pattern": "^(kernel|bpf)$"
                 },
+                "gke": {
+                    "type": "object",
+                    "properties": {
+                        "autopilot": {
+                            "type": "boolean",
+                            "default": "false"
+                        }
+                    }
+                },
                 "daemonset": {
                     "type": "object",
                     "required": [
@@ -63,6 +72,98 @@
                         },
                         "priorityClassName": {
                             "type": "string"
+                        },
+                        "priorityClassValue": {
+                            "type": "integer",
+                            "default": "1000000000",
+                            "minimum": 1
+                        },
+                        "resources": {
+                            "type": "object",
+                            "properties": {
+                                "limits": {
+                                    "type": "object",
+                                    "properties": {
+                                        "cpu": {
+                                            "oneOf": [
+                                                {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "default": "250m",
+                                                    "pattern": "^([0-9]{4,}|[2-9][5-9][0-9])m$"
+                                                },
+                                                {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "default": "1",
+                                                    "pattern": "^[0-9]+$",
+                                                    "minimum": 1
+                                                }
+                                            ]
+                                        },
+                                        "memory": {
+                                            "oneOf": [
+                                                {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "default": "500Mi",
+                                                    "pattern": "^([5-9][0-9]{2}[Mi]+)|([0-9.]+[iEGTP]+)$"
+                                                },
+                                                {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "default": "524288000",
+                                                    "pattern": "^([5-9][0-9]{8})|([0-9]{10,})$",
+                                                    "minimum": 524288000
+                                                }
+                                            ]
+                                        }
+                                    }
+                                },
+                                "requests": {
+                                    "type": "object",
+                                    "properties": {
+                                        "cpu": {
+                                            "oneOf": [
+                                                {
+                                                    "type": "string",
+                                                    "default": "250m",
+                                                    "pattern": "^([0-9]{4,}|[2-9][5-9][0-9])m$"
+                                                },
+                                                {
+                                                    "type": "integer",
+                                                    "default": "1",
+                                                    "pattern": "^[0-9]+$",
+                                                    "minimum": 1
+                                                }
+                                            ]
+                                        },
+                                        "memory": {
+                                            "oneOf": [
+                                                {
+                                                    "type": "string",
+                                                    "default": "500Mi",
+                                                    "pattern": "^([5-9][0-9]{2}[Mi]+)|([0-9.]+[iEGTP]+)$"
+                                                },
+                                                {
+                                                    "type": "integer",
+                                                    "default": "524288000",
+                                                    "pattern": "^([5-9][0-9]{8})|([0-9]{10,})$",
+                                                    "minimum": 524288000
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
                         },
                         "updateStrategy": {
                             "type": "string",

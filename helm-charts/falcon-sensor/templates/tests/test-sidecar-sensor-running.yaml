@@ -32,7 +32,7 @@ spec:
             echo "${KUBECMD}"
             exit 1
         fi
-        
+
         echo "[\033[0;32mOK\033[0m]: Injector pod is running"
 
         echo "Running test pod to verify sidecar injection"
@@ -46,10 +46,10 @@ spec:
             echo "${KUBECMD2}"
             exit 1
         fi
-        
+
         echo "[\033[0;32mOK\033[0m]: crowdstrike-falcon-container sidecar container is injected"
         exit 0
-        
+
       securityContext:
         runAsUser: 0
         privileged: true

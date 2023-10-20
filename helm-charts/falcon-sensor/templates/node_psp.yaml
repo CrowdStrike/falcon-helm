@@ -1,6 +1,6 @@
 {{- if .Capabilities.APIVersions.Has "policy/v1beta1/PodSecurityPolicy" }}
 {{- if lt (int (semver .Capabilities.KubeVersion.Version).Minor) 25 }}
-{{- if .Values.node.enabled }}
+{{- if and .Values.node.enabled .Values.node.psp.enabled }}
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:

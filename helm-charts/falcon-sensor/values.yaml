@@ -79,6 +79,10 @@ node:
   # How long to wait for Falcon pods to stop gracefully
   terminationGracePeriod: 30
 
+  #When enabled, Helm Chart installs a PodSecurityPolicy for the node sensor
+  psp:
+    enabled: true
+
 container:
   # When enabled, Helm chart deploys the Falcon Container Sensor to Pods through Webhooks
   enabled: false
@@ -204,6 +208,10 @@ container:
     requests:
       cpu: 10m
       memory: 20Mi
+  
+    #When enabled, Helm Chart installs a PodSecurityPolicy for the container sensor
+  psp:
+    enabled: true
 
 serviceAccount:
   name: crowdstrike-falcon-sa

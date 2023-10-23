@@ -1,5 +1,5 @@
 {{- if .Values.node.enabled }}
-{{- if or .Values.node.daemonset.priorityClassName .Values.node.gke.autopilot }}
+{{- if and .Values.node.daemonset.priorityClassCreate (or .Values.node.daemonset.priorityClassName .Values.node.gke.autopilot) }}
 apiVersion: scheduling.k8s.io/v1
 kind: PriorityClass
 metadata:

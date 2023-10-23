@@ -70,6 +70,10 @@
                         "nodeAffinity": {
                             "type": "object"
                         },
+                        "priorityClassCreate": {
+                            "type": "boolean",
+                            "default": "true"
+                        },
                         "priorityClassName": {
                             "type": "string"
                         },

@@ -24,6 +24,7 @@ node:
     labels: {}
 
     # Assign a PriorityClassName to pods if set
+    priorityClassCreate: true #Whether or not to create a PriorityClass as part of this Chart
     priorityClassName: ""
     priorityClassValue: 1000000000
 

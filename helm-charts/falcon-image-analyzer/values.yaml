@@ -20,6 +20,12 @@ image:
   # digest: sha256:ffdc91f66ef8570bd7612cf19145563a787f552656f5eec43cd80ef9caca0398
   digest:
   pullPolicy: IfNotPresent
+
+  # Use this if you have a base64 encoded docker
+  # config json with user and pass of your own
+  # private repository
+  pullSecret:
+
   envFrom:
     - configMapRef:
         name: agent-config
@@ -65,7 +71,16 @@ crowdstrikeConfig:
   clientID: ""
   clientSecret: ""
   cid: ""
+
+  # Use the value for the crowdstrike Artifactory
+  # Token retrieved by calling container-security
+  # /entities/image-registry-credentials/v1
   dockerAPIToken: ""
+
+
+  # Use this value if you have an existing secret
+  # defined in your k8s that may contain secrets
+  # for falcon api client id and pw
   existingSecret: ""
   agentRunmode: "watcher"
   agentRegion: "us-1"

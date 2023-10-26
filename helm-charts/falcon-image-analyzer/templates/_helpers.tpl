@@ -84,7 +84,7 @@ runAsGroup: {{ .Values.securityContext.runAsGroup | default 0 }}
 - name: fuse-overlay
   mountPath: /usr/bin/fuse-overlayfs
 - name: crio-conf
-  mountPath: /etc/containers/storage.conf
+  mountPath: /etc/containers
 {{- end }}
 {{- end }}
 {{- else -}}
@@ -111,8 +111,8 @@ runAsGroup: {{ .Values.securityContext.runAsGroup | default 0 }}
     type: Directory
 - name: crio-conf
   hostPath:
-    path: /etc/containers/storage.conf
-    type: File
+    path: /etc/containers
+    type: Directory
 - name: fuse-overlay
   hostPath:
     path: /usr/bin/fuse-overlayfs

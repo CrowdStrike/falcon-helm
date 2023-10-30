@@ -124,8 +124,7 @@
                     "type": "string"
                 },
                 "clientID": {
-                    "type": "string",
-                    "pattern": "^[a-fA-F0-9]{32}$"
+                    "type": "string"
                 },
                 "clientSecret": {
                     "type": "string"
@@ -160,6 +159,9 @@
             },
             "then": {
                 "properties": {
+                    "clientID": {
+                        "pattern": "^[a-fA-F0-9]{32}$"
+                    },
                     "clientSecret": {
                         "pattern": "^[a-zA-Z0-9]{40}$"
                     }

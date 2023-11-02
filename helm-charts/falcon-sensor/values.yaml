@@ -62,9 +62,11 @@ node:
     # resources:
     #   limits:
     #     cpu: 250m
+    #     ephemeral-storage: 100Mi
     #     memory: 500Mi
     #   requests:
     #     cpu: 250m
+    #     ephemeral-storage: 100Mi
     #     memory: 500Mi
 
     # Update strategy to role out new daemonset configuration to the nodes.

@@ -108,15 +108,17 @@ spec:
           - name: falconstore-dir
             mountPath: /host_opt
         {{- end }}
+        {{- if or .Values.node.gke.autopilot .Values.node.daemonset.resources }}
         resources:
           requests:
             cpu: 10m
-            ephemeral-storage: 10Mi
+            ephemeral-storage: 100Mi
             memory: 50Mi
           limits:
             cpu: 10m
-            ephemeral-storage: 10Mi
+            ephemeral-storage: 100Mi
             memory: 50Mi
+        {{- end }}
         securityContext:
           runAsUser: 0
           privileged: true

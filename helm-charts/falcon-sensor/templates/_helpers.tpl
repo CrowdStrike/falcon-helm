@@ -94,26 +94,30 @@ Create the name of the service account to use
 
 {{- define "falcon-sensor.daemonsetResources" -}}
 {{- if .Values.node.gke.autopilot -}}
-{{- if .Values.node.daemonset.resources -}}
 resources:
-  {{- if .Values.node.daemonset.resources.limits -}}
+  {{- if (.Values.node.daemonset.resources | default dict ).limits }}
   limits:
-    cpu: {{ .Values.node.daemonset.resources.limits.cpu | default "750m" }}
-    memory: {{ .Values.node.daemonset.resources.limits.memory | default "1.5Gi" }}
+    cpu: {{ (.Values.node.daemonset.resources.limits | default dict ).cpu | default "750m" }}
+    memory: {{ (.Values.node.daemonset.resources.limits | default dict ).memory | default "1.5Gi" }}
+    ephemeral-storage: {{  (index (.Values.node.daemonset.resources.limits | default dict ) "ephemeral-storage") |  default "100Mi" }}
+  {{- else }}
+  limits:
+    cpu: 750m
+    memory: 1.5Gi
+    ephemeral-storage: 100Mi
   {{- end }}
+  {{- if (.Values.node.daemonset.resources | default dict ).requests }}
   requests:
-    cpu: {{ .Values.node.daemonset.resources.requests.cpu | default "750m" }}
-    memory: {{ .Values.node.daemonset.resources.requests.memory | default "1.5Gi" }}
-{{- else -}}
-resources:
-  limits:
-    cpu: "750m"
-    memory: "1.5Gi"
+    cpu: {{ (.Values.node.daemonset.resources.requests | default dict ).cpu | default "750m" }}
+    ephemeral-storage: {{  (index (.Values.node.daemonset.resources.requests | default dict ) "ephemeral-storage") |  default "100Mi" }}
+    memory: {{ (.Values.node.daemonset.resources.requests | default dict ).memory | default "1.5Gi" }}
+  {{- else }}
   requests:
-    cpu: "750m"
-    memory: "1.5Gi"
-{{- end -}}
-{{- else -}}
+    cpu: 750m
+    memory: 1.5Gi
+    ephemeral-storage: 100Mi
+  {{- end }}
+ {{- else -}}
 {{- if .Values.node.daemonset.resources -}}
 {{- toYaml .Values.node.daemonset.resources -}}
 {{- end -}}

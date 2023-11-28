@@ -9,14 +9,7 @@ data:
   AGENT_DEBUG: {{ .Values.crowdstrikeConfig.enableDebug | default "false" | quote }}
   AGENT_ENV: {{ .Values.crowdstrikeConfig.env | quote }}
   AGENT_HELM_VERSION: {{ .Chart.Version | quote }}
-  {{- if .Values.proxyConfig }}
-  {{- if .Values.proxyConfig.HTTP_PROXY }}
-  HTTP_PROXY: {{ .Values.proxyConfig.HTTP_PROXY }}
-  {{- end }}
-  {{- if .Values.proxyConfig.HTTPS_PROXY }}
-  HTTPS_PROXY: {{ .Values.proxyConfig.HTTPS_PROXY }}
-  {{- end }}
-  {{- if .Values.proxyConfig.NO_PROXY }}
-  NO_PROXY: {{ .Values.proxyConfig.NO_PROXY }}
-  {{- end }}
-  {{- end }}
+  HTTP_PROXY: {{ .Values.proxyConfig.HTTP_PROXY | default "" }}
+  HTTPS_PROXY: {{ .Values.proxyConfig.HTTPS_PROXY | default "" }}
+  NO_PROXY: {{ .Values.proxyConfig.NO_PROXY | default "" }}
+

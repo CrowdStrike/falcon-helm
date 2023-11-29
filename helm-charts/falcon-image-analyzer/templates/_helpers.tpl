@@ -144,12 +144,12 @@ runAsGroup: {{ .Values.securityContext.runAsGroup | default 0 }}
 
 {{- define "falcon-image-analyzer.imagePullSecret" }}
 {{- with .Values.crowdstrikeConfig }}
-{{- if eq .Values.crowdstrikeConfig.agentRegion "us-gov-1" }}
-{{- printf "{\"auths\":{\"registry.laggar.gcw.crowdstrike.com\":{\"username\":\"fc-%s\",\"password\":\"%s\",\"email\":\"image-assessment@crowdstrike.com\",\"auth\":\"%s\"}}}" .cid .dockerAPIToken (printf "fc-%s:%s" .cid .dockerAPIToken | b64enc) | b64enc }}
-{{- else if eq .Values.crowdstrikeConfig.agentRegion "us-gov-2" }}
-{{- printf "{\"auths\":{\"registry.us-gov-2.crowdstrike.com\":{\"username\":\"fc-%s\",\"password\":\"%s\",\"email\":\"image-assessment@crowdstrike.com\",\"auth\":\"%s\"}}}" .cid .dockerAPIToken (printf "fc-%s:%s" .cid .dockerAPIToken | b64enc) | b64enc }}
+{{- if eq .agentRegion "us-gov-1" }}
+{{- printf "{\"auths\":{\"registry.laggar.gcw.crowdstrike.com\":{\"username\":\"fc-%s\",\"password\":\"%s\",\"email\":\"image-assessment@crowdstrike.com\",\"auth\":\"%s\"}}}" (first (regexSplit "-" (lower .cid) -1)) .dockerAPIToken (printf "fc-%s:%s" (first (regexSplit "-" (lower .cid) -1)) .dockerAPIToken | b64enc) | b64enc }}
+{{- else if eq .agentRegion "us-gov-2" }}
+{{- printf "{\"auths\":{\"registry.us-gov-2.crowdstrike.mil\":{\"username\":\"fc-%s\",\"password\":\"%s\",\"email\":\"image-assessment@crowdstrike.com\",\"auth\":\"%s\"}}}" (first (regexSplit "-" (lower .cid) -1)) .dockerAPIToken (printf "fc-%s:%s" (first (regexSplit "-" (lower .cid) -1)) .dockerAPIToken | b64enc) | b64enc }}
 {{- else }}
-{{- printf "{\"auths\":{\"registry.crowdstrike.com\":{\"username\":\"fc-%s\",\"password\":\"%s\",\"email\":\"image-assessment@crowdstrike.com\",\"auth\":\"%s\"}}}" .cid .dockerAPIToken (printf "fc-%s:%s" .cid .dockerAPIToken | b64enc) | b64enc }}
+{{- printf "{\"auths\":{\"registry.crowdstrike.com\":{\"username\":\"fc-%s\",\"password\":\"%s\",\"email\":\"image-assessment@crowdstrike.com\",\"auth\":\"%s\"}}}" (first (regexSplit "-" (lower .cid) -1)) .dockerAPIToken (printf "fc-%s:%s" (first (regexSplit "-" (lower .cid) -1)) .dockerAPIToken | b64enc) | b64enc }}
 {{- end }}
 {{- end }}
 {{- end }}

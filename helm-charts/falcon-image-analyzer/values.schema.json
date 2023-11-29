@@ -35,7 +35,10 @@
                     "pattern": "^(Always|Never|IfNotPresent)$"
                 },
                 "pullSecret": {
-                    "type": "string"
+                    "type": [
+                        "null",
+                        "string"
+                    ]
                 },
                 "repository": {
                     "type": "string"
@@ -146,7 +149,10 @@
                     "description": "Cluster name to use for the agent"
                 },
                 "dockerAPIToken": {
-                    "type": "string"
+                    "type": [
+                        "null",
+                        "string"
+                    ]
                 },
                 "enableDebug": {
                     "type": "string",

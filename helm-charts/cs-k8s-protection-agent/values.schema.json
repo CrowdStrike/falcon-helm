@@ -167,6 +167,30 @@
                     }
                 }
             }
+        },
+        "proxyConfig": {
+            "default": {},
+            "type": "object",
+            "properties": {
+                "HTTP_PROXY": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "HTTPS_PROXY": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "NO_PROXY": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                }
+            }
         }
     }
 }

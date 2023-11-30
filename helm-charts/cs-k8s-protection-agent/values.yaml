@@ -51,3 +51,8 @@ crowdstrikeConfig:
   cid: ""
   dockerAPIToken: ""
   existingSecret: ""
+
+proxyConfig:
+  HTTP_PROXY: ""
+  HTTPS_PROXY: ""
+  NO_PROXY: ""

@@ -158,6 +158,32 @@ When external cluster communication is routed through a proxy server, the follow
 
 ### Enable a proxy configuration for the Kubernetes Protection Agent
 
+#### Enabling proxy support at install time
+
+#####  Using set commands to specify `proxyConfig` values
+* Example using set commands - special characters need to be escaped
+    ```
+    helm upgrade --install kpagent crowdstrike/cs-k8s-protection-agent \
+    -n falcon-kubernetes-protection --create-namespace -f values.yaml \
+    --set proxyConfig.HTTP_PROXY="http:\/\/100.10.10.10:8080" \
+    --set proxyConfig.HTTPS_PROXY="http:\/\/100.10.10.10:8080" \
+    --set proxyConfig.NO_PROXY="localhost\,10.0.0.0\/8"
+    ```
+
+##### Adding to values file
+* Example appending proxy values to the values file
+```
+crowdstrikeConfig:
+  ...
+  ...
+proxyConfig:
+  HTTP_PROXY: http://100.10.10.10:8080
+  HTTP_PROXY: http://100.10.10.10:8080
+  NO_PROXY: localhost,10.0.0.0/8
+```
+
+#### Manually modifying an existing install
+
 If a proxy configuration is required for the KPA, follow these steps to enable proxy server support.
 
 1.  Install the KPA using the Helm chart following the specific Kubernetes service instructions.

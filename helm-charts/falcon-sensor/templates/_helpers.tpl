@@ -119,7 +119,8 @@ resources:
   {{- end }}
  {{- else -}}
 {{- if .Values.node.daemonset.resources -}}
-{{- toYaml .Values.node.daemonset.resources -}}
+resources:
+{{- toYaml .Values.node.daemonset.resources | trim | nindent 2 -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}

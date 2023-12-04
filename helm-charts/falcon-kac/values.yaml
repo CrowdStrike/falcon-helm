@@ -94,3 +94,7 @@ webhook:
   failurePolicy: Ignore
   # Comma sparated list of namespaces in which we need to disable validation e.g test1,test2
   disableNamespaces:
+
+# Number of pods for resourceQuota object
+resourceQuota:
+  pods: 2

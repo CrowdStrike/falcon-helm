@@ -259,6 +259,16 @@
                     ]
                 }
             }
+        },
+        "resourceQuota": {
+            "type": "object",
+            "properties": {
+                "pods": {
+                    "type": "integer",
+                    "default": "2",
+                    "minimum": 2
+                }
+            }
         }
     }
 }

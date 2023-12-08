@@ -166,6 +166,7 @@ spec:
               - SYS_RESOURCE
               - NET_RAW
               - CHOWN
+              - NET_ADMIN
         {{- end }}
         {{- if (eq .Values.node.backend "bpf") }}
         {{- include "falcon-sensor.daemonsetResources" . | nindent 8 }}

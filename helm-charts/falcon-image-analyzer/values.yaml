@@ -10,7 +10,7 @@ deployment:
 
 replicaCount: 1
 image:
-  repository: registry.crowdstrike.com/ivan-agent/us-1/stage/cs-imageanalyzer
+  repository: registry.crowdstrike.com/ivan-agent/us-1/release/cs-imageanalyzer
   # Overrides the image tag. In general, tags should not be used (including semver tags or `latest`). This variable is provided for those
   # who have yet to move off of using tags. The sha256 digest should be used in place of tags for increased security and image immutability.
   tag:

@@ -87,3 +87,9 @@ crowdstrikeConfig:
   agentRuntime: ""
   agentRuntimeSocket: ""
   agentMaxConsumerThreads: "1"
+
+
+proxyConfig:
+  HTTP_PROXY: ""
+  HTTPS_PROXY: ""
+  NO_PROXY: ""

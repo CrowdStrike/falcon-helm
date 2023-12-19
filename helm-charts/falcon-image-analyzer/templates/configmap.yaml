@@ -16,3 +16,12 @@ data:
   AGENT_RUNTIME_SOCKET: {{ include "falcon-image-analyzer.agentRuntimeSocket" . | quote }}
   {{- end }}
   AGENT_MAX_CONSUMER_THREADS: {{ .Values.crowdstrikeConfig.agentMaxConsumerThreads | quote }}
+  {{- if .Values.proxyConfig.HTTP_PROXY }}
+  HTTP_PROXY: {{ .Values.proxyConfig.HTTP_PROXY }}
+  {{- end }}
+  {{- if .Values.proxyConfig.HTTPS_PROXY }}
+  HTTPS_PROXY: {{ .Values.proxyConfig.HTTPS_PROXY }}
+  {{- end }}
+  {{- if .Values.proxyConfig.NO_PROXY }}
+  NO_PROXY: {{ .Values.proxyConfig.NO_PROXY }}
+  {{- end }}

@@ -10,6 +10,9 @@ rules:
   resources:
   - namespaces
   - nodes
+  - pods
+  - replicationcontrollers
+  - services
   verbs:
   - get
   - list
@@ -19,6 +22,25 @@ rules:
   resources:
   - daemonsets
   - deployments
+  - replicasets
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  - jobs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - validatingwebhookconfigurations
   verbs:
   - get
   - list

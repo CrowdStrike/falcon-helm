@@ -102,6 +102,9 @@ spec:
       topologySpreadConstraints:
         {{- toYaml .Values.container.topologySpreadConstraints | nindent 6 }}
       {{- end }}
+      {{- if .Values.container.hostNetwork }}
+      hostNetwork: true
+      {{- end }}
       securityContext:
         runAsNonRoot: true
       {{- if .Values.container.image.pullSecrets.enable }}

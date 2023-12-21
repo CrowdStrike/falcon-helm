@@ -317,6 +317,10 @@
                         }
                     }
                 },
+                "hostNetwork": {
+                    "type": "boolean",
+                    "default": "false"
+                },
                 "autoCertificateUpdate": {
                     "type": "boolean",
                     "default": "true"

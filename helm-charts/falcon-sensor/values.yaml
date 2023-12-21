@@ -136,6 +136,9 @@ container:
   networkPolicy:
     enabled: false
 
+  # Enable using hostNetwork for the injector pod
+  hostNetwork: false
+
   # Disable injection for all Namespaces
   disableNSInjection: false
 

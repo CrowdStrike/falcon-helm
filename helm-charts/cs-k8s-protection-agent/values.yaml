@@ -8,6 +8,7 @@ image:
   repository: registry.crowdstrike.com/kubernetes_protection/kpagent
   tag:
   pullPolicy: IfNotPresent
+  existingPullSecret:
   pullSecrets:
   # Value must be base64. This setting conflicts with image.pullSecrets
   # The base64 encoded string of the docker config json for the pull secret can be

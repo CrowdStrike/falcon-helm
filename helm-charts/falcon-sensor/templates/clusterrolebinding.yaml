@@ -12,11 +12,6 @@ metadata:
     crowdstrike.com/provider: crowdstrike
     helm.sh/chart: {{ include "falcon-sensor.chart" . }}
 subjects:
-{{- if .Values.container.enabled }}
-- apiGroup: rbac.authorization.k8s.io
-  kind: Group
-  name: system:authenticated
-{{- end }}
 - kind: ServiceAccount
   name: {{ .Values.serviceAccount.name }}
   namespace: {{ .Release.Namespace }}

@@ -70,17 +70,8 @@
                         "nodeAffinity": {
                             "type": "object"
                         },
-                        "priorityClassCreate": {
-                            "type": "boolean",
-                            "default": "true"
-                        },
                         "priorityClassName": {
                             "type": "string"
-                        },
-                        "priorityClassValue": {
-                            "type": "integer",
-                            "default": "1000000000",
-                            "minimum": 1
                         },
                         "resources": {
                             "type": "object",

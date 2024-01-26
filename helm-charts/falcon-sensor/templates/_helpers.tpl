@@ -87,8 +87,10 @@ Create the name of the service account to use
 
 {{- define "falcon-sensor.priorityClassName" -}}
 {{- printf "%s" .Values.node.daemonset.priorityClassName -}}
+{{- if .Values.node.gke.autopilot -}}
 {{- if not .Values.node.daemonset.priorityClassName -}}
-{{- printf "%s" "falcon-helm-node-security-critical" -}}
+{{- printf "%s" "system-node-critical" -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 

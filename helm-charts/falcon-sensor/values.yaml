@@ -23,11 +23,8 @@ node:
     # additionals labels
     labels: {}
 
-    # Enable the priorityClass creation on chart installation
-    priorityClassCreate: true
     # Assign a PriorityClassName to pods if set
     priorityClassName: ""
-    priorityClassValue: 1000000000
 
     tolerations:
       # We want to schedule on control plane nodes where they are accessible

@@ -1,0 +1,5 @@
+crowdstrikeConfig:
+  clusterName: "test-cluster12.test"
+  clientID: "abcdefABCDEF0123456789abcdefABCD"
+  clientSecret: "abcdefABCDEF0123456789abcdefABCDEF012345"
+  cid: "1234567890ABCDEF1234567890ABCDEF-12"

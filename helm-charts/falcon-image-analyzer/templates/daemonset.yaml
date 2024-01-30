@@ -1,0 +1,101 @@
+{{- if .Values.daemonset.enabled }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "falcon-image-analyzer.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "falcon-image-analyzer.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+    {{- include "falcon-image-analyzer.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      labels:
+    {{- include "falcon-image-analyzer.labels" . | nindent 8 }}
+    spec:
+      {{- if .Values.crowdstrikeConfig.dockerAPIToken }}
+      imagePullSecrets:
+        - name: {{ include "falcon-image-analyzer.fullname" . }}-pull-secret
+      {{- end }}
+      {{- if .Values.image.pullSecret }}
+      imagePullSecrets:
+        - name: {{ include "falcon-image-analyzer.fullname" . }}-pull-secret
+      {{- end }}
+      serviceAccountName: {{ .Values.serviceAccount.name | default ( include "falcon-image-analyzer.fullname" . ) }}
+      securityContext:
+      {{- if .Values.podSecurityContext }}
+      {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- end }}
+      {{- if .Values.gcp.enabled }}
+      initContainers:
+        - name: {{ .Chart.Name }}-init-container
+          image: "gcr.io/google.com/cloudsdktool/cloud-sdk:alpine"
+          imagePullPolicy: "Always"
+          command:
+            - '/bin/bash'
+            - '-c'
+            - |
+              curl -sS -H 'Metadata-Flavor: Google' 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token' --retry 30 --retry-connrefused --retry-max-time 60 --connect-timeout 3 --fail --retry-all-errors > /dev/null && exit 0 || echo 'Retry limit exceeded. Failed to wait for metadata server to be available. Check if the gke-metadata-server Pod in the kube-system namespace is healthy.' >&2; exit 1
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
+            privileged: false
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+          {{- include "falcon-image-analyzer.securityContext" . | nindent 12 }}
+          resources:
+          {{- if .Values.resources }}
+          {{- toYaml .Values.resources | nindent 12 }}
+          {{- end }}
+          image: {{ include "falcon-image-analyzer.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: ["-runmode", "socket"]
+          envFrom:
+            - configMapRef:
+                name: {{ include "falcon-image-analyzer.fullname" . }}
+            - secretRef:
+                {{- if .Values.crowdstrikeConfig.existingSecret }}
+                name: {{ .Values.crowdstrikeConfig.existingSecret }}
+                {{- else }}
+                name: {{ include "falcon-image-analyzer.fullname" . }}
+                {{- end }}
+          volumeMounts:
+          {{- (include "falcon-image-analyzer.volumeMounts" .) | nindent 12 }}
+          {{- if .Values.azure.enabled }}
+            - name: azure-config
+              mountPath: /etc/kubernetes/azure.json
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        {{- include "falcon-image-analyzer.volumes" . | nindent 8 }}
+        {{- if .Values.azure.enabled }}
+        - name: azure-config
+          hostPath:
+            path: {{ .Values.azure.azureConfig }}
+            type: File
+        {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.crowdstrikeConfig.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
+ {{- end }}

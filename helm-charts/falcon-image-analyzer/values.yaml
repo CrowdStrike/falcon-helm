@@ -1,0 +1,111 @@
+# Default values for falcon-image-analyzer.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Do not override anywhere in values - Always true when run in k8s
+isKubernetes: true
+
+daemonset:
+  enabled: false
+
+deployment:
+  enabled: false
+
+
+# Do not override anywhere in values - Always 1 for Deployment. NA for daemonset
+replicaCount: 1
+image:
+  repository: registry.crowdstrike.com/falcon-imageanalyzer/us-1/release/falcon-imageanalyzer
+  # Overrides the image tag. In general, tags should not be used (including semver tags or `latest`). This variable is provided for those
+  # who have yet to move off of using tags. The sha256 digest should be used in place of tags for increased security and image immutability.
+  tag:
+  # Setting a digest will override any tag and should be used instead of tags.
+  #
+  # Example digest variable configuration:
+  # digest: sha256:ffdc91f66ef8570bd7612cf19145563a787f552656f5eec43cd80ef9caca0398
+  digest:
+  pullPolicy: Always
+
+  # Use this if you have a base64 encoded docker
+  # config json with user and pass of your own
+  # private repository
+  pullSecret:
+
+  envFrom:
+    - configMapRef:
+        name: agent-config
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Annotations to add to the service account
+  name: ""
+  annotations: {}
+
+volumeMounts:
+  - mountPath: /tmp
+    name: tmp-volume
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+nodeSelector: {}
+
+resources: {}
+
+tolerations: []
+
+affinity: {}
+
+priorityClassName: ""
+
+  # For AKS without the pulltoken option
+azure:
+  enabled: false
+
+  # Path to the Kubernetes Azure config file on worker nodes
+  azureConfig: /etc/kubernetes/azure.json
+
+# GCP GKE workload identity init container
+gcp:
+  enabled: false
+
+# This is a mandatory mount for both deployment and daemon set.
+# this is used as a tmp working space for image storage
+volumes:
+  - name: tmp-volume
+    emptyDir:
+      sizeLimit: 20Gi
+
+crowdstrikeConfig:
+  clusterName: ""
+  enableDebug: "false"
+  clientID: ""
+  clientSecret: ""
+  cid: ""
+
+  # Use the value for the crowdstrike Artifactory
+  # Token retrieved by calling container-security
+  # /entities/image-registry-credentials/v1
+  dockerAPIToken: ""
+
+
+  # Use this value if you have an existing secret
+  # defined in your k8s that may contain secrets
+  # for falcon api client id and pw
+  existingSecret: ""
+  agentRunmode: "watcher"
+  agentRegion: "us-1"
+  agentRuntime: ""
+  agentRuntimeSocket: ""
+  agentMaxConsumerThreads: "1"
+
+
+proxyConfig:
+  HTTP_PROXY: ""
+  HTTPS_PROXY: ""
+  NO_PROXY: ""

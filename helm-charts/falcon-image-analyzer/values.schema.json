@@ -1,0 +1,278 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "type": "object",
+    "properties": {
+        "daemonset": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable the deployment as a Kubernetes privileged DaemonSet"
+                }
+            }
+        },
+        "deployment": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable the deployment as a Kubernetes non-privileged Deployment"
+                }
+            }
+        },
+        "image": {
+            "type": "object",
+            "required": [
+                "repository",
+                "pullPolicy"
+            ],
+            "properties": {
+                "pullPolicy": {
+                    "type": "string",
+                    "default": "Always",
+                    "pattern": "^(Always|Never|IfNotPresent)$"
+                },
+                "pullSecret": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "repository": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": [
+                        "null",
+                        "string"
+                    ],
+                    "example": [
+                        "1.0.0"
+                    ]
+                },
+                "digest": {
+                    "type": [
+                        "null",
+                        "string"
+                    ],
+                    "pattern": "^sha256:[0-9a-f]{64}$",
+                    "description": "Image digest, overrides tag if both are set",
+                    "example": [
+                        "sha256:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+                    ]
+                }
+            }
+        },
+        "nameOverride": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "fullnameOverride": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "serviceAccount": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "annotations": {
+                    "type": "object",
+                    "default": {},
+                    "examples": [
+                        {
+                            "iam.gke.io/gcp-service-account": "my-service-account@my-project.iam.gserviceaccount.com"
+                        }
+                    ]
+                }
+            }
+        },
+        "podAnnotations": {
+            "type": "object",
+            "default": {}
+        },
+        "podSecurityContext": {
+            "type": "object",
+            "default": {}
+        },
+        "securityContext": {
+            "type": "object",
+            "default": {}
+        },
+        "nodeSelector": {
+            "type": "object",
+            "default": {}
+        },
+        "resources": {
+            "type": "object",
+            "default": {}
+        },
+        "tolerations": {
+            "type": "array"
+        },
+        "affinity": {
+            "type": "object",
+            "default": {}
+        },
+        "priorityClassName": {
+            "type": "string"
+        },
+        "volumeMounts": {
+            "type": "array"
+        },
+        "volumes": {
+            "type": "array"
+        },
+        "crowdstrikeConfig": {
+            "type": "object",
+            "required": [
+                "clusterName",
+                "cid"
+            ],
+            "properties": {
+                "agentMaxConsumerThreads": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]*$",
+                    "description": "Maximum number of threads to use for image analysis",
+                    "default": "1"
+                },
+                "clusterName": {
+                    "type": "string",
+                    "pattern": "[\\S\\s]+[\\S]+",
+                    "description": "Cluster name to use for the agent"
+                },
+                "dockerAPIToken": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "enableDebug": {
+                    "type": "string",
+                    "pattern": "^(true|false)$",
+                    "description": "Enable debug logging for the agent",
+                    "default": "false"
+                },
+                "existingSecret": {
+                    "type": "string"
+                },
+                "agentRegion": {
+                    "type": "string",
+                    "pattern": "^(us-|eu-|us-gov-)[1-2]+$",
+                    "description": "CrowdStrike Cloud Region",
+                    "default": "us-1"
+                },
+                "agentRunmode": {
+                    "type": "string",
+                    "pattern": "^(socket|watcher)$",
+                    "description": "CrowdStrike Image Analyzer Runmode",
+                    "default": "watcher"
+                },
+                "agentRuntime": {
+                    "type": "string",
+                    "description": "Runtime for the agent to use"
+                },
+                "agentRuntimeSocket": {
+                    "type": "string",
+                    "description": "Runtime container socket for the agent to use",
+                    "examples": [
+                        "/run/containerd/containerd.sock"
+                    ]
+                },
+                "cid": {
+                    "type": "string",
+                    "description": "CrowdStrike CID",
+                    "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$",
+                    "example": [
+                        "1234567890ABCDEF1234567890ABCDEF-12"
+                    ]
+                },
+                "clientID": {
+                    "type": "string",
+                    "description": "CrowdStrike Oauth Client ID"
+                },
+                "clientSecret": {
+                    "type": "string",
+                    "description": "CrowdStrike Oauth Client Secret"
+                }
+            },
+            "dependentRequired": {
+                "clientID": [
+                    "clientSecret"
+                ],
+                "agentRunmode": [
+                    "agentRuntimeSocket",
+                    "agentRuntime"
+                ]
+            },
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "existingSecret": {
+                                "const": ""
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "clientID": {
+                                "pattern": "^[a-zA-Z0-9]{32}$"
+                            },
+                            "clientSecret": {
+                                "pattern": "^[a-zA-Z0-9]{40}$"
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "agentRunmode": {
+                                "const": "socket"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "agentRuntime": {
+                                "pattern": "^(docker|containerd|crio|podman)$"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "proxyConfig": {
+            "default": {},
+            "type": "object",
+            "properties": {
+                "HTTP_PROXY": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "HTTPS_PROXY": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "NO_PROXY": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                }
+            }
+        }
+    }
+}

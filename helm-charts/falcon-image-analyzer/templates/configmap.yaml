@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "falcon-image-analyzer.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "falcon-image-analyzer.labels" . | nindent 4 }}
+data:
+  IS_KUBERNETES: {{ .Values.isKubernetes | quote }}
+  AGENT_CID: {{ .Values.crowdstrikeConfig.cid | quote }}
+  AGENT_CLUSTER_NAME: {{ .Values.crowdstrikeConfig.clusterName | quote }}
+  AGENT_DEBUG: {{ .Values.crowdstrikeConfig.enableDebug | quote }}
+  AGENT_RUNMODE: {{ .Values.crowdstrikeConfig.agentRunmode | quote }}
+  AGENT_REGION: {{ .Values.crowdstrikeConfig.agentRegion | quote }}
+  {{- if eq .Values.crowdstrikeConfig.agentRunmode "socket" }}
+  AGENT_RUNTIME: {{ .Values.crowdstrikeConfig.agentRuntime | quote }}
+  AGENT_RUNTIME_SOCKET: {{ include "falcon-image-analyzer.agentRuntimeSocket" . | quote }}
+  {{- end }}
+  AGENT_MAX_CONSUMER_THREADS: {{ .Values.crowdstrikeConfig.agentMaxConsumerThreads | quote }}
+  {{- if .Values.proxyConfig.HTTP_PROXY }}
+  HTTP_PROXY: {{ .Values.proxyConfig.HTTP_PROXY }}
+  {{- end }}
+  {{- if .Values.proxyConfig.HTTPS_PROXY }}
+  HTTPS_PROXY: {{ .Values.proxyConfig.HTTPS_PROXY }}
+  {{- end }}
+  {{- if .Values.proxyConfig.NO_PROXY }}
+  NO_PROXY: {{ .Values.proxyConfig.NO_PROXY }}
+  {{- end }}

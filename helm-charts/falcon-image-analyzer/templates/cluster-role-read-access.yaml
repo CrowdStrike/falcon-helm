@@ -1,0 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "falcon-image-analyzer.fullname" . }}
+  labels:
+  {{- include "falcon-image-analyzer.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    - secrets
+    - namespaces
+    verbs:
+    - get
+    - watch
+    - list

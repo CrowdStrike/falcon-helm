@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "falcon-image-analyzer.fullname" . }}
+  labels:
+  {{- include "falcon-image-analyzer.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.serviceAccount.name | default ( include "falcon-image-analyzer.fullname" . ) }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "falcon-image-analyzer.fullname" . }}

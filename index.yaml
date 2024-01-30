@@ -100,6 +100,17 @@ entries:
     urls:
     - https://github.com/CrowdStrike/falcon-helm/releases/download/cs-k8s-protection-agent-0.43.8/cs-k8s-protection-agent-0.43.8.tgz
     version: 0.43.8
+  falcon-image-analyzer:
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2024-01-30T18:39:39.485764043Z"
+    description: A Helm chart for Kubernetes
+    digest: 104a897dd460c67c9c374dcbb01560b52e37769c97797fa8a139a5a047d08df0
+    name: falcon-image-analyzer
+    type: application
+    urls:
+    - https://github.com/CrowdStrike/falcon-helm/releases/download/falcon-image-analyzer-1.0.0/falcon-image-analyzer-1.0.0.tgz
+    version: 1.0.0
   falcon-integration-gateway:
   - apiVersion: v2
     appVersion: 3.1.10
@@ -2301,4 +2312,4 @@ entries:
     urls:
     - https://github.com/CrowdStrike/falcon-helm/releases/download/0.5.0/falcon-sensor-0.5.0.tgz
     version: 0.5.0
-generated: "2024-01-25T23:58:17.899532951Z"
+generated: "2024-01-30T18:39:39.485932268Z"

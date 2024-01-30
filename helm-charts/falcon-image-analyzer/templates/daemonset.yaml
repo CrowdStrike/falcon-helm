@@ -34,6 +34,21 @@ spec:
       {{- if .Values.podSecurityContext }}
       {{- toYaml .Values.podSecurityContext | nindent 8 }}
       {{- end }}
+      {{- if .Values.gcp.enabled }}
+      initContainers:
+        - name: {{ .Chart.Name }}-init-container
+          image: "gcr.io/google.com/cloudsdktool/cloud-sdk:alpine"
+          imagePullPolicy: "Always"
+          command:
+            - '/bin/bash'
+            - '-c'
+            - |
+              curl -sS -H 'Metadata-Flavor: Google' 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token' --retry 30 --retry-connrefused --retry-max-time 60 --connect-timeout 3 --fail --retry-all-errors > /dev/null && exit 0 || echo 'Retry limit exceeded. Failed to wait for metadata server to be available. Check if the gke-metadata-server Pod in the kube-system namespace is healthy.' >&2; exit 1
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
+            privileged: false
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -56,12 +71,22 @@ spec:
                 {{- end }}
           volumeMounts:
           {{- (include "falcon-image-analyzer.volumeMounts" .) | nindent 12 }}
+          {{- if .Values.azure.enabled }}
+            - name: azure-config
+              mountPath: /etc/kubernetes/azure.json
+          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
       {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
         {{- include "falcon-image-analyzer.volumes" . | nindent 8 }}
+        {{- if .Values.azure.enabled }}
+        - name: azure-config
+          hostPath:
+            path: {{ .Values.azure.azureConfig }}
+            type: File
+        {{- end }}
       {{- with .Values.affinity }}
       affinity:
       {{- toYaml . | nindent 8 }}

@@ -88,13 +88,13 @@ runAsGroup: {{ .Values.securityContext.runAsGroup | default 0 }}
 {{- end }}
 {{- end }}
 {{- else -}}
-{{- .Values.volumeMounts | toYaml -}}
+{{- .Values.volumeMounts | toYaml }}
 {{- end }}
 {{- end }}
 
 {{- define "falcon-image-analyzer.volumes" -}}
 {{- if lt (len .Values.volumes) 2 -}}
-{{- .Values.volumes | toYaml -}}
+{{- .Values.volumes | toYaml }}
 {{- if eq .Values.crowdstrikeConfig.agentRunmode "socket" }}
 - name: var-run
   hostPath:
@@ -120,7 +120,7 @@ runAsGroup: {{ .Values.securityContext.runAsGroup | default 0 }}
 {{- end }}
 {{- end }}
 {{- else -}}
-{{- .Values.volumes | toYaml -}}
+{{- .Values.volumes | toYaml }}
 {{- end }}
 {{- end }}
 

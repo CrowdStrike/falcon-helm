@@ -11,9 +11,11 @@ daemonset:
 deployment:
   enabled: false
 
+
+# Do not override anywhere in values - Always 1 for Deployment. NA for daemonset
 replicaCount: 1
 image:
-  repository: registry.crowdstrike.com/ivan-agent/us-1/release/cs-imageanalyzer
+  repository: registry.crowdstrike.com/falcon-imageanalyzer/us-1/release/falcon-imageanalyzer
   # Overrides the image tag. In general, tags should not be used (including semver tags or `latest`). This variable is provided for those
   # who have yet to move off of using tags. The sha256 digest should be used in place of tags for increased security and image immutability.
   tag:
@@ -22,7 +24,7 @@ image:
   # Example digest variable configuration:
   # digest: sha256:ffdc91f66ef8570bd7612cf19145563a787f552656f5eec43cd80ef9caca0398
   digest:
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
   # Use this if you have a base64 encoded docker
   # config json with user and pass of your own
@@ -60,6 +62,17 @@ tolerations: []
 affinity: {}
 
 priorityClassName: ""
+
+  # For AKS without the pulltoken option
+azure:
+  enabled: false
+
+  # Path to the Kubernetes Azure config file on worker nodes
+  azureConfig: /etc/kubernetes/azure.json
+
+# GCP GKE workload identity init container
+gcp:
+  enabled: false
 
 # This is a mandatory mount for both deployment and daemon set.
 # this is used as a tmp working space for image storage

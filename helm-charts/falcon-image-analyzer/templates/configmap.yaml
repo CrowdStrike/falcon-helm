@@ -9,10 +9,11 @@ data:
   IS_KUBERNETES: {{ .Values.isKubernetes | quote }}
   AGENT_CID: {{ .Values.crowdstrikeConfig.cid | quote }}
   AGENT_CLUSTER_NAME: {{ .Values.crowdstrikeConfig.clusterName | quote }}
+  AGENT_REGISTRY_CREDENTIALS: {{ .Values.privateRegistries.credentials | quote }}
   AGENT_DEBUG: {{ .Values.crowdstrikeConfig.enableDebug | quote }}
-  AGENT_RUNMODE: {{ .Values.crowdstrikeConfig.agentRunmode | quote }}
+  AGENT_RUNMODE: {{ include "falcon-image-analyzer.agentrunmode" . | quote }}
   AGENT_REGION: {{ .Values.crowdstrikeConfig.agentRegion | quote }}
-  {{- if eq .Values.crowdstrikeConfig.agentRunmode "socket" }}
+  {{- if .Values.daemonset.enabled }}
   AGENT_RUNTIME: {{ .Values.crowdstrikeConfig.agentRuntime | quote }}
   AGENT_RUNTIME_SOCKET: {{ include "falcon-image-analyzer.agentRuntimeSocket" . | quote }}
   {{- end }}

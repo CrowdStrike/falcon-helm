@@ -169,12 +169,6 @@
                     "description": "CrowdStrike Cloud Region",
                     "default": "us-1"
                 },
-                "agentRunmode": {
-                    "type": "string",
-                    "pattern": "^(socket|watcher)$",
-                    "description": "CrowdStrike Image Analyzer Runmode",
-                    "default": "watcher"
-                },
                 "agentRuntime": {
                     "type": "string",
                     "description": "Runtime for the agent to use"
@@ -206,10 +200,6 @@
             "dependentRequired": {
                 "clientID": [
                     "clientSecret"
-                ],
-                "agentRunmode": [
-                    "agentRuntimeSocket",
-                    "agentRuntime"
                 ]
             },
             "allOf": [
@@ -228,22 +218,6 @@
                             },
                             "clientSecret": {
                                 "pattern": "^[a-zA-Z0-9]{40}$"
-                            }
-                        }
-                    }
-                },
-                {
-                    "if": {
-                        "properties": {
-                            "agentRunmode": {
-                                "const": "socket"
-                            }
-                        }
-                    },
-                    "then": {
-                        "properties": {
-                            "agentRuntime": {
-                                "pattern": "^(docker|containerd|crio|podman)$"
                             }
                         }
                     }
@@ -274,5 +248,31 @@
                 }
             }
         }
-    }
+    },
+    "allOf": [
+        {
+            "if": {
+                "properties": {
+                    "daemonset": {
+                        "properties": {
+                            "enabled": {
+                                "const": true
+                            }
+                        }
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "crowdstrikeConfig": {
+                        "properties": {
+                            "agentRuntime": {
+                                "pattern": "^(docker|containerd|crio|podman)$"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
 }

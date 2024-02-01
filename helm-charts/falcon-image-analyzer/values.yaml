@@ -74,6 +74,20 @@ azure:
 gcp:
   enabled: false
 
+
+# Use this param to provide the comma separated registry secrets of the form namsepace1:secretname1,namespace:secret2
+# each secret should be of type docker-registry for each of the private registry that is used.
+# for e.g.  a docker-registry secret can be created as below
+#  kubectl create secret docker-registry regcred \
+#  --docker-server=my-artifactory.jfrog.io \
+#  --docker-username=read-only \
+#  --docker-password=my-super-secret-pass \
+#  --docker-email=johndoe@example.com  -n my-app-ns
+#
+# use the above secret as "my-app-ns:regcred"
+privateRegistries:
+  credentials: ""
+
 # This is a mandatory mount for both deployment and daemon set.
 # this is used as a tmp working space for image storage
 volumes:
@@ -98,7 +112,6 @@ crowdstrikeConfig:
   # defined in your k8s that may contain secrets
   # for falcon api client id and pw
   existingSecret: ""
-  agentRunmode: "watcher"
   agentRegion: "us-1"
   agentRuntime: ""
   agentRuntimeSocket: ""

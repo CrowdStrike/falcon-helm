@@ -1,4 +1,4 @@
-{{- if .Values.deployment.enabled }}
+{{- if eq .Values.crowdstrikeConfig.agentRunmode "watcher" -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:

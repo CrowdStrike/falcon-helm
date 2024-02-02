@@ -1,4 +1,4 @@
-{{- if .Values.daemonset.enabled }}
+{{- if eq .Values.crowdstrikeConfig.agentRunmode "socket" -}}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:

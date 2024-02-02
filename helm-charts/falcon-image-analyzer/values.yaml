@@ -5,13 +5,6 @@
 # Do not override anywhere in values - Always true when run in k8s
 isKubernetes: true
 
-daemonset:
-  enabled: false
-
-deployment:
-  enabled: false
-
-
 # Do not override anywhere in values - Always 1 for Deployment. NA for daemonset
 replicaCount: 1
 image:

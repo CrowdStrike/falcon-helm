@@ -2,26 +2,6 @@
     "$schema": "http://json-schema.org/schema#",
     "type": "object",
     "properties": {
-        "daemonset": {
-            "type": "object",
-            "properties": {
-                "enabled": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Enable the deployment as a Kubernetes privileged DaemonSet"
-                }
-            }
-        },
-        "deployment": {
-            "type": "object",
-            "properties": {
-                "enabled": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Enable the deployment as a Kubernetes non-privileged Deployment"
-                }
-            }
-        },
         "image": {
             "type": "object",
             "required": [

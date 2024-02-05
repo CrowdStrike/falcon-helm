@@ -39,28 +39,30 @@ helm repo update
 
 The following tables list the Falcon sensor configurable parameters and their default values.
 
-| Parameter                              | Description                                                                                                                                              | Default                                                                           |
-|:---------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------|
-| `daemonset.enabled`                    | Set to `true` if running in Watcher Mode i.e. `crowdstrikeConfig.agentRunmode` is `socket`                                                               | false                                                                             |
-| `deployment.enabled`                   | Set to `true` if running in Watcher Mode i.e. `crowdstrikeConfig.agentRunmode` is `watcher`                                                              | false                                                                             |
-| `image.repo`                           | IAR image repo name                                                                                                                                      | `registry.crowdstrike.com/falcon-imageanalyzer/us-1/release/falcon-imageanalyzer` |
-| `image.tag`                            | Image tag version                                                                                                                                        | None                                                                              |
-| `azure.enabled`                        | Set to `true` if cluster is Azure AKS or self-managed on Azure nodes.                                                                                    | false                                                                             |
-| `azure.azureConfig`                    | Azure  config file path                                                                                                                                  | `/etc/kubernetes/azure.json`                                                      |
-| `gcp.enabled`                          | Set to `true` if cluster is Gogle GKE or self-managed on Google Cloud GCP nodes.                                                                         | false                                                                             |
-| `crowdstrikeConfig.clusterName`        | Cluster name                                                                                                                                             | None                                                                              |
-| `crowdstrikeConfig.enableDebug`        | Set to `true` for debug level log verbosity.                                                                                                             | false                                                                             |
-| `crowdstrikeConfig.clientID`           | CrowdStrike Falcon OAuth API Client ID                                                                                                                   | None                                                                              |
-| `crowdstrikeConfig.clientSecret`       | CrowdStrike Falcon OAuth API Client secret                                                                                                               | None                                                                              |
-| `crowdstrikeConfig.cid`                | Customer ID (CID)                                                                                                                                        | None                                                                              |
-| `crowdstrikeConfig.dockerAPIToken`     | Crowdstrike Artifactory Image Pull Token for pulling IAR image directly from  `registry.crowdstrike.com`                                                 | None                                                                              |
-| `crowdstrikeConfig.existingSecret`     | Existing secret ref name of the customer Kubernetes cluster                                                                                              | None                                                                              |
-| `crowdstrikeConfig.agentRunmode`       | Agent run mode `watcher` or `socket` for Kubernetes. Set this along with `deployment.enabled` and `daemonset.enabled` respectively                       | None                                                                              |
-| `crowdstrikeConfig.agentRegion`        | Region of the CrowdStrike API to connect to us-1/us-2/eu-1                                                                                               | None                                                                              |
-| `crowdstrikeConfig.agentRuntime`       | The underlying runtime of the OS. docker/containerd/podman/crio. ONLY TO BE USED with `crowdstrikeConfig.agentRunmode` = `socket`                        | None                                                                              |
-| `crowdstrikeConfig.agentRuntimeSocket` | The unix socket path for the runtime socket. For example: `unix///var/run/docker.sock`. ONLY TO BE USED with `crowdstrikeConfig.agentRunmode` = `socket` | None                                                                              |
+| Parameter                              | Description                                                                                                                                                    | Default                                                                           |
+|:---------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------|
+| `daemonset.enabled`                    | Set to `true` if running in Watcher Mode i.e.                                                                                                                  | false                                                                             |
+| `deployment.enabled`                   | Set to `true` if running in Socket Mode i.e. Both CANNOT be true . This  causes the IAR to run in `socket` mode                                                | false                                                                             |
+| `privateRegistries.credentials`        | Use this param to provide the comma separated registry secrets of the form namsepace1:secretname1,namespace:secret2                                            | ""                                                                                |
+| `image.repo`                           | IAR image repo name                                                                                                                                            | `registry.crowdstrike.com/falcon-imageanalyzer/us-1/release/falcon-imageanalyzer` |
+| `image.tag`                            | Image tag version                                                                                                                                              | None                                                                              |
+| `azure.enabled`                        | Set to `true` if cluster is Azure AKS or self-managed on Azure nodes.                                                                                          | false                                                                             |
+| `azure.azureConfig`                    | Azure  config file path                                                                                                                                        | `/etc/kubernetes/azure.json`                                                      |
+| `gcp.enabled`                          | Set to `true` if cluster is Gogle GKE or self-managed on Google Cloud GCP nodes.                                                                               | false                                                                             |
+| `crowdstrikeConfig.clusterName`        | Cluster name                                                                                                                                                   | None                                                                              |
+| `crowdstrikeConfig.enableDebug`        | Set to `true` for debug level log verbosity.                                                                                                                   | false                                                                             |
+| `crowdstrikeConfig.clientID`           | CrowdStrike Falcon OAuth API Client ID                                                                                                                         | None                                                                              |
+| `crowdstrikeConfig.clientSecret`       | CrowdStrike Falcon OAuth API Client secret                                                                                                                     | None                                                                              |
+| `crowdstrikeConfig.cid`                | Customer ID (CID)                                                                                                                                              | None                                                                              |
+| `crowdstrikeConfig.dockerAPIToken`     | Crowdstrike Artifactory Image Pull Token for pulling IAR image directly from  `registry.crowdstrike.com`                                                       | None                                                                              |
+| `crowdstrikeConfig.existingSecret`     | Existing secret ref name of the customer Kubernetes cluster                                                                                                    | None                                                                              |
+| `crowdstrikeConfig.agentRegion`        | Region of the CrowdStrike API to connect to us-1/us-2/eu-1                                                                                                     | None                                                                              |
+| `crowdstrikeConfig.agentRuntime`       | The underlying runtime of the OS. docker/containerd/podman/crio. ONLY TO BE USED with `daemonset.enabled` = `true`                                             | None                                                                              |
+| `crowdstrikeConfig.agentRuntimeSocket` | The unix socket path for the runtime socket. For example: `unix///var/run/docker.sock`. ONLY TO BE USED with ONLY TO BE USED with `daemonset.enabled` = `true` | None                                                                              |
 
 ## Installing on Kubernetes cluster nodes
+
+
 
 ### Deployment considerations
 
@@ -82,6 +84,49 @@ If you want to silence the warning and change the auditing level for the Pod Sec
 kubectl label ns --overwrite my-existing-namespace pod-security.kubernetes.io/audit=privileged
 kubectl label ns --overwrite my-existing-namespace pod-security.kubernetes.io/warn=privileged
 ```
+
+### IAM Roles  ( EKS or Partially Managed using EC2 Instances)
+- For the IAR to detect cloud as AWS it should be able to retrieve sts token to assume role to retrieve ECR Tokens.
+  There are 2 options for  that . If your EKS cluster us using the kiam or kube2iam admission controller, add annotations
+  for the IAR service account in the values.yaml as stated below, before installing. Make sure the roles have trust-relationship to allow
+  the serviceaccount in the `falcon-image-analyzer` namespace
+```
+serviceAccount:
+  # Annotations to add to the service account
+  annotations:
+    iam.amazonaws.com/role: role-name-with-s2sassume-role-permission
+```
+
+
+- For the EKS Cluster using the OIDC providers add the annotation as below.Make sure the roles have trust-relationship to allow
+  the serviceaccount in the `falcon-image-analyzer` namespace
+
+```
+serviceAccount:
+  # Annotations to add to the service account
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::111122223333:role/my-role
+```
+
+### Authentication for Private Registries
+- If you are using ECR or cloud based Private Registries then assigning the IAM role to the iar service-account in `falcon-image-analyzer` namespace should be enough
+
+- If you are using a 3rd party private registry such as jfrog artifactory, etc then use the below param in the values.yaml
+```
+privateRegistries:
+  credentials: ""
+```
+to provide the comma separated registry secrets of the form `"namsepace1:secretname1,namespace:secret2"`
+each secret should be of type docker-registry for each of the private registry that is used.
+for e.g.  a docker-registry secret can be created as below
+```
+ kubectl create secret docker-registry regcred \
+--docker-server=my-artifactory.jfrog.io \
+--docker-username=read-only \
+--docker-password=my-super-secret-pass \
+--docker-email=johndoe@example.com  -n my-app-ns
+```
+use the above secret as `"my-app-ns:regcred"`
 
 ### Install CrowdStrike Falcon Helm chart on Kubernetes nodes
 

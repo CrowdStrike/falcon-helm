@@ -31,6 +31,17 @@ Create chart name and version as used by the chart label.
 {{- end }}
 
 {{/*
+agentRunmode definition
+*/}}
+{{- define "falcon-image-analyzer.agentrunmode" -}}
+{{- if .Values.daemonset.enabled }}
+{{- printf "socket" }}
+{{- else if .Values.deployment.enabled }}
+{{- printf "watcher" }}
+{{- end }}
+{{- end }}
+
+{{/*
 Common labels
 */}}
 {{- define "falcon-image-analyzer.labels" -}}
@@ -62,7 +73,7 @@ Create the name of the service account to use
 {{- end }}
 
 {{- define "falcon-image-analyzer.securityContext" -}}
-{{- if eq .Values.crowdstrikeConfig.agentRunmode "socket" -}}
+{{- if .Values.daemonset.enabled -}}
 privileged: {{ .Values.securityContext.privileged | default true }}
 allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation | default true }}
 runAsUser: {{ .Values.securityContext.runAsUser | default 0 }}
@@ -73,7 +84,7 @@ runAsGroup: {{ .Values.securityContext.runAsGroup | default 0 }}
 {{- define "falcon-image-analyzer.volumeMounts" -}}
 {{- if lt (len .Values.volumeMounts) 2 -}}
 {{- .Values.volumeMounts | toYaml }}
-{{- if eq .Values.crowdstrikeConfig.agentRunmode "socket" }}
+{{- if .Values.daemonset.enabled }}
 - name: var-run
   mountPath: {{ trimPrefix "unix://" (include "falcon-image-analyzer.agentRuntimeSocket" . ) }}
 {{- if eq .Values.crowdstrikeConfig.agentRuntime "crio" }}
@@ -95,7 +106,7 @@ runAsGroup: {{ .Values.securityContext.runAsGroup | default 0 }}
 {{- define "falcon-image-analyzer.volumes" -}}
 {{- if lt (len .Values.volumes) 2 -}}
 {{- .Values.volumes | toYaml }}
-{{- if eq .Values.crowdstrikeConfig.agentRunmode "socket" }}
+{{- if .Values.daemonset.enabled }}
 - name: var-run
   hostPath:
     path: {{ trimPrefix "unix://" (include "falcon-image-analyzer.agentRuntimeSocket" . ) }}
@@ -125,7 +136,7 @@ runAsGroup: {{ .Values.securityContext.runAsGroup | default 0 }}
 {{- end }}
 
 {{- define "falcon-image-analyzer.agentRuntimeSocket" -}}
-{{- if eq .Values.crowdstrikeConfig.agentRunmode "socket" }}
+{{- if .Values.daemonset.enabled }}
 {{- if not .Values.crowdstrikeConfig.agentRuntimeSocket }}
 {{- if eq .Values.crowdstrikeConfig.agentRuntime "docker" }}
 {{- printf "%s" "unix:///run/docker.sock" }}

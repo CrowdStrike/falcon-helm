@@ -15,6 +15,10 @@ The Falcon Image Analyzer Helm chart has been tested to deploy on the following 
 * SUSE Rancher K3s
 * Red Hat OpenShift Kubernetes
 
+## New updates in curent release
+- Removed the `crowdstrikeConfig.agentRunmode` variable from values.
+- added `privateRegistries.credentials` variable in values. Details below.
+
 ## Dependencies
 
 1. Requires a x86_64 Kubernetes cluster
@@ -60,6 +64,12 @@ The following tables list the Falcon sensor configurable parameters and their de
 | `crowdstrikeConfig.agentRuntime`       | The underlying runtime of the OS. docker/containerd/podman/crio. ONLY TO BE USED with `daemonset.enabled` = `true`                                             | None                                                                              |
 | `crowdstrikeConfig.agentRuntimeSocket` | The unix socket path for the runtime socket. For example: `unix///var/run/docker.sock`. ONLY TO BE USED with ONLY TO BE USED with `daemonset.enabled` = `true` | None                                                                              |
 
+
+Note : 
+-
+- Please set either `daemonset.enabled` OR `deployment.enabled`
+- For deployment the replica count is set to **1** always. this is because IAR is not a load balanced service i.e. increasing replicas will not divide the work but rather duplicate creating unncessary resource consumption.
+
 ## Installing on Kubernetes cluster nodes
 
 
@@ -87,19 +97,41 @@ kubectl label ns --overwrite my-existing-namespace pod-security.kubernetes.io/wa
 
 ### IAM Roles  ( EKS or Partially Managed using EC2 Instances)
 - For the IAR to detect cloud as AWS it should be able to retrieve sts token to assume role to retrieve ECR Tokens.
-  There are 2 options for  that . If your EKS cluster us using the kiam or kube2iam admission controller, add annotations
+  There are 2 options for  that . If your EKS cluster us using the **kiam** or **kube2iam** admission controller, add annotations
   for the IAR service account in the values.yaml as stated below, before installing. Make sure the roles have trust-relationship to allow
   the serviceaccount in the `falcon-image-analyzer` namespace
 ```
 serviceAccount:
   # Annotations to add to the service account
   annotations:
-    iam.amazonaws.com/role: role-name-with-s2sassume-role-permission
+    iam.amazonaws.com/role: role-name-with-s2sassume-role-permission -> NOTE That is role name ONLY Not the full ARN
 ```
 
+Make sure the above role `role-name-with-s2sassume-role-permission` in **AWS** has the as policy with ECR all permissions as IAR will need to pull images and assume ECR Tokens
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": [
+                "ecr:*"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
+The above role is important so that IAR can read/pull/list from all ECR registries if any workload is launched with an image from any ECR.
+Modify the resource part of the role above to restrict to specific registry or AWS Account. Keep the actions as atleast get* and gist*.
+Consult the AWS IAM Role Guide/Wizard for syntax and avoid typos.
+
+Make sure the trust-relationship of the has  principal role of `kiam` or `kube2iam` service with `s2s:assumeRole` permissions.
 
 - For the EKS Cluster using the OIDC providers add the annotation as below.Make sure the roles have trust-relationship to allow
   the serviceaccount in the `falcon-image-analyzer` namespace
+
 
 ```
 serviceAccount:
@@ -107,6 +139,47 @@ serviceAccount:
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::111122223333:role/my-role
 ```
+
+Make sure the above role `arn:aws:iam::111122223333:role/my-role` in **AWS** has the as policy with ECR all permissions as IAR will need to pull images and assume ECR Tokens
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": [
+                "ecr:*"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+and a trust-relationship as
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Federated": "EKS-OIDC-ARN"
+            },
+            "Action": "sts:AssumeRoleWithWebIdentity",
+            "Condition": {
+                "StringEquals": {
+                    "EKS-OIDC-ARN:aud": "sts.amazonaws.com",
+                    "EKS-OIDC-ARN:sub": "system:serviceaccount:falcon-image-analyzer:imageanalyzer-falcon-image-analyzer"
+                }
+            }
+        }
+    ]
+}
+```
+
+Here `falcon-image-analyzer` is the namespace of IAR and `imageanalyzer-falcon-image-analyzer` is the name of the iar Service Account
 
 ### Authentication for Private Registries
 - If you are using ECR or cloud based Private Registries then assigning the IAM role to the iar service-account in `falcon-image-analyzer` namespace should be enough
@@ -125,8 +198,15 @@ for e.g.  a docker-registry secret can be created as below
 --docker-username=read-only \
 --docker-password=my-super-secret-pass \
 --docker-email=johndoe@example.com  -n my-app-ns
+
+ kubectl create secret docker-registry regcred2 \
+--docker-server=my2ndregistry-artifactory.jfrog.io \
+--docker-username=2nd-read-only \
+--docker-password=2nd-my-super-secret-pass \
+--docker-email=johndoe@example.com  -n my-app-ns
+
 ```
-use the above secret as `"my-app-ns:regcred"`
+use the above secret as `"my-app-ns:regcred,my-app-ns:regcred2"`
 
 ### Install CrowdStrike Falcon Helm chart on Kubernetes nodes
 
@@ -134,7 +214,7 @@ Before you install IAR, set the Helm chart variables and add them to the `values
 
 ```
 helm upgrade --install -f path-to-my-values.yaml \ 
-      --create-namespace -n falcon-image-analyzer imageanalyzer falcon-helm crowdstrike/falcon-image-analyzer
+      --create-namespace -n falcon-image-analyzer imageanalyzer crowdstrike/falcon-image-analyzer
 ```
 
 

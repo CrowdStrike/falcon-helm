@@ -22,14 +22,15 @@ spec:
     spec:
     {{- if or (.Values.image.pullSecrets) (.Values.image.registryConfigJSON) (.Values.crowdstrikeConfig.dockerAPIToken) }}
       imagePullSecrets:
-        {{ if .Values.crowdstrikeConfig.dockerAPIToken }}
+        {{- if and (.Values.crowdstrikeConfig.dockerAPIToken) (.Values.image.registryConfigJSON) }}
+          {{- fail "crowdstrikeConfig.dockerAPIToken and image.registryConfigJSON cannot be used together." }}
+        {{- else -}}
+        {{ if or (.Values.crowdstrikeConfig.dockerAPIToken) (.Values.image.registryConfigJSON) }}
         - name: {{ include "cs-k8s-protection-agent.fullname" . }}-regsecret
+        {{- end }}
         {{- end }}
         {{ if .Values.image.pullSecrets }}
         - name: {{ .Values.image.pullSecrets }}
-        {{- end }}
-        {{ if .Values.image.registryConfigJSON }}
-        - name: {{ include "cs-k8s-protection-agent.fullname" . }}-regsecret-registryconfigjson
         {{- end }}
     {{- end }}
       serviceAccountName: {{ .Values.serviceAccount.name | default ( include "cs-k8s-protection-agent.fullname" . ) }}

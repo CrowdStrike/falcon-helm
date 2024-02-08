@@ -31,6 +31,12 @@ image:
   # private repository
   pullSecret:
 
+  # Value must be base64. This setting conflicts with image.pullSecret
+  # The base64 encoded string of the docker config json for the pull secret can be
+  # gotten through:
+  # $ cat ~/.docker/config.json | base64 -
+  registryConfigJSON:
+
   envFrom:
     - configMapRef:
         name: agent-config

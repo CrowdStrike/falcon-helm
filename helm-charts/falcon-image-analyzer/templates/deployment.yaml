@@ -22,13 +22,18 @@ spec:
       labels:
     {{- include "falcon-image-analyzer.labels" . | nindent 8 }}
     spec:
-      {{- if .Values.crowdstrikeConfig.dockerAPIToken }}
+      {{- if or (.Values.image.pullSecret) (.Values.image.registryConfigJSON) (.Values.crowdstrikeConfig.dockerAPIToken) }}
       imagePullSecrets:
+        {{- if and (.Values.crowdstrikeConfig.dockerAPIToken) (.Values.image.registryConfigJSON) }}
+          {{- fail "crowdstrikeConfig.dockerAPIToken and image.registryConfigJSON cannot be used together." }}
+        {{- else -}}
+        {{ if or (.Values.crowdstrikeConfig.dockerAPIToken) (.Values.image.registryConfigJSON) }}
         - name: {{ include "falcon-image-analyzer.fullname" . }}-pull-secret
-      {{- end }}
-      {{- if .Values.image.pullSecret }}
-      imagePullSecrets:
-        - name: {{ include "falcon-image-analyzer.fullname" . }}-pull-secret
+        {{- end }}
+        {{- end }}
+        {{- if .Values.image.pullSecret }}
+        - name: {{ .Values.image.pullSecret }}
+        {{- end }}
       {{- end }}
       serviceAccountName: {{ .Values.serviceAccount.name | default ( include "falcon-image-analyzer.fullname" . ) }}
       securityContext:

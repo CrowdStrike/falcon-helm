@@ -54,12 +54,21 @@ spec:
             runAsUser: 0
             runAsNonRoot: false
             privileged: false
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
             runAsUser: 0
             privileged: false
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
           resources:
           {{- if .Values.resources }}
           {{- toYaml .Values.resources | nindent 12 }}

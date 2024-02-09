@@ -49,12 +49,26 @@ spec:
             runAsUser: 0
             runAsNonRoot: false
             privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
+          {{- if .Values.azure.enabled }}
             runAsUser: 0
+          {{- end }}
+            runAsNonRoot: true
             privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
           resources:
           {{- if .Values.resources }}
           {{- toYaml .Values.resources | nindent 12 }}

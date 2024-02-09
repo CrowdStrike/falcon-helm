@@ -26,10 +26,14 @@ image:
   digest:
   pullPolicy: Always
 
-  # Use this if you have a base64 encoded docker
-  # config json with user and pass of your own
-  # private repository
+  # use this to refer to an existing secret in the namespace falcon-image-analyzer
   pullSecret:
+
+  # Value must be base64. This setting conflicts with image.pullSecret
+  # The base64 encoded string of the docker config json for the pull secret can be
+  # gotten through:
+  # $ cat ~/.docker/config.json | base64 -
+  registryConfigJSON:
 
   envFrom:
     - configMapRef:

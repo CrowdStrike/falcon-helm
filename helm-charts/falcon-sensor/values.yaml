@@ -24,7 +24,7 @@ node:
     labels: {}
 
     # Enable the priorityClass creation on chart installation
-    priorityClassCreate: true
+    priorityClassCreate: false
     # Assign a PriorityClassName to pods if set
     priorityClassName: ""
     priorityClassValue: 1000000000

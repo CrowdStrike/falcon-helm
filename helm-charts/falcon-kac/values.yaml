@@ -56,6 +56,11 @@ falcon:
   tags:
   provisioning_token:
 
+# When clusterName is not present (like Rancher or microk8s), you can setup the hostname
+# for the falcon-kac that will be displayed in the Host Management UI.
+# Important Note: if the clusterName is detected by the agent, this value will be overwritten
+clusterName: ""
+
 # Annotations to apply to the webhook deployment
 annotations: {}
 

@@ -78,6 +78,26 @@ azure:
 gcp:
   enabled: false
 
+exclusions:
+  # provide a comma separate list of name spaces that you want to be
+  # excluded from IAR scanning.
+  # Note that all pods will be excluded.
+  # Use this param when you install IAR on a cluster that already has pods running and want to be excluded
+  # For excluding only specific pods or excluding namespaces AFTER iar has been installed , please refer to README
+  # For e.g.
+  #  exclusions:
+  #    namespace: "ns1,ns2"
+  namespace: ""
+
+  # provide a comma separate list of
+  # registries ( without transport http/https:// ) to be excluded
+  # from IAR scanning.
+  # Note that any pods running any image with the registry will be excluded
+  # Use this param when you install IAR on a cluster that already has pods running and want to be excluded
+  # for E.g.
+  #   exclusions:
+  #    registry: "index.docker.io,my.private.registry,localhost,localhost:1234"
+  registry: ""
 
 # Use this param to provide the comma separated registry secrets of the form namsepace1:secretname1,namespace:secret2
 # each secret should be of type docker-registry for each of the private registry that is used.
@@ -93,7 +113,10 @@ privateRegistries:
   credentials: ""
 
 # This is a mandatory mount for both deployment and daemon set.
-# this is used as a tmp working space for image storage
+# this is used as a tmp working space for image storage.
+# adjust this space to any comfortable value. The max Size should be equals
+# to the largest image possible to run in the container.
+# for e.g. if the largest possible image is in the range of 1-4g put 4Gi as the value.
 volumes:
   - name: tmp-volume
     emptyDir:

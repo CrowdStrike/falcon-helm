@@ -167,12 +167,23 @@
             "type": "object",
             "default": {}
         },
+        "nodeSelector": {
+            "type": "object",
+            "default": {
+                "kubernetes.io/os": "linux",
+                "kubernetes.io/arch": "amd64"
+            }
+        },
         "podAnnotations": {
             "type": "object",
             "default": {}
         },
         "tolerations": {
             "type": "array"
+        },
+        "affinity": {
+            "type": "object",
+            "default": {}
         },
         "falconClientResources": {
             "type": "object",

@@ -206,19 +206,23 @@ spec:
           name: crowdstrike-falcon-vol0
         - mountPath: /var/private/
           name: crowdstrike-falcon-vol1
+      {{- with .Values.nodeSelector }}
       nodeSelector:
-        kubernetes.io/os: linux
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       priorityClassName: system-cluster-critical
       securityContext:
         seccompProfile:
           type: RuntimeDefault
       serviceAccountName: {{ .Values.serviceAccount.name }}
       shareProcessNamespace: true
-      {{- if .Values.tolerations }}
-      tolerations:
-      {{- with .Values.tolerations }}
-      {{- toYaml . | nindent 6 }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
       - name: {{ include "falcon-kac.name" . }}-tls-certs

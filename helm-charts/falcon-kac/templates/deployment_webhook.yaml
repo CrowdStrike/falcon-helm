@@ -206,10 +206,8 @@ spec:
           name: crowdstrike-falcon-vol0
         - mountPath: /var/private/
           name: crowdstrike-falcon-vol1
-      {{- with .Values.nodeSelector }}
       nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
       securityContext:
         seccompProfile:

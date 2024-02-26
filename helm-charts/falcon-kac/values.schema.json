@@ -167,13 +167,6 @@
             "type": "object",
             "default": {}
         },
-        "nodeSelector": {
-            "type": "object",
-            "default": {
-                "kubernetes.io/os": "linux",
-                "kubernetes.io/arch": "amd64"
-            }
-        },
         "podAnnotations": {
             "type": "object",
             "default": {}
@@ -183,7 +176,25 @@
         },
         "affinity": {
             "type": "object",
-            "default": {}
+            "default": {
+                "nodeAffinity": {
+                    "requiredDuringSchedulingIgnoredDuringExecution": {
+                        "nodeSelectorTerms": [
+                            {
+                                "matchExpressions": [
+                                    {
+                                        "key": "kubernetes.io/arch",
+                                        "operator": "In",
+                                        "values": [
+                                            "amd64"
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
         },
         "falconClientResources": {
             "type": "object",

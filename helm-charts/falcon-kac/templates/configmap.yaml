@@ -12,4 +12,15 @@ data:
   FALCONCTL_OPT_{{ $key | upper }}: {{ $value | quote }}
   {{- end }}
   {{- end }}
-
+{{- if .Values.clusterName }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: falcon-kac-meta
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "falcon-kac.labels" . | nindent 4 }}
+data:
+  ClusterName: {{ .Values.clusterName }}
+{{- end -}}

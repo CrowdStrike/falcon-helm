@@ -41,6 +41,18 @@ agentRunmode definition
 {{- end }}
 {{- end }}
 
+
+{{/*
+tmp-volume volume size definition
+*/}}
+{{- define "falcon-image-analyzer.tempvolsize" -}}
+{{- range $v := .Values.volumes }}
+{{- if eq $v.name "tmp-volume" }}
+{{- printf $v.emptyDir.sizeLimit }}
+{{- end }}
+{{- end }}
+{{- end }}
+
 {{/*
 Common labels
 */}}

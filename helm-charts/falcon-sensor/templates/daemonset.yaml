@@ -172,12 +172,11 @@ spec:
         {{- include "falcon-sensor.daemonsetResources" . | nindent 8 }}
         {{- end }}
         envFrom:
+        - configMapRef:
+            name: {{ include "falcon-sensor.fullname" . }}-config
         {{- if .Values.node.daemonset.existingSecret }}
         - secretRef:
             name: {{ .Values.node.daemonset.existingSecret }}
-        {{- else }}
-        - configMapRef:
-            name: {{ include "falcon-sensor.fullname" . }}-config
         {{- end }}
         volumeMounts:
           - name: falconstore

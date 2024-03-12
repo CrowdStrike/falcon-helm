@@ -200,6 +200,9 @@
                                     "default": {}
                                 }
                             }
+                        },
+                        "existingSecret": {
+                            "type": "string"
                         }
                     }
                 },

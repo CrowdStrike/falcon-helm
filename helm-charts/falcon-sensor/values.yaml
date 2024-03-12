@@ -75,6 +75,9 @@ node:
     # Sets the max unavailable nodes. Default is 1 when no value exists.
     maxUnavailable: 1
 
+    # Use an existing secret as a replacement for the configMap
+    existingSecret:
+
   image:
     repository: falcon-node-sensor
     pullPolicy: Always

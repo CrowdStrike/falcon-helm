@@ -75,8 +75,10 @@ node:
     # Sets the max unavailable nodes. Default is 1 when no value exists.
     maxUnavailable: 1
 
-    # Use an existing secret as a replacement for the configMap
-    existingSecret:
+    # Use an existing secret as a complement for the configMap 
+    # `falcon.cid`` and `falcon.provisioning_token` are expected to be
+    # provisionned outside of this chart, to avoid storing sensitive data.
+    existingSecret: ""
 
   image:
     repository: falcon-node-sensor

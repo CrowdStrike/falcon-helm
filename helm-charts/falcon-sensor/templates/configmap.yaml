@@ -12,10 +12,14 @@ metadata:
     crowdstrike.com/provider: crowdstrike
     helm.sh/chart: {{ include "falcon-sensor.chart" . }}
 data:
+  {{- if not .Values.node.daemonset.existingSecret }}
   FALCONCTL_OPT_CID: {{ .Values.falcon.cid }}
+  {{- end }}
   {{- range $key, $value := .Values.falcon }}
   {{- if and (or $value (eq ($value | toString) "false")) (ne $key "cid") }}
+  {{- if not (and ($.Values.node.daemonset.existingSecret) (eq $key "provisioning_token")) }}
   FALCONCTL_OPT_{{ $key | upper }}: {{ $value | quote }}
+  {{- end }}
   {{- end }}
   {{- end }}
   {{- if and .Values.node.enabled .Values.node.backend }}

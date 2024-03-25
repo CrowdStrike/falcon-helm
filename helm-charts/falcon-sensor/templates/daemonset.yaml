@@ -174,6 +174,10 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "falcon-sensor.fullname" . }}-config
+        {{- if .Values.node.daemonset.existingSecret }}
+        - secretRef:
+            name: {{ .Values.node.daemonset.existingSecret }}
+        {{- end }}
         volumeMounts:
           - name: falconstore
             mountPath: /opt/CrowdStrike/falconstore

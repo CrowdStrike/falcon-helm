@@ -255,6 +255,20 @@
                     "type": "integer",
                     "default": "30",
                     "pattern": "^[0-9]+$"
+                },
+                "hooks": {
+                    "type": "object",
+                    "properties": {
+                        "postDelete": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "default": "true"
+                                }
+                            }
+                        }
+                    }
                 }
             }
         },

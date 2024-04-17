@@ -15,8 +15,9 @@ The Falcon Image Analyzer Helm chart has been tested to deploy on the following 
 * SUSE Rancher K3s
 * Red Hat OpenShift Kubernetes
 
-## New updates in current release (1.1.3)
-- Adding support to exclude registries / namespaces / pods via Helm or spec . Image Support `1.0.8`
+## New updates in current release (1.1.5)
+- Adding a way to specify `priorityClassName` for pod. Image Support `1.0.11`
+- Configure securityContexts for deployments. Image Support requires version `1.0.11`
 
 ## Dependencies
 
@@ -46,6 +47,7 @@ The following tables list the Falcon sensor configurable parameters and their de
 |:---------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------|
 | `deployment.enabled`   required                                                                                            | Set to `true` if running in Watcher Mode i.e.                                                                                                                  | false                                                                                  |
 | `daemsonset.enabled`     required                                                                                          | Set to `true` if running in Socket Mode i.e. Both CANNOT be true . This  causes the IAR to run in `socket` mode                                                | false                                                                                  |
+| `priorityClassName`                  optional    ( available in falcon-imageanalyzer Helm Chart >= 1.1.4)                  | Set to `system-node-critical` or `system-cluster-critical` to avoid pod evictions due to resource limits.                                                      | ""                                                                                     |
 | `privateRegistries.credentials`  optional                                                                                  | Use this param to provide the comma separated registry secrets of the form namsepace1:secretname1,namespace:secret2                                            | ""                                                                                     |
 | `image.repo`       required                                                                                                | IAR image repo name                                                                                                                                            | `[CROWDSTREIKE_IMAGE_REGISTRY]/falcon-imageanalyzer/us-1/release/falcon-imageanalyzer` |
 | `image.tag`        required                                                                                                | Image tag version                                                                                                                                              | None                                                                                   |
@@ -319,6 +321,10 @@ for e.g.  a docker-registry secret can be created as below
 
 ```
 use the above secret as `"my-app-ns:regcred,my-app-ns:regcred2"`
+
+### Pod Eviction
+If for some reason pod evivictions are observed in the Cluster due to exceeding ephemeral storage
+please set the `priorityClassName`  to `system-node-critical` or `system-cluster-critical` in `config-values.yaml` and update.
 
 ### Exclusions ( available in falcon-imageanalyzer v >= 1.0.8 and Helm Chart v >= 1.1.3)
 In order to exclude pods from scans, you can either exclude the registries, namespace, or specific pods

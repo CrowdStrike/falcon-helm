@@ -3,6 +3,17 @@ entries:
   cs-k8s-protection-agent:
   - apiVersion: v2
     appVersion: 1.0.1
+    created: "2024-04-24T15:22:58.952022807Z"
+    description: A Helm chart for Crowdstrike Kubernetes Protection Agent
+    digest: d69b6af926eadfa3ffbe35d346078c06b4b8d29d7c35363f5ca530f610e34cd9
+    icon: https://www.crowdstrike.com/wp-content/uploads/2020/08/FalconPremium@2x.svg
+    name: cs-k8s-protection-agent
+    type: application
+    urls:
+    - https://github.com/CrowdStrike/falcon-helm/releases/download/cs-k8s-protection-agent-1.0.3/cs-k8s-protection-agent-1.0.3.tgz
+    version: 1.0.3
+  - apiVersion: v2
+    appVersion: 1.0.1
     created: "2024-02-06T15:47:18.172940966Z"
     description: A Helm chart for Crowdstrike Kubernetes Protection Agent
     digest: e5658caf219a1365e25ade0e342224c081a62bfb3aecfd93fd36de88642032f2
@@ -112,6 +123,16 @@ entries:
     - https://github.com/CrowdStrike/falcon-helm/releases/download/cs-k8s-protection-agent-0.43.8/cs-k8s-protection-agent-0.43.8.tgz
     version: 0.43.8
   falcon-image-analyzer:
+  - apiVersion: v2
+    appVersion: 1.1.3
+    created: "2024-04-24T15:22:59.157988926Z"
+    description: A Helm chart for Falcon Image Analyzer
+    digest: 91da45c1c3bb8f25f12f0cdea628e5147bfdabafbb3552b18859ff7e0e2c496d
+    name: falcon-image-analyzer
+    type: application
+    urls:
+    - https://github.com/CrowdStrike/falcon-helm/releases/download/falcon-image-analyzer-1.1.4/falcon-image-analyzer-1.1.4.tgz
+    version: 1.1.4
   - apiVersion: v2
     appVersion: 1.1.3
     created: "2024-03-07T01:29:55.421285363Z"
@@ -2443,4 +2464,4 @@ entries:
     urls:
     - https://github.com/CrowdStrike/falcon-helm/releases/download/0.5.0/falcon-sensor-0.5.0.tgz
     version: 0.5.0
-generated: "2024-03-07T01:29:55.421564895Z"
+generated: "2024-04-24T15:22:59.158290829Z"

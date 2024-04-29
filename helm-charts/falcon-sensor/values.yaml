@@ -99,6 +99,11 @@ node:
   # How long to wait for Falcon pods to stop gracefully
   terminationGracePeriod: 30
 
+  hooks:
+    # Settings for the node post-delete helm hook
+    postDelete:
+      enabled: true
+
 container:
   # When enabled, Helm chart deploys the Falcon Container Sensor to Pods through Webhooks
   enabled: false

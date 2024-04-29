@@ -14,6 +14,7 @@ spec:
   template:
     metadata:
       annotations:
+        sensor.falcon-system.crowdstrike.com/injection: disabled
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

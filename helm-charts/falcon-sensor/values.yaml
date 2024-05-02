@@ -220,6 +220,7 @@ container:
 
   tolerations: []
 
+  # Configure the requests and limits of the injector container
   resources:
     # limits:
     #   cpu: 100m

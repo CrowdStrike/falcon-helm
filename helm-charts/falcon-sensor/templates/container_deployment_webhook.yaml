@@ -92,6 +92,10 @@ spec:
                 operator: In
                 values:
                 - linux
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 1
             preference:

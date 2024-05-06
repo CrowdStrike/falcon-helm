@@ -214,11 +214,13 @@ spec:
           type: RuntimeDefault
       serviceAccountName: {{ .Values.serviceAccount.name }}
       shareProcessNamespace: true
-      {{- if .Values.tolerations }}
-      tolerations:
-      {{- with .Values.tolerations }}
-      {{- toYaml . | nindent 6 }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
       - name: {{ include "falcon-kac.name" . }}-tls-certs

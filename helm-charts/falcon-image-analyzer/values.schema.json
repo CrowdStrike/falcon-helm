@@ -261,12 +261,14 @@
                 }
             },
             "additionalProperties": {
-                "properties": {
-                    "enabled": {
-                        "const": false
-                    }
+                "daemonset": {
+                  "properties": {
+                     "enabled": {
+                     "const": false
                 }
-            }
+              }
+          }
+        }
         },
         {
             "properties": {
@@ -279,9 +281,11 @@
                 }
             },
             "additionalProperties": {
-                "properties": {
-                    "enabled": {
-                        "const": false
+                "deployment": {
+                    "properties": {
+                        "enabled": {
+                            "const": false
+                        }
                     }
                 }
             }

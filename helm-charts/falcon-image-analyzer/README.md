@@ -15,9 +15,11 @@ The Falcon Image Analyzer Helm chart has been tested to deploy on the following 
 * SUSE Rancher K3s
 * Red Hat OpenShift Kubernetes
 
-## New updates in current release (1.1.5)
-- Adding a way to specify `priorityClassName` for pod. Image Support `1.0.11`
-- Configure securityContexts for deployments. Image Support requires version `1.0.11`
+## New updates in current release (1.1.7)
+- Adding a way to specify log output terminal `log/output:` . Image Support `1.0.12`
+use this field to set the output terminal of logs
+`1` = stdout ( some cloud providers like GCP assume any output on stderr to be critical err and display on console )  .
+`2` = stderr/default ( stderr is the normal output for logs ) . Any other value will be defaulted to stderr
 
 ## Dependencies
 
@@ -57,6 +59,7 @@ The following tables list the Falcon sensor configurable parameters and their de
 | `gcp.enabled`                  optional                                                                                    | Set to `true` if cluster is Gogle GKE or self-managed on Google Cloud GCP nodes.                                                                               | false                                                                                  |
 | `exclusions.namespace`                  optional   ( available in falcon-imageanalyzer >= 1.0.8 and Helm Chart v >= 1.1.3) | Set the value as a comma separate list of namespaces to be excluded. all pods in that namespace(s) will be excluded                                            | ""                                                                                     |
 | `exclusions.registry`                  optional   ( available in falcon-imageanalyzer >= 1.0.8 and Helm Chart v >= 1.1.3)  | Set the value as a comma separate list of registries to be excluded. all images in that registry(s) will be excluded                                           | ""                                                                                     |
+| `log.output`                  optional   ( available  Helm Chart v >= 1.1.7 & falcon-imageanalyzer >= 1.0.12)              | Set the value to for log output terminal. `2=stderr` and `1=stdout`                                                                                            | 2 ( stderr )                                                                           |
 | `crowdstrikeConfig.clusterName`     required                                                                               | Cluster name                                                                                                                                                   | None                                                                                   |
 | `crowdstrikeConfig.enableDebug`   optional                                                                                 | Set to `true` for debug level log verbosity.                                                                                                                   | false                                                                                  |
 | `crowdstrikeConfig.clientID`    required                                                                                   | CrowdStrike Falcon OAuth API Client ID                                                                                                                         | None                                                                                   |

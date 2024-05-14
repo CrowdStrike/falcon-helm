@@ -133,6 +133,16 @@ volumes:
     emptyDir:
       sizeLimit: 20Gi
 
+
+# use this field to set the output terminal of logs
+# 1 = stdout ( some cloud providers like GCP assume any output on stderr to be critical err and display on console )  .
+# 2 = stderr/default ( stderr is the normal output for logs )
+# any other value will be defaulted to stderr
+# https://stackoverflow.com/questions/4919093/should-i-log-messages-to-stderr-or-stdout/4919110#4919110 )
+
+log:
+  output: 2
+
 crowdstrikeConfig:
   clusterName: ""
   enableDebug: "false"

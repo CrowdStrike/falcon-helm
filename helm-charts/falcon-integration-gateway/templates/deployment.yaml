@@ -41,8 +41,14 @@ spec:
               mountPath: /fig/config/config.ini
               subPath: config.ini
           envFrom:
+          - configMapRef:
+              name: {{ include "falcon-integration-gateway.fullname" . }}-env
           - secretRef:
+              {{- if .Values.falcon.existingSecret }}
+              name: {{ .Values.falcon.existingSecret }}
+              {{- else }}
               name: {{ include "falcon-integration-gateway.fullname" . }}-creds
+              {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           command:

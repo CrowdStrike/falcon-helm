@@ -38,6 +38,9 @@
                     "type": "string",
                     "enum": ["us-1", "us-2", "eu-1", "us-gov-1"]
                 },
+                "existingSecret": {
+                    "type": "string"
+                },
                 "integration_gateway": {
                     "type": "object",
                     "properties": {

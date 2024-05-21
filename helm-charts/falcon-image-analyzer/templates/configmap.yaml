@@ -7,6 +7,7 @@ metadata:
   {{- include "falcon-image-analyzer.labels" . | nindent 4 }}
 data:
   IS_KUBERNETES: {{ .Values.isKubernetes | quote }}
+  LOG_OUTPUT: {{ .Values.log.output | quote }}
   AGENT_CID: {{ .Values.crowdstrikeConfig.cid | quote }}
   AGENT_CLUSTER_NAME: {{ .Values.crowdstrikeConfig.clusterName | quote }}
   AGENT_REGISTRY_CREDENTIALS: {{ .Values.privateRegistries.credentials | quote }}

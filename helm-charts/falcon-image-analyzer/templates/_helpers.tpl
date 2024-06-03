@@ -31,6 +31,13 @@ Create chart name and version as used by the chart label.
 {{- end }}
 
 {{/*
+isKubernetes definition
+*/}}
+{{- define "falcon-image-analyzer.isKubernetes" -}}
+{{- printf "true" }}
+{{- end }}
+
+{{/*
 agentRunmode definition
 */}}
 {{- define "falcon-image-analyzer.agentrunmode" -}}

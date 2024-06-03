@@ -2,8 +2,6 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-# Do not override anywhere in values - Always true when run in k8s
-isKubernetes: true
 
 daemonset:
   enabled: false
@@ -142,6 +140,13 @@ volumes:
 
 log:
   output: 2
+
+# Set this flag to true to send scan error stats to cs cloud.
+# These events can be searched in investigate>events / advanced events search
+# note that if true,  agent will send an error for image for first time only.
+# Repeated errors for same images will not be sent to preserve network footprint
+scanStats:
+  enabled: false
 
 crowdstrikeConfig:
   clusterName: ""

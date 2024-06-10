@@ -99,6 +99,11 @@ node:
   # How long to wait for Falcon pods to stop gracefully
   terminationGracePeriod: 30
 
+  hooks:
+    # Settings for the node post-delete helm hook
+    postDelete:
+      enabled: true
+
 container:
   # When enabled, Helm chart deploys the Falcon Container Sensor to Pods through Webhooks
   enabled: false
@@ -188,7 +193,7 @@ container:
       # list. For example:
       #
       # namespaces: ns1,ns2,ns3
-      namespaces:
+      namespaces: ""
 
       # Attempt to create the Falcon sensor pull secret in all Namespaces
       # instead of using "container.image.pullSecrets.namespaces"
@@ -220,6 +225,7 @@ container:
 
   tolerations: []
 
+  # Configure the requests and limits of the injector container
   resources:
     # limits:
     #   cpu: 100m

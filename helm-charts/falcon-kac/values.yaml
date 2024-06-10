@@ -76,6 +76,16 @@ podAnnotations: {}
 
 tolerations: []
 
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/arch
+          operator: In
+          values:
+          - amd64
+
 falconClientResources:
   limits:
     cpu: 750m
@@ -103,3 +113,7 @@ webhook:
   failurePolicy: Ignore
   # Comma sparated list of namespaces in which we need to disable validation e.g test1,test2
   disableNamespaces:
+
+# Number of pods for resourceQuota object
+resourceQuota:
+  pods: 2

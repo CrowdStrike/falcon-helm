@@ -1,4 +1,4 @@
-{{- if .Values.node.enabled }}
+{{- if and .Values.node.enabled .Values.node.hooks.postDelete.enabled }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -88,18 +88,11 @@ spec:
         imagePullPolicy: "{{ .Values.node.image.pullPolicy }}"
         command:
           - /bin/bash
-        {{- if .Values.node.gke.autopilot }}
         args:
           - '-c'
           - >-
             echo "Running /opt/CrowdStrike/falcon-daemonset-init -u";
             /opt/CrowdStrike/falcon-daemonset-init -u
-        {{- else }}
-        args: ['-c', 'if [ -x "/opt/CrowdStrike/falcon-daemonset-init" ]; then echo "Running /opt/CrowdStrike/falcon-daemonset-init -u"; /opt/CrowdStrike/falcon-daemonset-init -u ; else rm -rf "/host_opt/CrowdStrike"; fi']
-        volumeMounts:
-          - name: opt-crowdstrike
-            mountPath: /host_opt
-        {{- end }}
         {{- if or .Values.node.gke.autopilot .Values.node.daemonset.resources }}
         resources:
           requests:
@@ -150,12 +143,6 @@ spec:
           privileged: false
           readOnlyRootFilesystem: true
           allowPrivilegeEscalation: true
-      {{- if not .Values.node.gke.autopilot }}
-      volumes:
-      - name: opt-crowdstrike
-        hostPath:
-          path: /opt
-      {{- end }}
       serviceAccountName: {{ .Values.serviceAccount.name }}-node-cleanup
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
       hostPID: true

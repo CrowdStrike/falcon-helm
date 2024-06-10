@@ -214,11 +214,13 @@ spec:
           type: RuntimeDefault
       serviceAccountName: {{ .Values.serviceAccount.name }}
       shareProcessNamespace: true
-      {{- if .Values.tolerations }}
-      tolerations:
-      {{- with .Values.tolerations }}
-      {{- toYaml . | nindent 6 }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
       - name: {{ include "falcon-kac.name" . }}-tls-certs
@@ -286,7 +288,7 @@ webhooks:
     - pods/ephemeralcontainers
     scope: '*'
   sideEffects: None
-  timeoutSeconds: 5
+  timeoutSeconds: 10
 - admissionReviewVersions:
   - v1
   clientConfig:
@@ -359,4 +361,5 @@ webhooks:
     - jobs
     scope: '*'
   sideEffects: None
-  timeoutSeconds: 5
+  timeoutSeconds: 10
+

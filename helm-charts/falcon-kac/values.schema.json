@@ -174,6 +174,28 @@
         "tolerations": {
             "type": "array"
         },
+        "affinity": {
+            "type": "object",
+            "default": {
+                "nodeAffinity": {
+                    "requiredDuringSchedulingIgnoredDuringExecution": {
+                        "nodeSelectorTerms": [
+                            {
+                                "matchExpressions": [
+                                    {
+                                        "key": "kubernetes.io/arch",
+                                        "operator": "In",
+                                        "values": [
+                                            "amd64"
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        },
         "falconClientResources": {
             "type": "object",
             "properties": {
@@ -256,6 +278,32 @@
                     "type": [
                         "null",
                         "string"
+                    ]
+                }
+            }
+        },
+        "resourceQuota": {
+            "type": "object",
+            "properties": {
+                "pods": {
+                    "oneOf": [
+                        {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "default": "2",
+                            "pattern": "^[0-9]+$"
+                        },
+                        {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "default": "2",
+                            "pattern": "^[0-9]+$",
+                            "minimum": 1
+                        }
                     ]
                 }
             }

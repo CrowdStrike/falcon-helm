@@ -11,7 +11,6 @@ daemonset:
 deployment:
   enabled: false
 
-
 # Do not override anywhere in values - Always 1 for Deployment. NA for daemonset
 replicaCount: 1
 image:
@@ -63,7 +62,19 @@ resources: {}
 
 tolerations: []
 
-affinity: {}
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/os
+          operator: In
+          values:
+            - linux
+        - key: kubernetes.io/arch
+          operator: In
+          values:
+            - amd64
 
 priorityClassName: ""
 
@@ -78,6 +89,26 @@ azure:
 gcp:
   enabled: false
 
+exclusions:
+  # provide a comma separate list of name spaces that you want to be
+  # excluded from IAR scanning.
+  # Note that all pods will be excluded.
+  # Use this param when you install IAR on a cluster that already has pods running and want to be excluded
+  # For excluding only specific pods or excluding namespaces AFTER iar has been installed , please refer to README
+  # For e.g.
+  #  exclusions:
+  #    namespace: "ns1,ns2"
+  namespace: ""
+
+  # provide a comma separate list of
+  # registries ( without transport http/https:// ) to be excluded
+  # from IAR scanning.
+  # Note that any pods running any image with the registry will be excluded
+  # Use this param when you install IAR on a cluster that already has pods running and want to be excluded
+  # for E.g.
+  #   exclusions:
+  #    registry: "index.docker.io,my.private.registry,localhost,localhost:1234"
+  registry: ""
 
 # Use this param to provide the comma separated registry secrets of the form namsepace1:secretname1,namespace:secret2
 # each secret should be of type docker-registry for each of the private registry that is used.
@@ -93,11 +124,24 @@ privateRegistries:
   credentials: ""
 
 # This is a mandatory mount for both deployment and daemon set.
-# this is used as a tmp working space for image storage
+# this is used as a tmp working space for image storage.
+# adjust this space to any comfortable value. The max Size should be equals
+# to the largest image possible to run in the container.
+# for e.g. if the largest possible image is in the range of 1-4g put 4Gi as the value.
 volumes:
   - name: tmp-volume
     emptyDir:
       sizeLimit: 20Gi
+
+
+# use this field to set the output terminal of logs
+# 1 = stdout ( some cloud providers like GCP assume any output on stderr to be critical err and display on console )  .
+# 2 = stderr/default ( stderr is the normal output for logs )
+# any other value will be defaulted to stderr
+# https://stackoverflow.com/questions/4919093/should-i-log-messages-to-stderr-or-stdout/4919110#4919110 )
+
+log:
+  output: 2
 
 crowdstrikeConfig:
   clusterName: ""
@@ -111,7 +155,6 @@ crowdstrikeConfig:
   # /entities/image-registry-credentials/v1
   dockerAPIToken: ""
 
-
   # Use this value if you have an existing secret
   # defined in your k8s that may contain secrets
   # for falcon api client id and pw
@@ -120,7 +163,6 @@ crowdstrikeConfig:
   agentRuntime: ""
   agentRuntimeSocket: ""
   agentMaxConsumerThreads: "1"
-
 
 proxyConfig:
   HTTP_PROXY: ""

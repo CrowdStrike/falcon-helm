@@ -1,3 +1,5 @@
+deployment:
+  enabled: true
 crowdstrikeConfig:
   clusterName: "test-cluster12.test"
   clientID: "abcdefABCDEF0123456789abcdefABCD"

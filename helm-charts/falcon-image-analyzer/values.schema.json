@@ -249,6 +249,48 @@
             }
         }
     },
+    "oneOf": [
+        {
+            "properties": {
+                "deployment": {
+                    "properties": {
+                        "enabled": {
+                            "const": true
+                        }
+                    }
+                }
+            },
+            "additionalProperties": {
+                "daemonset": {
+                  "properties": {
+                     "enabled": {
+                     "const": false
+                }
+              }
+          }
+        }
+        },
+        {
+            "properties": {
+                "daemonset": {
+                    "properties": {
+                        "enabled": {
+                            "const": true
+                        }
+                    }
+                }
+            },
+            "additionalProperties": {
+                "deployment": {
+                    "properties": {
+                        "enabled": {
+                            "const": false
+                        }
+                    }
+                }
+            }
+        }
+    ],
     "allOf": [
         {
             "if": {

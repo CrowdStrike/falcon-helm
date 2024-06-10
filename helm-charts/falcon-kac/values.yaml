@@ -56,8 +56,8 @@ falcon:
   tags:
   provisioning_token:
 
-# Falcon KAC can usually discover the clusterName automatically so setting clusterName here is normally 
-# not necessary, but in some cases the clusterName cannot be discovered by the KAC, e.g. for self-hosted 
+# Falcon KAC can usually discover the clusterName automatically so setting clusterName here is normally
+# not necessary, but in some cases the clusterName cannot be discovered by the KAC, e.g. for self-hosted
 # kubernetes clusters such as MicroK8s. In those case, the clusterName can be manually set here.
 # The clusterName is displayed as hostname for KAC in the Host Management UI.
 # Note: if the clusterName is detected by the KAC, this value will be overwritten

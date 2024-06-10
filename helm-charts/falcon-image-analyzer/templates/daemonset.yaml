@@ -13,6 +13,7 @@ spec:
   template:
     metadata:
       annotations:
+        sensor.falcon-system.crowdstrike.com/injection: disabled
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -100,7 +101,7 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .Values.crowdstrikeConfig.priorityClassName }}
+      {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName }}
       {{- end }}
  {{- end }}

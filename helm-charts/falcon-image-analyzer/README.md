@@ -5,7 +5,7 @@ platform purpose-built to stop breaches via a unified set of cloud-delivered
 technologies that prevent all types of attacks — including malware and much
 more.
 
-## Kubernetes cluster compatability
+## Kubernetes cluster compatibility
 
 The Falcon Image Analyzer Helm chart has been tested to deploy on the following Kubernetes distributions:
 
@@ -15,9 +15,11 @@ The Falcon Image Analyzer Helm chart has been tested to deploy on the following 
 * SUSE Rancher K3s
 * Red Hat OpenShift Kubernetes
 
-## New updates in curent release
-- Removed the `crowdstrikeConfig.agentRunmode` variable from values.
-- added `privateRegistries.credentials` variable in values. Details below.
+## New updates in current release (1.1.7)
+- Adding a way to specify log output terminal `log/output:` . Image Support `1.0.12`
+use this field to set the output terminal of logs
+`1` = stdout ( some cloud providers like GCP assume any output on stderr to be critical err and display on console )  .
+`2` = stderr/default ( stderr is the normal output for logs ) . Any other value will be defaulted to stderr
 
 ## Dependencies
 
@@ -43,27 +45,31 @@ helm repo update
 
 The following tables list the Falcon sensor configurable parameters and their default values.
 
-| Parameter                                                              | Description                                                                                                                                                    | Default                                                                                |
-|:-----------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------|
-| `deployment.enabled`   required                                        | Set to `true` if running in Watcher Mode i.e.                                                                                                                  | false                                                                                  |
-| `daemsonset.enabled`     required                                      | Set to `true` if running in Socket Mode i.e. Both CANNOT be true . This  causes the IAR to run in `socket` mode                                                | false                                                                                  |
-| `privateRegistries.credentials`  optional                              | Use this param to provide the comma separated registry secrets of the form namsepace1:secretname1,namespace:secret2                                            | ""                                                                                     |
-| `image.repo`       required                                            | IAR image repo name                                                                                                                                            | `[CROWDSTREIKE_IMAGE_REGISTRY]/falcon-imageanalyzer/us-1/release/falcon-imageanalyzer` |
-| `image.tag`        required                                            | Image tag version                                                                                                                                              | None                                                                                   |
-| `image.registryConfigJSON`        optional                             | iar private registry secret in docker config format                                                                                                            | None                                                                                   |
-| `azure.enabled`         optional                                       | Set to `true` if cluster is Azure AKS or self-managed on Azure nodes.                                                                                          | false                                                                                  |
-| `azure.azureConfig`          optional                                  | Azure  config file path                                                                                                                                        | `/etc/kubernetes/azure.json`                                                           |
-| `gcp.enabled`                  optional                                | Set to `true` if cluster is Gogle GKE or self-managed on Google Cloud GCP nodes.                                                                               | false                                                                                  |
-| `crowdstrikeConfig.clusterName`     required                           | Cluster name                                                                                                                                                   | None                                                                                   |
-| `crowdstrikeConfig.enableDebug`   optional                             | Set to `true` for debug level log verbosity.                                                                                                                   | false                                                                                  |
-| `crowdstrikeConfig.clientID`    required                               | CrowdStrike Falcon OAuth API Client ID                                                                                                                         | None                                                                                   |
-| `crowdstrikeConfig.clientSecret`     required                          | CrowdStrike Falcon OAuth API Client secret                                                                                                                     | None                                                                                   |
-| `crowdstrikeConfig.cid`         required                               | Customer ID (CID)                                                                                                                                              | None                                                                                   |
-| `crowdstrikeConfig.dockerAPIToken`  optional                           | Crowdstrike Artifactory Image Pull Token for pulling IAR image directly from  `[CROWDSTREIKE_IMAGE_REGISTRY] described below`                                  | None                                                                                   |
-| `crowdstrikeConfig.existingSecret`      optional                       | Existing secret ref name of the customer Kubernetes cluster                                                                                                    | None                                                                                   |
-| `crowdstrikeConfig.agentRegion`      required                          | Region of the CrowdStrike API to connect to us-1/us-2/eu-1                                                                                                     | None                                                                                   |
-| `crowdstrikeConfig.agentRuntime`             required ( if daemonset ) | The underlying runtime of the OS. docker/containerd/podman/crio. ONLY TO BE USED with `daemonset.enabled` = `true`                                             | None                                                                                   |
-| `crowdstrikeConfig.agentRuntimeSocket`              optional           | The unix socket path for the runtime socket. For example: `unix///var/run/docker.sock`. ONLY TO BE USED with ONLY TO BE USED with `daemonset.enabled` = `true` | None                                                                                   |
+| Parameter                                                                                                                  | Description                                                                                                                                                    | Default                                                                                |
+|:---------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------|
+| `deployment.enabled`   required                                                                                            | Set to `true` if running in Watcher Mode i.e.                                                                                                                  | false                                                                                  |
+| `daemsonset.enabled`     required                                                                                          | Set to `true` if running in Socket Mode i.e. Both CANNOT be true . This  causes the IAR to run in `socket` mode                                                | false                                                                                  |
+| `priorityClassName`                  optional    ( available in falcon-imageanalyzer Helm Chart >= 1.1.4)                  | Set to `system-node-critical` or `system-cluster-critical` to avoid pod evictions due to resource limits.                                                      | ""                                                                                     |
+| `privateRegistries.credentials`  optional                                                                                  | Use this param to provide the comma separated registry secrets of the form namsepace1:secretname1,namespace:secret2                                            | ""                                                                                     |
+| `image.repo`       required                                                                                                | IAR image repo name                                                                                                                                            | `[CROWDSTREIKE_IMAGE_REGISTRY]/falcon-imageanalyzer/us-1/release/falcon-imageanalyzer` |
+| `image.tag`        required                                                                                                | Image tag version                                                                                                                                              | None                                                                                   |
+| `image.registryConfigJSON`        optional                                                                                 | iar private registry secret in docker config format                                                                                                            | None                                                                                   |
+| `azure.enabled`         optional                                                                                           | Set to `true` if cluster is Azure AKS or self-managed on Azure nodes.                                                                                          | false                                                                                  |
+| `azure.azureConfig`          optional                                                                                      | Azure  config file path                                                                                                                                        | `/etc/kubernetes/azure.json`                                                           |
+| `gcp.enabled`                  optional                                                                                    | Set to `true` if cluster is Gogle GKE or self-managed on Google Cloud GCP nodes.                                                                               | false                                                                                  |
+| `exclusions.namespace`                  optional   ( available in falcon-imageanalyzer >= 1.0.8 and Helm Chart v >= 1.1.3) | Set the value as a comma separate list of namespaces to be excluded. all pods in that namespace(s) will be excluded                                            | ""                                                                                     |
+| `exclusions.registry`                  optional   ( available in falcon-imageanalyzer >= 1.0.8 and Helm Chart v >= 1.1.3)  | Set the value as a comma separate list of registries to be excluded. all images in that registry(s) will be excluded                                           | ""                                                                                     |
+| `log.output`                  optional   ( available  Helm Chart v >= 1.1.7 & falcon-imageanalyzer >= 1.0.12)              | Set the value to for log output terminal. `2=stderr` and `1=stdout`                                                                                            | 2 ( stderr )                                                                           |
+| `crowdstrikeConfig.clusterName`     required                                                                               | Cluster name                                                                                                                                                   | None                                                                                   |
+| `crowdstrikeConfig.enableDebug`   optional                                                                                 | Set to `true` for debug level log verbosity.                                                                                                                   | false                                                                                  |
+| `crowdstrikeConfig.clientID`    required                                                                                   | CrowdStrike Falcon OAuth API Client ID                                                                                                                         | None                                                                                   |
+| `crowdstrikeConfig.clientSecret`     required                                                                              | CrowdStrike Falcon OAuth API Client secret                                                                                                                     | None                                                                                   |
+| `crowdstrikeConfig.cid`         required                                                                                   | Customer ID (CID)                                                                                                                                              | None                                                                                   |
+| `crowdstrikeConfig.dockerAPIToken`  optional                                                                               | Crowdstrike Artifactory Image Pull Token for pulling IAR image directly from  `[CROWDSTREIKE_IMAGE_REGISTRY] described below`                                  | None                                                                                   |
+| `crowdstrikeConfig.existingSecret`      optional                                                                           | Existing secret ref name of the customer Kubernetes cluster                                                                                                    | None                                                                                   |
+| `crowdstrikeConfig.agentRegion`      required                                                                              | Region of the CrowdStrike API to connect to us-1/us-2/eu-1                                                                                                     | None                                                                                   |
+| `crowdstrikeConfig.agentRuntime`             required ( if daemonset )                                                     | The underlying runtime of the OS. docker/containerd/podman/crio. ONLY TO BE USED with `daemonset.enabled` = `true`                                             | None                                                                                   |
+| `crowdstrikeConfig.agentRuntimeSocket`              optional                                                               | The unix socket path for the runtime socket. For example: `unix///var/run/docker.sock`. ONLY TO BE USED with ONLY TO BE USED with `daemonset.enabled` = `true` | None                                                                                   |
 
 
 
@@ -77,9 +83,9 @@ Note:
 -
 - Please set either `daemonset.enabled` OR `deployment.enabled`
 
-- For deployment the replica count is set to **1** always. this is because IAR is not a load balanced service i.e. increasing replicas will not divide the work but rather duplicate creating unncessary resource consumption.
+- For deployment, the replica count is set to **1** always. This is because IAR is not a load balanced service i.e. increasing replicas will not divide the work but rather duplicate creating unncessary resource consumption.
 
-- For ease of installation and avoid complication the recommended way to install IAR creating a `config.yaml` file at some path like below
+- For ease of installation and avoiding complication, the recommended way to install IAR is to create a `config_values.yaml` file at some path like below
 
 For deployment
 ```
@@ -187,10 +193,29 @@ kubectl label ns --overwrite my-existing-namespace pod-security.kubernetes.io/au
 kubectl label ns --overwrite my-existing-namespace pod-security.kubernetes.io/warn=privileged
 ```
 
+### Temp Volume Mount
+In order to perform image scan, IAR will pull the image and un-compress it for traversal through layers and image config and manifest.
+For this, IAR will use a temp space that is added as a mount of type `emptyDir` . The idea of the storage here is to accommodate the max size image that one could run in the kubernetes.
+By Default, this is set to `20Gi` but can be overridden by the customer by adding the following in the `config_values.yaml`
+```
+# This is a mandatory mount for both deployment and daemonset.
+# this is used as a tmp working space for image storage.
+# adjust this space to any comfortable value. the temp ssize limit should be equal to 
+# 2 X to the largest image possible to run in the container.
+# for e.g. if the largest possible image is in the range of 4g put 8Gi as the value.
+volumes:
+  - name: tmp-volume
+    emptyDir:
+      sizeLimit: 20Gi --> Change this to any other value if need
+```
+
+**From the IAR `1.0.8` on wards any image that is greater than the allowed size will NOT be scanned to avoid container eviction crash due to tmp space shortage.**
+
+
 ### IAM Roles  ( EKS or Partially Managed using EC2 Instances)
-- For the IAR to detect cloud as AWS it should be able to retrieve sts token to assume role to retrieve ECR Tokens.
+- For the IAR to detect cloud as AWS, it should be able to retrieve sts token to assume role to retrieve ECR Tokens.
   There are 2 options for  that . If your EKS cluster us using the **kiam** or **kube2iam** admission controller, add annotations
-  for the IAR service account in the values.yaml as stated below, before installing. Make sure the roles have trust-relationship to allow
+  for the IAR service account in the `config_values.yaml` as stated below, before installing. Make sure the roles have trust-relationship to allow
   the serviceaccount in the `falcon-image-analyzer` namespace
 ```
 serviceAccount:
@@ -276,7 +301,7 @@ Here `falcon-image-analyzer` is the namespace of IAR and `imageanalyzer-falcon-i
 ### Authentication for Private Registries
 - If you are using ECR or cloud based Private Registries then assigning the IAM role to the iar service-account in `falcon-image-analyzer` namespace should be enough
 
-- If you are using a 3rd party private registry such as jfrog artifactory for running all your workload images, etc then use the below param in the values.yaml
+- If you are using a 3rd party private registry such as jfrog artifactory for running all your workload images, etc. then use the below param in the `config_values.yaml`
 ```
 privateRegistries:
   credentials: ""
@@ -300,12 +325,97 @@ for e.g.  a docker-registry secret can be created as below
 ```
 use the above secret as `"my-app-ns:regcred,my-app-ns:regcred2"`
 
+### Pod Eviction
+If for some reason pod evivictions are observed in the Cluster due to exceeding ephemeral storage
+please set the `priorityClassName`  to `system-node-critical` or `system-cluster-critical` in `config-values.yaml` and update.
+
+### Exclusions ( available in falcon-imageanalyzer v >= 1.0.8 and Helm Chart v >= 1.1.3)
+In order to exclude pods from scans, you can either exclude the registries, namespace, or specific pods
+
+#### Registry
+
+Registries can be excluded by adding the full registry name in the below section of the `config_values.yaml` ( without transport i.e. `http(s)://`)
+
+1. **Helm Chart Values** : If you are installing IAR on a cluster that is running a lot of pods and would like to exclude images from specific registry(s) from IAR scanning then use the `exclusions.registry` param in your `config_values.yaml` for IAR and set the value to be a comma separate list of registries that need to be excluded
+   e.g.
+  ```
+  exclusions:
+    registry: "index.docker.io,my.private.registry,localhost,localhost:1234"
+  ```
+
+#### Namespace
+Namespaces can be excluded in two ways:
+
+1. **Helm Chart Values** : If you are installing IAR on a cluster that is running a lot of pods and would like to exclude them from IAR scanning then use the `exclusions.namespace` param in your `config_values.yaml` for IAR and set the value to be a comma separate list of namespaces that needs to be excluded
+e.g.
+  ```
+  exclusions:
+    namespace: "ns1,ns2"
+  ```
+
+2. **Annotations**: Once the IAR has been installed, any new namespace can be excluded by adding the below annotation to the target namespace spec
+`sensor.crowdstrike.com/imageanalyzer: "disabled"`  
+
+e.g.
+```
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: "my-newnamespace-to-be-excluded"
+  annotations:
+    sensor.crowdstrike.com/imageanalyzer: "disabled"
+```
+
+#### POD Exclusions via PodSpec
+
+For excluding a specific pod from IAR scanning, one can add the below annotation on pod spec or pod annotation in their own target deployment, daemonset, cron spec.
+`sensor.crowdstrike.com/imageanalyzer: "disabled"`
+
+
+1. **PodSpec**
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  name: my-pod-spec
+  labels:
+    app: my-app
+  annotations:
+    sensor.crowdstrike.com/imageanalyzer: "disabled"
+spec:
+  containers:
+    - image: myappimage:x.y.z
+    ....
+```
+
+2. **Deployment / Daemonset**
+```
+apiVersion: apps/v1
+kind: Deployment / Daemonset
+metadata:
+  name: myapp
+  namespace: mynamespace
+  
+spec:
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        sensor.crowdstrike.com/imageanalyzer: "disabled"
+      labels:
+        app: myapp
+    spec:
+      containers:
+      .....
+```
+
 ### Install CrowdStrike Falcon Helm chart on Kubernetes nodes
 
-Before you install IAR, set the Helm chart variables and add them to the `values.yaml` file. Then, run the following to install IAR:
+Before you install IAR, set the Helm chart variables and add them to the `config_values.yaml` file. Then, run the following to install IAR:
 
 ```
-helm upgrade --install -f path-to-my-values.yaml \
+helm upgrade --install -f /path/to/config_values.yaml \
       --create-namespace -n falcon-image-analyzer imageanalyzer crowdstrike/falcon-image-analyzer
 ```
 

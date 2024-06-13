@@ -88,6 +88,9 @@ resources: {}
   #   cpu: 100m
   #   memory: 128Mi
 
+# Environment variables to pass to container
+env: []
+
 autoscaling:
   enabled: false
   minReplicas: 1

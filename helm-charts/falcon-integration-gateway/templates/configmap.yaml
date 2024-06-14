@@ -110,6 +110,9 @@ data:
 
     # Uncomment to provide Secrets Manager secret name. Alternatively, use SECRETS_MANAGER_SECRET_NAME env variable.
     #secrets_manager_secret_name = falcon/fig/credentials
+    {{- if .Values.credentials_store.secrets_manager.secret_name }}
+    secrets_manager_secret_name = {{ .Values.credentials_store.secrets_manager.secret_name }}
+    {{- end }}
 
     # Uncomment to provide Secrets Manager client id key. Alternatively, use SECRETS_MANAGER_CLIENT_ID_KEY env variable.
     #secrets_manager_client_id_key = client_id

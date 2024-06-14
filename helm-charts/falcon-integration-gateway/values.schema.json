@@ -42,6 +42,9 @@
                         "us-gov-1"
                     ]
                 },
+                "existingSecret": {
+                    "type": "string"
+                },
                 "integration_gateway": {
                     "type": "object",
                     "properties": {

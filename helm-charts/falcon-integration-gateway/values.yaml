@@ -67,6 +67,11 @@ falcon:
   client_secret:
   cloud_region:
 
+  # Use this value if you have an existing secret
+  # defined in your k8s that may contain secrets
+  # for falcon api client id and pw
+  existingSecret: ""
+
   integration_gateway:
     # Configure number of threads that process Falcon Events
     worker_threads: 4

@@ -10,7 +10,9 @@ data:
     # Falcon Integration Gateway
 
     [main]
+    # Uncomment to enable backends. Alternatively, use FIG_BACKENDS env variable.
     # Cloud backends that are enabled. The gateway will push events to the cloud providers specified below
+    #backends = AWS,AWS_SQS,AZURE,GCP,WORKSPACEONE,CHRONICLE,CLOUDTRAIL_LAKE,GENERIC
     backends={{- include "falcon-integration-gateway.backends" . }}
 
     # Uncomment to configure number of threads that process Falcon Events
@@ -20,38 +22,210 @@ data:
     {{- end }}
 
     [events]
-    # Uncomment to filter out events based on severity (allowed values 1-5, default 2)
+    # Uncomment to filter out events based on severity (allowed values 1-5, default 2).
     #severity_threshold = 3
     {{- if .Values.falcon.integration_gateway.severity_threshold }}
     severity_threshold = {{ .Values.falcon.integration_gateway.severity_threshold }}
     {{- end }}
-    # Uncomment to filter out events based on number of days past the event (default 365)
-    #older_than_days_threshold = 90
+
+    # Uncomment to filter out events based on number of days past the event (default 21).
+    #older_than_days_threshold = 14
     {{- if .Values.falcon.integration_gateway.older_than_days_threshold }}
     older_than_days_threshold = {{ .Values.falcon.integration_gateway.older_than_days_threshold }}
     {{- end }}
+
     # Exclude events originating from certain cloud environments (AWS, Azure, GCP, or unrecognized)
     # detections_exclude_clouds =
     {{- if .Values.falcon.integration_gateway.detections_exclude_clouds }}
     detections_exclude_clouds = {{ .Values.falcon.integration_gateway.detections_exclude_clouds }}
     {{- end }}
 
+    # Pass in the offset to start the stream from. This is useful to prevent duplicate events.
+    #offset = 0
+    {{- if .Values.falcon.integration_gateway.offset }}
+    offset = {{ .Values.falcon.integration_gateway.offset }}
+    {{- end }}
+
     [logging]
-    # Uncomment to request logging level (ERROR, WARN, INFO, DEBUG)
-    # level = DEBUG
+    # Uncomment to request logging level (ERROR, WARN, INFO, DEBUG).
+    #level = DEBUG
     {{- if .Values.falcon.integration_gateway.level }}
     level = {{ .Values.falcon.integration_gateway.level }}
     {{- end }}
 
     [falcon]
-    # Uncomment to provide Falcon Cloud alternatively use FALCON_CLOUD_REGION to override
+    # Uncomment to provide Falcon Cloud. Alternatively, use FALCON_CLOUD_REGION env variable to override.
     #cloud_region = us-1
     {{- if .Values.falcon.cloud_region }}
     cloud_region = {{ .Values.falcon.cloud_region }}
     {{- end }}
 
+    # Uncomment to provide OAuth Client ID.
+    # Alternatively, use FALCON_CLIENT_ID env variable or a credentials store (see [credentials_store] section).
+    #client_id = ABCD
+
+    # Uncomment to provide OAuth Secret.
+    # Alternatively, use FALCON_CLIENT_SECRET env variable or a credentials store (see [credentials_store] section).
+    #client_secret = ABCD
+
     # Uncomment to provide application id. Needs to be different per each fig instance.
     #application_id = my-acme-gcp-1
     {{- if .Values.falcon.integration_gateway.application_id }}
     application_id = {{ .Values.falcon.integration_gateway.application_id }}
+    {{- end }}
+
+    [credentials_store]
+    # Uncomment to provide credentials store. Alternatively, use CREDENTIALS_STORE env variable.
+    # Supported values: ssm, secrets_manager
+    #store = ssm
+    {{- if .Values.credentials_store.store }}
+    store = {{ .Values.credentials_store.store }}
+    {{- end }}
+
+    [ssm]
+    # Uncomment to provide aws region for SSM. Alternatively, use SSM_REGION env variable.
+    #region = us-west-2
+    {{- if .Values.credentials_store.ssm.region }}
+    region = {{ .Values.credentials_store.ssm.region }}
+    {{- end }}
+
+    # Uncomment to provide SSM parameter name or path for client id. Alternatively, use SSM_CLIENT_ID env variable.
+    #ssm_client_id = /falcon/fig/client_id
+    {{- if .Values.credentials_store.ssm.client_id }}
+    ssm_client_id = {{ .Values.credentials_store.ssm.client_id }}
+    {{- end }}
+
+    # Uncomment to provide SSM parameter name or path for client secret. Alternatively, use SSM_CLIENT_SECRET env variable.
+    #ssm_client_secret = /falcon/fig/client_secret
+    {{- if .Values.credentials_store.ssm.client_secret }}
+    ssm_client_secret = {{ .Values.credentials_store.ssm.client_secret }}
+    {{- end }}
+
+    [secrets_manager]
+    # Uncomment to provide aws region for Secrets Manager. Alternatively, use SECRETS_MANAGER_REGION env variable.
+    #region = us-west-2
+    {{- if .Values.credentials_store.secrets_manager.region }}
+    region = {{ .Values.credentials_store.secrets_manager.region }}
+    {{- end }}
+
+    # Uncomment to provide Secrets Manager secret name. Alternatively, use SECRETS_MANAGER_SECRET_NAME env variable.
+    #secrets_manager_secret_name = falcon/fig/credentials
+
+    # Uncomment to provide Secrets Manager client id key. Alternatively, use SECRETS_MANAGER_CLIENT_ID_KEY env variable.
+    #secrets_manager_client_id_key = client_id
+    {{- if .Values.credentials_store.secrets_manager.client_id_key }}
+    secrets_manager_client_id_key = {{ .Values.credentials_store.secrets_manager.client_id_key }}
+    {{- end }}
+
+    # Uncomment to provide Secrets Manager client secret key. Alternatively, use SECRETS_MANAGER_CLIENT_SECRET_KEY env variable.
+    #secrets_manager_client_secret_key = client_secret
+    {{- if .Values.credentials_store.secrets_manager.client_secret_key }}
+    secrets_manager_client_secret_key = {{ .Values.credentials_store.secrets_manager.client_secret_key }}
+    {{- end }}
+
+    [generic]
+    # Generic section is applicable only when GENERIC backend is enabled in the [main] section.
+    # Generic backend can be used for outputting events to STDOUT
+
+    [gcp]
+    # GCP section is applicable only when GCP backend is enabled in the [main] section.
+
+    # Use GOOGLE_APPLICATION_CREDENTIALS env variable to configure GCP Backend. GOOGLE_APPLICATION_CREDENTIALS
+    # is an environment variable used to configure GCP Service accounts, it should point out to the credentials
+    # file for given service account.
+
+    [azure]
+    # Azure section is applicable only when AZURE backend is enabled in the [main] section.
+
+    # Uncomment to provide Azure Workspace ID. Alternatively, use WORKSPACE_ID env variable.
+    #workspace_id =
+    # Uncomment to provide Azure Primary Key. Alternatively, use PRIMARY_KEY env variable.
+    #primary_key =
+
+    # Uncomment to enable RTR based auto discovery of Azure Arc Systems. Alternatively,
+    # use ARC_AUTODISCOVERY env variable.
+    #arc_autodiscovery = true
+    {{- if .Values.push.azure_log_analytics.arc_autodiscovery }}
+    arc_autodiscovery = {{ .Values.push.azure_log_analytics.arc_autodiscovery }}
+    {{- end }}
+
+    [aws]
+    # AWS section is applicable only when AWS backend is enabled in the [main] section.
+
+    # Uncomment to provide aws region. Alternatively, use AWS_REGION env variable
+    #region = eu-west-1
+    {{- if .Values.push.aws_security_hub.region }}
+    region = {{ .Values.push.aws_security_hub.region }}
+    {{- end }}
+
+    # Uncomment to manage whether or not to confirm instance in AWS account supported region.
+    # Alternatively, use AWS_CONFIRM_INSTANCE env variable.
+    #confirm_instance = true
+    {{- if .Values.push.aws_security_hub.confirm_instance }}
+    confirm_instance = {{ .Values.push.aws_security_hub.confirm_instance }}
+    {{- end }}
+
+    [cloudtrail_lake]
+    # AWS CloudTrail Lake section is applicable only when CLOUDTRAIL_LAKE backend is enabled in the [main] section.
+
+    # Uncomment to provide the Channel ARN. Alternatively, use CLOUDTRAIL_LAKE_CHANNEL_ARN env variable.
+    #channel_arn =
+
+    # Uncomment to provide the AWS region. Should match the same region as the Channel.
+    # Alternatively, use CLOUDTRAIL_LAKE_REGION env variable.
+    #region =
+    {{- if .Values.push.cloudtrail_lake.region }}
+    region = {{ .Values.push.cloudtrail_lake.region }}
+    {{- end }}
+
+    [aws_sqs]
+    # AWS SQS section is applicable only when AWS backend is enabled in the [main] section.
+    # AWS SQS Backend publishes raw events to SQS queue
+
+    # Uncomment to provide AWS region. Alternatively, use AWS_REGION env variable
+    #region = eu-west-1
+    {{- if .Values.push.aws_sqs.region }}
+    region = {{ .Values.push.aws_sqs.region }}
+    {{- end }}
+
+    # Uncomment to provide name of AWS SQS. Alternatively, use AWS_SQS env variable
+    #sqs_queue_name = my-sqs-queue-for-falcon
+    {{- if .Values.push.aws_sqs.sqs_queue_name }}
+    sqs_queue_name = {{ .Values.push.aws_sqs.sqs_queue_name }}
+    {{- end }}
+
+    [workspaceone]
+    # Workspace One section is applicable only when Workspace One backend is enabled in the [main] section.
+
+    # Uncomment to provide Workspace One token. Alternatively, use WORKSPACEONE_TOKEN env variable
+    #token =
+
+    # Uncomment to provide syslog host. Alternatively, use SYSLOG_HOST env variable
+    #syslog_host =
+    {{- if .Values.push.vmware_workspace_one.syslog_host }}
+    syslog_host = {{ .Values.push.vmware_workspace_one.syslog_host }}
+    {{- end }}
+
+    # Uncomment to provide syslog port. Alternatively, use SYSLOG_PORT env variable
+    #syslog_port =
+    {{- if .Values.push.vmware_workspace_one.syslog_port }}
+    syslog_port = {{ .Values.push.vmware_workspace_one.syslog_port }}
+    {{- end }}
+
+    [chronicle]
+    # Chronicle section is applicable only when Chronicle backend is enabled in the [main] section
+
+    # Uncomment to provide Google Service Account filepath. Alternatively, use GOOGLE_SERVICE_ACCOUNT_FILE variable
+    #service_account = apikeys-demo.json
+    {{- if .Values.push.chronicle.service_account }}
+    service_account = {{ .Values.push.chronicle.service_account }}
+    {{- end }}
+
+    # Uncomment to provide Chronicle Customer ID. Alternatively, use GOOGLE_CUSTOMER_ID variable
+    #customer_id = XXX
+
+    # Uncomment to provide Chronicle region (us, europe, asia-southeast1). Alternatively, use CHRONICLE_REGION variable
+    #region =
+    {{- if .Values.push.chronicle.region }}
+    region = {{ .Values.push.chronicle.region}}
     {{- end }}

@@ -6,6 +6,11 @@ push:
   aws_security_hub:
     enabled: false
     region:
+    confirm_instance: true
+  aws_sqs:
+    enabled: false
+    region:
+    sqs_queue_name:
   azure_log_analytics:
     enabled: false
     workspace_id:
@@ -14,7 +19,8 @@ push:
   chronicle:
     enabled: false
     region:
-    security_key:
+    service_account:
+    customer_id:
   cloudtrail_lake:
     enabled: false
     channel_arn:
@@ -26,11 +32,45 @@ push:
     syslog_host:
     syslog_port:
     token:
+  generic:
+    enabled: false
+
+credentials_store:
+  # Provide credentials store. Supported values: ssm, secrets_manager
+  store:
+
+  ssm:
+    # Provide aws region for SSM
+    region:
+
+    # Provide SSM parameter name or path of the client id
+    client_id:
+
+    # Provide SSM parameter name or path of the client secret
+    client_secret:
+
+  secrets_manager:
+    # Provide aws region for Secrets Manager
+    region:
+
+    # Provide Secrets Manager secret name
+    secret_name:
+
+    # To provide Secrets Manager client id key
+    client_id_key:
+
+    # To provide Secrets Manager client secret key
+    client_secret_key:
 
 falcon:
   client_id:
   client_secret:
   cloud_region:
+
+  # Use this value if you have an existing secret
+  # defined in your k8s that may contain secrets
+  # for falcon api client id and pw
+  existingSecret: ""
 
   integration_gateway:
     # Configure number of threads that process Falcon Events
@@ -39,8 +79,14 @@ falcon:
     # Filter out events based on severity (allowed values 1-5, default 2)
     severity_threshold: 2
 
-    # Filter out events based on number of days past the event (default 14)
-    older_than_days_threshold: 14
+    # Filter out events based on number of days past the event (default 21)
+    older_than_days_threshold: 21
+
+    # Exclude events originating from certain cloud environments (AWS, Azure, GCP, or unrecognized)
+    detections_exclude_clouds:
+
+    # Pass in the offset to start the stream from. (default: 0)
+    offset: 0
 
     # Configure logging level (ERROR, WARN, INFO, DEBUG)
     level: INFO

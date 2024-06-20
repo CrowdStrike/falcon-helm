@@ -15,11 +15,10 @@ The Falcon Image Analyzer Helm chart has been tested to deploy on the following 
 * SUSE Rancher K3s
 * Red Hat OpenShift Kubernetes
 
-## New updates in current release (1.1.7)
-- Adding a way to specify log output terminal `log/output:` . Image Support `1.0.12`
-use this field to set the output terminal of logs
-`1` = stdout ( some cloud providers like GCP assume any output on stderr to be critical err and display on console )  .
-`2` = stderr/default ( stderr is the normal output for logs ) . Any other value will be defaulted to stderr
+## New updates in current release (1.1.8)
+- Adding flag to support sending scan stats/error to cloud `scanStats.enabled` . Image Support `1.0.13`
+  Set this flag to true to send scan error stats to cs cloud.These events can be searched in investigate>events / advanced events search .
+  Note that if enabled agent will send an error for image for first time only. Repeated errors for same images will not be sent to preserve network footprint
 
 ## Dependencies
 
@@ -60,6 +59,7 @@ The following tables list the Falcon sensor configurable parameters and their de
 | `exclusions.namespace`                  optional   ( available in falcon-imageanalyzer >= 1.0.8 and Helm Chart v >= 1.1.3) | Set the value as a comma separate list of namespaces to be excluded. all pods in that namespace(s) will be excluded                                            | ""                                                                                     |
 | `exclusions.registry`                  optional   ( available in falcon-imageanalyzer >= 1.0.8 and Helm Chart v >= 1.1.3)  | Set the value as a comma separate list of registries to be excluded. all images in that registry(s) will be excluded                                           | ""                                                                                     |
 | `log.output`                  optional   ( available  Helm Chart v >= 1.1.7 & falcon-imageanalyzer >= 1.0.12)              | Set the value to for log output terminal. `2=stderr` and `1=stdout`                                                                                            | 2 ( stderr )                                                                           |
+| `scanStats.enabled`                  optional   ( available  Helm Chart v >= 1.1.8 & falcon-imageanalyzer >= 1.0.13)       | Set `enabled` to true for agent to send scan error and stats to cloud                                                                                          | false                                                                                  |
 | `crowdstrikeConfig.clusterName`     required                                                                               | Cluster name                                                                                                                                                   | None                                                                                   |
 | `crowdstrikeConfig.enableDebug`   optional                                                                                 | Set to `true` for debug level log verbosity.                                                                                                                   | false                                                                                  |
 | `crowdstrikeConfig.clientID`    required                                                                                   | CrowdStrike Falcon OAuth API Client ID                                                                                                                         | None                                                                                   |
@@ -347,14 +347,14 @@ Registries can be excluded by adding the full registry name in the below section
 Namespaces can be excluded in two ways:
 
 1. **Helm Chart Values** : If you are installing IAR on a cluster that is running a lot of pods and would like to exclude them from IAR scanning then use the `exclusions.namespace` param in your `config_values.yaml` for IAR and set the value to be a comma separate list of namespaces that needs to be excluded
-e.g.
+   e.g.
   ```
   exclusions:
     namespace: "ns1,ns2"
   ```
 
 2. **Annotations**: Once the IAR has been installed, any new namespace can be excluded by adding the below annotation to the target namespace spec
-`sensor.crowdstrike.com/imageanalyzer: "disabled"`  
+   `sensor.crowdstrike.com/imageanalyzer: "disabled"`
 
 e.g.
 ```

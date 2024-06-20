@@ -43,6 +43,13 @@ agentRunmode definition
 
 
 {{/*
+isKubernetes definition
+*/}}
+{{- define "falcon-image-analyzer.isKubernetes" -}}
+{{- printf "true" }}
+{{- end }}
+
+{{/*
 tmp-volume volume size definition
 */}}
 {{- define "falcon-image-analyzer.tempvolsize" -}}

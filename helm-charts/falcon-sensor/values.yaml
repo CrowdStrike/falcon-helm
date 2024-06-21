@@ -7,7 +7,7 @@ node:
   enabled: true
 
   # Overrides the backend leveraged by the Falcon Sensor (kernel, bpf)
-  backend: kernel
+  backend: bpf
 
   # Enable for use on Google's GKE Autopilot clusters
   gke:

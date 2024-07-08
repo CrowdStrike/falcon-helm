@@ -148,9 +148,7 @@ data:
     # Uncomment to enable RTR based auto discovery of Azure Arc Systems. Alternatively,
     # use ARC_AUTODISCOVERY env variable.
     #arc_autodiscovery = true
-    {{- if .Values.push.azure_log_analytics.arc_autodiscovery }}
     arc_autodiscovery = {{ .Values.push.azure_log_analytics.arc_autodiscovery }}
-    {{- end }}
 
     [aws]
     # AWS section is applicable only when AWS backend is enabled in the [main] section.
@@ -164,9 +162,7 @@ data:
     # Uncomment to manage whether or not to confirm instance in AWS account supported region.
     # Alternatively, use AWS_CONFIRM_INSTANCE env variable.
     #confirm_instance = true
-    {{- if .Values.push.aws_security_hub.confirm_instance }}
     confirm_instance = {{ .Values.push.aws_security_hub.confirm_instance }}
-    {{- end }}
 
     [cloudtrail_lake]
     # AWS CloudTrail Lake section is applicable only when CLOUDTRAIL_LAKE backend is enabled in the [main] section.

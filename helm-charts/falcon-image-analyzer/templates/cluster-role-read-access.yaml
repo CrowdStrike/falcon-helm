@@ -11,6 +11,7 @@ rules:
     - pods
     - secrets
     - namespaces
+    - nodes
     verbs:
     - get
     - watch

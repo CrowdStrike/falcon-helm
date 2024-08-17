@@ -8,6 +8,10 @@ daemonset:
 deployment:
   enabled: false
 
+# override this value if needed
+watcher:
+  listPageSize: 100
+
 # Do not override anywhere in values - Always 1 for Deployment. NA for daemonset
 replicaCount: 1
 image:

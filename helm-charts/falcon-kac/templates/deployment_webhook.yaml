@@ -168,6 +168,80 @@ spec:
           name: crowdstrike-falcon-vol0
         - mountPath: /var/private
           name: crowdstrike-falcon-vol1
+      - args:
+        - "client"
+        - "-app=watcher"
+        env:
+        - name: __CS_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: __CS_POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: __CS_POD_NODENAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        {{ if not .Values.clusterVisibility.resourceSnapshots.enabled -}}
+        - name: __CS_SNAPSHOTS_ENABLED
+          value: "false"
+        {{- end }}
+        {{ if .Values.clusterVisibility.resourceSnapshots.interval -}}
+        - name: __CS_SNAPSHOT_INTERVAL
+          value: {{ .Values.clusterVisibility.resourceSnapshots.interval }}
+        {{- end }}
+        {{- if not .Values.clusterVisibility.resourceWatcher.enabled -}}
+        - name: __CS_WATCH_EVENTS_ENABLED
+          value: "false"
+        {{- end }}
+        envFrom:
+        - configMapRef:
+            name: {{ include "falcon-kac.fullname" . }}-config
+        image: {{ include "falcon-kac.image" . }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /livez
+            port: 4080
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: falcon-watcher
+        ports:
+        - containerPort: 4080
+          name: healthcheck
+        resources:
+          {{- toYaml .Values.falconWatcherResources | nindent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        startupProbe:
+          failureThreshold: 30
+          httpGet:
+            path: /startz
+            port: 4080
+            scheme: HTTP
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: /tmp
+          name: crowdstrike-falcon-vol0
+        - mountPath: /var/private
+          name: crowdstrike-falcon-vol1
+        - mountPath: /var/falcon-watcher
+          name: crowdstrike-falcon-vol2
       - envFrom:
         - configMapRef:
             name: {{ include "falcon-kac.fullname" . }}-config
@@ -206,6 +280,8 @@ spec:
           name: crowdstrike-falcon-vol0
         - mountPath: /var/private/
           name: crowdstrike-falcon-vol1
+        - mountPath: /var/falcon-watcher
+          name: crowdstrike-falcon-vol2
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
@@ -232,6 +308,9 @@ spec:
       - name: crowdstrike-falcon-vol1
         emptyDir:
           sizeLimit: 4Ki
+      - name: crowdstrike-falcon-vol2
+        emptyDir:
+          sizeLimit: 64Mi
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration

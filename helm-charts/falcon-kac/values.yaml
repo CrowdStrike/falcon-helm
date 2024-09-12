@@ -56,6 +56,31 @@ falcon:
   tags:
   provisioning_token:
 
+# These variables can be used to customize the way KAC provides visibility into
+# resources on your Kubernetes cluster. The variables are initially set to the
+# default values which will be used if they are commented out.
+clusterVisibility:
+  # KAC snapshots Kubernetes resources on a periodic basis and sends them to CrowdStrike
+  # cloud. This enables long living resources to be maintained in CrowdStrike cloud databases.
+  resourceSnapshots:
+    # If set to false, the snapshots are not taken and you may not see long lived
+    # Kubernetes resources in Falcon UI after about 7 days.
+    enabled: true
+    # The time interval between periodic snapshots. The default value of 22 hours is
+    # also the maximum value allowed. Minimum allowed value is 30 minutes. The format
+    # for this variable is HHhMMm. Some examples are 12h, 45m and 1h30m.
+    interval: 22h
+
+  # KAC watches Kubernetes cluster continuously for any action - creation, updates and deletion -
+  # on resources and sends events with the resource representation and the type of action
+  # to the CrowdStrike cloud.
+  resourceWatcher:
+    # If set to false, KAC does not watch the Kubernetes cluster and you will not be ables
+    # to see the latest state of the Kubernetes resources in the Falcon UI until a resource
+    # snapshot has been taken. Any resources deleted when KAC does not watch the Kubernetes
+    # cluster will not be shown as deleted in the Falcon UI.
+    enabled: true
+
 # Falcon KAC can usually discover the clusterName automatically so setting clusterName here is normally
 # not necessary, but in some cases the clusterName cannot be discovered by the KAC, e.g. for self-hosted
 # kubernetes clusters such as MicroK8s. In those case, the clusterName can be manually set here.
@@ -87,6 +112,14 @@ affinity:
           - amd64
 
 falconClientResources:
+  limits:
+    cpu: 750m
+    memory: 256Mi
+  requests:
+    cpu: 500m
+    memory: 256Mi
+
+falconWatcherResources:
   limits:
     cpu: 750m
     memory: 256Mi

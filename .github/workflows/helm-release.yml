@@ -32,4 +32,5 @@ jobs:
           charts_dir: helm-charts
           config: .cr.yaml
         env:
+          CR_PAGES_INDEX_PATH: "prerelease/index.yaml"
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

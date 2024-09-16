@@ -124,6 +124,16 @@ entries:
     version: 0.43.8
   falcon-image-analyzer:
   - apiVersion: v2
+    appVersion: 1.0.15
+    created: "2024-09-16T14:03:46.132871328Z"
+    description: A Helm chart for Falcon Image Analyzer
+    digest: 85a4b755d051413428538dc67043282aab58b116639b384a397b242a40df9d67
+    name: falcon-image-analyzer
+    type: application
+    urls:
+    - https://github.com/CrowdStrike/falcon-helm/releases/download/falcon-image-analyzer-1.1.9/falcon-image-analyzer-1.1.9.tgz
+    version: 1.1.9
+  - apiVersion: v2
     appVersion: 1.0.13
     created: "2024-06-20T21:29:09.370544669Z"
     description: A Helm chart for Falcon Image Analyzer
@@ -2765,4 +2775,4 @@ entries:
     urls:
     - https://github.com/CrowdStrike/falcon-helm/releases/download/0.5.0/falcon-sensor-0.5.0.tgz
     version: 0.5.0
-generated: "2024-09-12T18:18:11.392811087Z"
+generated: "2024-09-16T14:03:46.133132096Z"

@@ -114,26 +114,26 @@ affinity:
 falconClientResources:
   limits:
     cpu: 750m
-    memory: 256Mi
+    memory: 384Mi
   requests:
     cpu: 500m
-    memory: 256Mi
+    memory: 384Mi
 
 falconWatcherResources:
   limits:
     cpu: 750m
-    memory: 256Mi
+    memory: 384Mi
   requests:
     cpu: 500m
-    memory: 256Mi
+    memory: 384Mi
 
 falconAcResources:
   limits:
     cpu: 300m
-    memory: 512Mi
+    memory: 256Mi
   requests:
     cpu: 300m
-    memory: 512Mi
+    memory: 256Mi
 
 # Update Webhook and roll out new Deployment on helm upgrade
 autoDeploymentUpdate: true

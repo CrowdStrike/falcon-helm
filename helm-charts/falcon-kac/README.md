@@ -20,6 +20,13 @@ The Falcon Kubernetes Admission Controller has been deployed and tested on these
 - Microsoft Azure Kubernetes Service (AKS)
 - Red Hat OpenShift Container Platform 4.6 and later
 
+## Helm Chart Support for Falcon Admission Controller Versions
+
+| Helm chart Version      | Falcon Admission Controller Version            |
+|:------------------------|:-----------------------------------------------|
+| `< 1.2.x`              | `< 7.20.x`                                     |
+| `>= 1.2.x`              | `>= 7.20.x`                                    |
+
 Depending on your network environment, you might need to allow TLS traffic on port 443 between your network and our cloud's network addresses:
 
 | CrowdStrike cloud | Network address                                                          |
@@ -163,14 +170,17 @@ When a new container image is available, you can update your Falcon KAC by passi
 
 The following tables lists the Falcon KAC  configurable parameters and their default values.
 
-| Parameter                   | Description                                           | Default               |
-|:----------------------------|:------------------------------------------------------|:----------------------|
-| `falcon.cid`                | CrowdStrike Customer ID (CID)                         | None       (Required) |
-| `falcon.apd`                | App Proxy Disable (APD)                               | None                  |
-| `falcon.aph`                | App Proxy Hostname (APH)                              | None                  |
-| `falcon.app`                | App Proxy Port (APP)                                  | None                  |
-| `falcon.trace`              | Set trace level. (`none`,`err`,`warn`,`info`,`debug`) | `none`                |
-| `falcon.feature`            | Sensor Feature options                                | None                  |
-| `falcon.billing`            | Utilize default or metered billing                    | None                  |
-| `falcon.tags`               | Comma separated list of tags for sensor grouping      | None                  |
-| `falcon.provisioning_token` | Provisioning token value                              | None                  |
+| Parameter                                      | Description                                           | Default               |
+|:-----------------------------------------------|:------------------------------------------------------|:----------------------|
+| `falcon.cid`                                   | CrowdStrike Customer ID (CID)                         | None       (Required) |
+| `falcon.apd`                                   | App Proxy Disable (APD)                               | None                  |
+| `falcon.aph`                                   | App Proxy Hostname (APH)                              | None                  |
+| `falcon.app`                                   | App Proxy Port (APP)                                  | None                  |
+| `falcon.trace`                                 | Set trace level. (`none`,`err`,`warn`,`info`,`debug`) | `none`                |
+| `falcon.feature`                               | Sensor Feature options                                | None                  |
+| `falcon.billing`                               | Utilize default or metered billing                    | None                  |
+| `falcon.tags`                                  | Comma separated list of tags for sensor grouping      | None                  |
+| `falcon.provisioning_token`                    | Provisioning token value                              | None                  |
+| `clusterVisibility.resourceSnapshots.enabled`  | Enable cluster snapshots                              | `true`                |
+| `clusterVisibility.resourceSnapshots.interval` | Interval between cluster snapshots                    | `22h`                 |
+| `clusterVisibility.resourceWatcher.enabled`    | Enable Cluster Visbility                              | `true`                |

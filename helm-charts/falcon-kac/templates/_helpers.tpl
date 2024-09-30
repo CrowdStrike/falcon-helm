@@ -92,3 +92,33 @@ On Openshift lookup namespaces and print namespaces with prefix openshift
 {{- end -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Create Watcher container environment variables
+*/}}
+{{- define "falcon-kac.generateWatcherEnvVars" -}}
+{{- $snapshotsEnabled := true -}}
+{{- $snapshotInterval := "22h" -}}
+{{- $watcherEnabled := true -}}
+{{- if .Values.clusterVisibility -}}
+{{- if .Values.clusterVisibility.resourceSnapshots -}}
+  {{- if ne .Values.clusterVisibility.resourceSnapshots.enabled nil -}}
+  {{ $snapshotsEnabled = .Values.clusterVisibility.resourceSnapshots.enabled -}}
+  {{- end -}}
+  {{- if .Values.clusterVisibility.resourceSnapshots.interval -}}
+  {{ $snapshotInterval = .Values.clusterVisibility.resourceSnapshots.interval -}}
+  {{- end -}}
+{{- end -}}
+{{- if .Values.clusterVisibility.resourceWatcher -}}
+  {{- if ne .Values.clusterVisibility.resourceWatcher.enabled nil -}}
+  {{ $watcherEnabled = .Values.clusterVisibility.resourceWatcher.enabled -}}
+  {{- end -}}
+{{- end -}}
+{{- end -}}
+- name: __CS_SNAPSHOTS_ENABLED
+  value: {{ $snapshotsEnabled | toString | quote }}
+- name: __CS_SNAPSHOT_INTERVAL
+  value: {{ $snapshotInterval | toString | quote }}
+- name: __CS_WATCH_EVENTS_ENABLED
+  value: {{ $watcherEnabled | toString | quote }}
+{{- end -}}

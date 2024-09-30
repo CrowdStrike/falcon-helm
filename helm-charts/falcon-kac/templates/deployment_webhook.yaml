@@ -187,18 +187,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
-        {{ if not .Values.clusterVisibility.resourceSnapshots.enabled -}}
-        - name: __CS_SNAPSHOTS_ENABLED
-          value: "false"
-        {{- end }}
-        {{ if .Values.clusterVisibility.resourceSnapshots.interval -}}
-        - name: __CS_SNAPSHOT_INTERVAL
-          value: {{ .Values.clusterVisibility.resourceSnapshots.interval }}
-        {{- end }}
-        {{- if not .Values.clusterVisibility.resourceWatcher.enabled -}}
-        - name: __CS_WATCH_EVENTS_ENABLED
-          value: "false"
-        {{- end }}
+        {{- include "falcon-kac.generateWatcherEnvVars" . | nindent 8 }}
         envFrom:
         - configMapRef:
             name: {{ include "falcon-kac.fullname" . }}-config

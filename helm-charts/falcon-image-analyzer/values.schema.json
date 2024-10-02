@@ -165,9 +165,9 @@
                 },
                 "agentRegion": {
                     "type": "string",
-                    "pattern": "^(us-|eu-|us-gov-)[1-2]+$",
+                    "pattern": "^(us-1|us-2|eu-1|us-gov-1|us-gov-2|gov-1|gov-2|gov1|gov2|auto|autodiscovery|autodiscover)$",
                     "description": "CrowdStrike Cloud Region",
-                    "default": "us-1"
+                    "default": "autodiscovery"
                 },
                 "agentRuntime": {
                     "type": "string",

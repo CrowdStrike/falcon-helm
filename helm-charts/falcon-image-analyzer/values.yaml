@@ -9,8 +9,9 @@ deployment:
   enabled: false
 
 # override this value if needed
+# default to 500 as kubectl
 watcher:
-  listPageSize: 100
+  listPageSize: 500
 
 # Do not override anywhere in values - Always 1 for Deployment. NA for daemonset
 replicaCount: 1
@@ -154,6 +155,12 @@ scanStats:
 
 crowdstrikeConfig:
   clusterName: ""
+
+  # These are special Kubernetes SDK Verbose Logs. Helpful for troubleshooting kube API.
+  # Only Enable for extreme troubleshooting.
+  enableKlogs: "false"
+
+
   enableDebug: "false"
   clientID: ""
   clientSecret: ""
@@ -168,7 +175,7 @@ crowdstrikeConfig:
   # defined in your k8s that may contain secrets
   # for falcon api client id and pw
   existingSecret: ""
-  agentRegion: "us-1"
+  agentRegion: "autodiscovery"
   agentRuntime: ""
   agentRuntimeSocket: ""
   agentMaxConsumerThreads: "1"

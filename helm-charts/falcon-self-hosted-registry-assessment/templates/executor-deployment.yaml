@@ -1,0 +1,177 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "ra-self-hosted-executor.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ra-self-hosted.labels-executor" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.executor.replicaCount }}
+  serviceName: {{ include "ra-self-hosted-executor.fullname" . }}
+  selector:
+    matchLabels:
+  {{- include "ra-self-hosted-executor.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+    {{- include "ra-self-hosted.labels-executor" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/executor-comfigmap.yaml") . | sha256sum }}
+{{ if .Values.executor.podAnnotations -}}
+{{- .Values.executor.podAnnotations | indent 8 -}}
+{{- end }}
+    spec:
+      serviceAccountName: {{ include "ra-self-hosted-executor.fullname" . }}
+      securityContext:
+        fsGroup: 2001
+     {{- if or (.Values.executor.image.pullSecret) (.Values.executor.image.registryConfigJSON) }}
+      imagePullSecrets:
+       {{ if .Values.executor.image.registryConfigJSON }}
+        - name: {{ include "ra-self-hosted-executor.pullsecret-name" . }}
+       {{- end }}
+       {{- if .Values.executor.image.pullSecret }}
+        - name: {{ .Values.executor.image.pullSecret }}
+       {{- end }}
+     {{- end }}
+      initContainers:
+        - name: executor-init
+          image: {{ include "ra-self-hosted-executor.image" . }}
+          imagePullPolicy: {{ .Values.executor.image.pullPolicy }}
+          env:
+            - name: ASSESSMENT_WORKING_DIR
+              value: "/storage"
+            - name: SQLITE_DBPATH
+              value: "/db"
+            - name: "ENVIRONMENT"
+              value: {{ .Values.crowdstrikeConfig.environment }}
+            - name: "CLIENT_ID"
+              value: {{ .Values.crowdstrikeConfig.clientID }}
+            - name: "CLIENT_SECRET"
+              value: {{ .Values.crowdstrikeConfig.clientSecret }}
+            - name: "STORAGE_ENGINE"
+              value: "sqlite"
+            - name: "AGENT_RUN_MODE"
+              value: "init"
+            - name: "LOG_LEVEL"
+              value: {{ .Values.executor.logLevel | quote }}
+            {{- if .Values.additionalEnv }}
+            {{- range .Values.additionalEnv }}
+            - name: {{ .name }}
+              value: {{ .value }}
+            {{- end }}
+            {{- end }}
+          {{ if (or .Values.registryConfigs .Values.executor.additionalCMEnvFrom .Values.executor.additionalSecretEnvFrom) -}} 
+          envFrom:
+            {{- if .Values.registryConfigs }}
+            - configMapRef:
+                name: {{ include "ra-self-hosted-executor.fullname" . }}
+            {{- end }}
+            {{- range .Values.executor.additionalSecretEnvFrom }}
+            - secretRef:
+{{ . | toYaml | indent 16 }}
+            {{- end }}
+            {{- range .Values.executor.additionalCMEnvFrom }}
+            - configMapRef:
+{{ . | toYaml | indent 16 }}
+            {{- end }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /storage
+              name: storage
+            - mountPath: /db
+              name: db
+          {{- if .Values.executor.resources }}
+          resources:
+{{ .Values.executor.resources | toYaml | indent 12 }}
+          {{- end }}
+          securityContext:
+            runAsUser: 1001
+            runAsGroup: 2001
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+      containers:
+        - name: executor
+          image: {{ include "ra-self-hosted-executor.image" . }}
+          imagePullPolicy: {{ .Values.executor.image.pullPolicy }}
+          env:
+            - name: GRPC_HOST
+              value: {{ include "ra-self-hosted-job-controller.fullname" . }}
+            - name: GRPC_PORT
+              value: {{ .Values.jobController.service.port | quote }}
+            - name: ASSESSMENT_WORKING_DIR
+              value: "/storage"
+            - name: SQLITE_DBPATH
+              value: "/db"
+            - name: "ENVIRONMENT"
+              value: {{ .Values.crowdstrikeConfig.environment }}
+            - name: "CLIENT_ID"
+              value: {{ .Values.crowdstrikeConfig.clientID }}
+            - name: "CLIENT_SECRET"
+              value: {{ .Values.crowdstrikeConfig.clientSecret }}
+            - name: "STORAGE_ENGINE"
+              value: "sqlite"
+            - name: "LOG_LEVEL"
+              value: {{ .Values.executor.logLevel | quote }}
+          {{ if (or .Values.registryConfigs .Values.executor.additionalCMEnvFrom .Values.executor.additionalSecretEnvFrom) -}}
+          envFrom:
+            {{- if .Values.registryConfigs }}
+            - configMapRef:
+                name: {{ include "ra-self-hosted-executor.fullname" . }}
+            {{- end }}
+            {{- range .Values.executor.additionalSecretEnvFrom }}
+            - secretRef:
+{{ . | toYaml | indent 16 }}
+            {{- end }}
+            {{- range .Values.executor.additionalCMEnvFrom }}
+            - configMapRef:
+{{ . | toYaml | indent 16 }}
+            {{- end }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /storage
+              name: storage
+            - mountPath: /db
+              name: db
+            {{ if .Values.tls.enable -}}
+            - mountPath: /etc/tls
+              name: tls
+            {{- end }}
+          {{- if .Values.executor.resources }}
+          resources:
+{{ .Values.executor.resources | toYaml | indent 12 }}
+          {{- end }}
+          securityContext:
+            runAsUser: 1001
+            runAsGroup: 2001
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+      {{- if .Values.executor.nodeSelector }}
+      nodeSelector:
+        {{- .Values.executor.nodeSelector | toYaml | nindent 8 }}
+      {{- end }}
+      {{- if .Values.executor.affinity }}
+      affinity:
+        {{- .Values.executor.affinity | toYaml | nindent 8 }}
+      {{- end }}
+      {{- if .Values.executor.priorityClassName }}
+      priorityClassName: {{- .Values.executor.priorityClassName }}
+      {{- end }}
+      volumes:
+        - name: storage
+          {{ if (eq .Values.executor.assessmentStorage.type "PVC") -}}
+          persistentVolumeClaim:
+            claimName: {{ include "ra-self-hosted-executor.storage-pvc-name" . }}
+          {{ else if (eq .Values.executor.assessmentStorage.type "local") -}}
+          emptyDir:
+            sizeLimit: {{ .Values.executor.assessmentStorage.size }}
+            {{- end }}
+        - name: db
+          persistentVolumeClaim:
+            claimName: {{ include "ra-self-hosted-executor.db-pvc-name" . }}
+        {{ if .Values.tls.enable -}}
+        - name: tls
+          secret:
+            secretName: {{ include "ra-self-hosted.cert-secret-name" .}}
+          {{- end }}

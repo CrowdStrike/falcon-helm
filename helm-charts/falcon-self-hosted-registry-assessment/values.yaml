@@ -1,0 +1,213 @@
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: ""
+fullnameOverride: ""
+
+executor:
+  replicaCount: 1
+  image:
+    registry:
+    repository: "registryassessmentexecutor"
+    # Overrides the image tag. In general, tags should not be used (including semver tags or `latest`). 
+    # This variable is provided for those who have yet to move off of using tags. The sha256 digest 
+    # should be used in place of tags for increased security and image immutability.
+    tag: "0.9.0"
+    # Setting a digest will override any tag and should be used instead of tags.
+    #
+    # Example digest variable configuration:
+    # digest: sha256:ffdc91f66ef8570bd7612cf19145563a787f552656f5eec43cd80ef9caca0398
+    digest:
+    pullPolicy: IfNotPresent
+
+    # use this to refer to an existing secret in the release namespace
+    pullSecret:
+
+    # Value must be base64. This setting conflicts with image.pullSecret
+    # The base64 encoded string of the docker config json for the pull secret can be
+    # gotten through:
+    # $ cat ~/.docker/config.json | base64 -
+    registryConfigJSON:
+
+  dbStorage:
+    create: true
+    existingClaimName: ""
+    storageClass: ""
+    size: 1Gi
+    accessModes:
+      - ReadWriteOnce
+
+  assessmentStorage:
+    type: "PVC" # PVC or local
+    size: 100Gi
+    pvc:
+      create: true # exclusive
+      existingClaimName: ""
+      storageClass: ""
+      accessModes:
+        - ReadWriteOnce
+
+  logLevel: 3  # log level to be set for the service (1:error, 2:warning, 3:info, 4:debug)
+  
+  labels: { }
+
+  podAnnotations: { }
+
+  nodeSelector: { }
+
+  resources: {}
+  #    requests:
+  #      cpu: "1"
+  #      memory: 1Gi
+  #    limits:
+  #      cpu: "2"
+  #      memory: 2Gi
+
+  tolerations: [ ]
+
+  affinity: [ ]
+  #  nodeAffinity:
+  #    requiredDuringSchedulingIgnoredDuringExecution:
+  #      nodeSelectorTerms:
+  #        - matchExpressions:
+  #            - key: kubernetes.io/os
+  #              operator: In
+  #              values:
+  #                - linux
+  #            - key: kubernetes.io/arch
+  #              operator: In
+  #              values:
+  #                - amd64
+
+  priorityClassName: ""
+
+  additionalEnv: [ ]
+  #    - name: "key"
+  #      value: "thing"
+
+  additionalCMEnvFrom: [ ]
+  #    - name: "test"
+  #      optional: false
+
+  additionalSecretEnvFrom: [ ]
+#    - name: "test"
+#      optional: false
+
+jobController:
+  image:
+    registry:
+    repository: "jobcontroller"
+    # Overrides the image tag. In general, tags should not be used (including semver tags or `latest`). This variable is provided for those
+    # who have yet to move off of using tags. The sha256 digest should be used in place of tags for increased security and image immutability.
+    tag: "0.17.0"
+    # Setting a digest will override any tag and should be used instead of tags.
+    #
+    # Example digest variable configuration:
+    # digest: sha256:ffdc91f66ef8570bd7612cf19145563a787f552656f5eec43cd80ef9caca0398
+    digest:
+    pullPolicy: IfNotPresent
+
+    # use this to refer to an existing secret in the release namespace
+    pullSecret:
+
+    # Value must be base64. This setting conflicts with image.pullSecret
+    # The base64 encoded string of the docker config json for the pull secret can be
+    # gotten through:
+    # $ cat ~/.docker/config.json | base64 -
+    registryConfigJSON:
+
+  service:
+    type: "ClusterIP"
+    port: 9000
+
+  dbStorage:
+    create: true
+    existingClaimName:
+    storageClass: ""
+    size: 1Gi
+    accessModes:
+      - "ReadWriteOnce"
+
+  labels: { }
+
+  logLevel: 3  # log level to be set for the service (1:error, 2:warning, 3:info, 4:debug)
+
+  podAnnotations: { }
+
+  nodeSelector: { }
+
+  resources: { }
+
+  tolerations: [ ]
+
+  affinity: [ ]
+  #  nodeAffinity:
+  #    requiredDuringSchedulingIgnoredDuringExecution:
+  #      nodeSelectorTerms:
+  #        - matchExpressions:
+  #            - key: kubernetes.io/os
+  #              operator: In
+  #              values:
+  #                - linux
+  #            - key: kubernetes.io/arch
+  #              operator: In
+  #              values:
+  #                - amd64
+
+  priorityClassName: ""
+
+  additionalEnv: []
+
+  additionalCMEnvFrom: []
+
+  additionalSecretEnvFrom: []
+
+crowdstrikeConfig:
+  environment: "autodiscovery" # autodiscovery, us-1, us-2, eu-1, gov1, or gov2
+  clientID: ""
+  clientSecret: ""
+
+  jobTypeConfigs:
+    registryCollection:
+      threadsPerPod: 1 # Required.  the number of goroutines to create within a single executor
+      allowConcurrentIdentical: false
+      runtimeMax: 480
+      retriesMax: 0
+      jobRetentionMax: 604800 # Optional.  the max amount of time a job lives in the job database before being cleaned up. A value of 0 means the job will live forever.
+    tagScrape:
+      threadsPerPod: 1 # Required.  the number of goroutines to create within a single executor
+      allowConcurrentIdentical: false
+      runtimeMax: 480
+      retriesMax: 0
+      jobRetentionMax: 604800 # Optional.  the max amount of time a job lives in the job database before being cleaned up. A value of 0 means the job will live forever.
+    tagAssessment:
+      threadsPerPod: 8 # Required.  the number of goroutines to create within a single executor
+      allowConcurrentIdentical: false
+      runtimeMax: 480
+      retriesMax: 0
+      jobRetentionMax: 604800 # Optional.  the max amount of time a job lives in the job database before being cleaned up. A value of 0 means the job will live forever.
+
+registryConfigs:
+  - type: dockerhub
+    credentials:
+      username: ""
+      password: ""
+      kubernetesSecretName: ""
+      kubernetesSecretNamespace: ""
+    allowedRepositories: ""
+    port: ""
+    host: ""
+    cronSchedule: "* * * * *"
+
+tls:
+  enable: false
+  useCertManager: true # allow false
+  existingSecret: ""
+  issuer: {}
+#    name: self-signed-issuer
+#    kind: ClusterIssuer
+
+proxyConfig:
+  HTTP_PROXY: ""
+  HTTPS_PROXY: ""
+  NO_PROXY: ""

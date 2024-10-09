@@ -1,0 +1,16 @@
+{{ if .Values.jobController.dbStorage.create -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "ra-self-hosted-job-controller.db-pvc-name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ra-self-hosted-job-controller.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    {{- .Values.jobController.dbStorage.accessModes | toYaml | nindent 4 }}
+  storageClassName: {{ .Values.jobController.dbStorage.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.jobController.dbStorage.size }}
+{{ end -}}

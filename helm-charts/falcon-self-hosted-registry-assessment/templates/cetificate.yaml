@@ -1,0 +1,17 @@
+{{- if (and .Values.tls.enable .Values.tls.useCertManager) -}}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "ra-self-hosted.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "ra-self-hosted.labels" . | indent 4 }}
+spec:
+  secretName: {{ include "ra-self-hosted.cert-secret-name" . }}
+  issuerRef:
+{{ .Values.tls.issuer | toYaml | indent 4 }}
+  dnsNames:
+    - {{ include "ra-self-hosted-job-controller.fullname" . }}
+  duration: "2160h"
+  renewBefore: "360h"
+{{- end -}}

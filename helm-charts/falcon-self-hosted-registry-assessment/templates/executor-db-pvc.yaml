@@ -1,0 +1,16 @@
+{{ if .Values.executor.dbStorage.create -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "ra-self-hosted-executor.db-pvc-name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ra-self-hosted.labels-executor" . | nindent 4 }}
+spec:
+  accessModes:
+    {{- .Values.executor.dbStorage.accessModes | toYaml | nindent 4 }}
+  storageClassName: {{ .Values.executor.dbStorage.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.executor.dbStorage.size }}
+{{ end -}}

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ra-self-hosted-job-controller.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ra-self-hosted-job-controller.labels" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "ra-self-hosted-job-controller.selectorLabels" . | nindent 4}}
+  type: {{ .Values.jobController.service.type }}
+  ports:
+    - port: {{ .Values.jobController.service.port }}
+      targetPort: grpc
+      name: grpc

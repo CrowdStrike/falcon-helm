@@ -1,0 +1,16 @@
+{{ if (and .Values.executor.assessmentStorage.pvc.create (eq .Values.executor.assessmentStorage.type "PVC") (eq .Values.executor.assessmentStorage.pvc.existingClaimName "")) -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "ra-self-hosted-executor.storage-pvc-name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ra-self-hosted.labels-executor" . | nindent 4 }}
+spec:
+  accessModes:
+    {{- .Values.executor.assessmentStorage.pvc.accessModes | toYaml | nindent 4 }}
+  storageClassName: {{ .Values.executor.assessmentStorage.pvc.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.executor.assessmentStorage.size }}
+{{ end -}}

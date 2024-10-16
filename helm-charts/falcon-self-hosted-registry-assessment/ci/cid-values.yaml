@@ -1,0 +1,34 @@
+fullnameOverride: "shra"
+executor:
+  image:
+    registry: "artifactory.crwd.dev"
+    repository: "cloud/cs-registryassessmentexecutor"
+    tag: "0.8.0"
+
+  dbStorage:
+    storageClass: "standard"
+
+  assessmentStorage:
+    type: "local"
+
+jobController:
+  image:
+    registry: "artifactory.crwd.dev"
+    repository: "cloud/cs-job-controller"
+    tag: "0.17.0"
+
+  dbStorage:
+    storageClass: "standard"
+
+crowdstrikeConfig:
+  clientID: "abcdefABCDEF0123456789abcdefABCD"
+  clientSecret: "abcdefABCDEF0123456789abcdefABCDEF012345"
+
+registryConfigs:
+  - type: dockerhub
+    credentials:
+      username: "userName"
+      password: "password"
+    port: "443"
+    host: "https://registry-1.docker.io"
+    cronSchedule: "* * * * *"

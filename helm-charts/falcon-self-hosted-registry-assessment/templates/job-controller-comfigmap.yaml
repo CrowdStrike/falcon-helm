@@ -1,0 +1,14 @@
+{{- if .Values.crowdstrikeConfig.jobTypeConfigs -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ra-self-hosted-job-controller.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ra-self-hosted-job-controller.labels" . | nindent 4 }}
+data:
+  JOB_TYPE_CONFIGS: |-
+{{ include "ra-self-hosted-job-controller.job-type-configs-json" . | indent 4 }}
+  JOB_CONFIGS: |-
+{{ include "ra-self-hosted-job-controller.job-configs-json" . | indent 4 }}
+{{- end -}}

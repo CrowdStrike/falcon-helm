@@ -1,0 +1,21 @@
+{{- if .Values.registryConfigs -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ra-self-hosted-executor.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ra-self-hosted.labels-executor" . | nindent 4 }}
+data:
+  REGISTRY_CREDENTIALS: |-
+{{ include "ra-self-hosted-executor.registry-credentials-json" . | indent 4 }}
+{{- if .Values.proxyConfig.HTTP_PROXY }}
+  HTTP_PROXY: {{ .Values.proxyConfig.HTTP_PROXY }}
+{{- end }}
+{{- if .Values.proxyConfig.HTTPS_PROXY }}
+  HTTPS_PROXY: {{ .Values.proxyConfig.HTTPS_PROXY }}
+{{- end }}
+{{- if .Values.proxyConfig.NO_PROXY }}
+  NO_PROXY: {{ .Values.proxyConfig.NO_PROXY }}
+{{- end }}
+{{- end -}}

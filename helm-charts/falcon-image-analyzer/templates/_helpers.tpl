@@ -174,9 +174,9 @@ runAsGroup: {{ .Values.securityContext.runAsGroup | default 0 }}
 
 {{- define "falcon-image-analyzer.imagePullSecret" }}
 {{- with .Values.crowdstrikeConfig }}
-{{- if eq .agentRegion "us-gov-1" }}
+{{- if or (eq .agentRegion "us-gov-1") (eq .agentRegion "usgov1") (eq .agentRegion "us-gov1") (eq .agentRegion "gov1") (eq .agentRegion "gov-1") }}
 {{- printf "{\"auths\":{\"registry.laggar.gcw.crowdstrike.com\":{\"username\":\"fc-%s\",\"password\":\"%s\",\"email\":\"image-assessment@crowdstrike.com\",\"auth\":\"%s\"}}}" (first (regexSplit "-" (lower .cid) -1)) .dockerAPIToken (printf "fc-%s:%s" (first (regexSplit "-" (lower .cid) -1)) .dockerAPIToken | b64enc) | b64enc }}
-{{- else if eq .agentRegion "us-gov-2" }}
+{{- else if or (eq .agentRegion "us-gov-2") (eq .agentRegion "usgov2") (eq .agentRegion "us-gov2") (eq .agentRegion "gov2") (eq .agentRegion "gov-2") }}
 {{- printf "{\"auths\":{\"registry.us-gov-2.crowdstrike.mil\":{\"username\":\"fc-%s\",\"password\":\"%s\",\"email\":\"image-assessment@crowdstrike.com\",\"auth\":\"%s\"}}}" (first (regexSplit "-" (lower .cid) -1)) .dockerAPIToken (printf "fc-%s:%s" (first (regexSplit "-" (lower .cid) -1)) .dockerAPIToken | b64enc) | b64enc }}
 {{- else }}
 {{- printf "{\"auths\":{\"registry.crowdstrike.com\":{\"username\":\"fc-%s\",\"password\":\"%s\",\"email\":\"image-assessment@crowdstrike.com\",\"auth\":\"%s\"}}}" (first (regexSplit "-" (lower .cid) -1)) .dockerAPIToken (printf "fc-%s:%s" (first (regexSplit "-" (lower .cid) -1)) .dockerAPIToken | b64enc) | b64enc }}

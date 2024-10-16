@@ -29,6 +29,9 @@ replicas: 1
 # Configure the webhook Port
 webhookPort: 4443
 
+# Configure the watcher Port
+watcherPort: 4080
+
 # Auto update the certificates every time there is an update
 autoCertificateUpdate: true
 
@@ -146,6 +149,13 @@ webhook:
   failurePolicy: Ignore
   # Comma sparated list of namespaces in which we need to disable validation e.g test1,test2
   disableNamespaces:
+
+# Specifies if Falcon KAC should use hostNetwork mode. This is required in some scenarios such as when a
+# custom CNI is in use where control plane nodes cannot establish network communication with pods.
+hostNetwork: false
+
+# Define Falcon KAC POD DNS Policy, follows cluster default when not set and sets "ClusterFirstWithHostNet" when hostNetwork = true unless overriden
+dnsPolicy:
 
 # Number of pods for resourceQuota object
 resourceQuota:

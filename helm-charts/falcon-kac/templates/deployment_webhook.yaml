@@ -287,6 +287,12 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.hostNetwork }}
+      hostNetwork: true
+      dnsPolicy: {{ default "ClusterFirstWithHostNet" .Values.dnsPolicy }}
+      {{- else if .Values.dnsPolicy}}
+      dnsPolicy: {{ .Values.dnsPolicy }}
+      {{- end }}
       volumes:
       - name: {{ include "falcon-kac.name" . }}-tls-certs
         secret:

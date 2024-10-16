@@ -147,6 +147,13 @@ webhook:
   # Comma sparated list of namespaces in which we need to disable validation e.g test1,test2
   disableNamespaces:
 
+# Specifies if Falcon KAC should use hostNetwork mode. This is required in some scenarios such as when a 
+# custom CNI is in use where control plane nodes cannot establish network communication with pods.
+hostNetwork: false
+
+# Define Falcon KAC POD DNS Policy, defaults to "ClusterFirstWithHostNet" when hostNetwork = true
+dnsPolicy:
+
 # Number of pods for resourceQuota object
 resourceQuota:
   pods: 2

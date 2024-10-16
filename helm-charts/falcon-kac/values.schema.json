@@ -320,6 +320,24 @@
                 "string"
             ]
         },
+        "hostNetwork": {
+            "type": "boolean",
+            "default": "false"
+        },
+        "dnsPolicy": {
+            "type": [
+                "null",
+                "string"
+            ],
+            "default": null,
+            "enum": [
+                null,
+                "ClusterFirst",
+                "ClusterFirstWithHostNet",
+                "Default",
+                "None"
+            ]
+        },
         "webhook": {
             "type": "object",
             "properties": {

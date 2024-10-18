@@ -48,11 +48,17 @@
             "default": 1,
             "minimum": 1
         },
+        "watcherPort": {
+            "type": "integer",
+            "default": "4080",
+            "minimum": 1024,
+            "maximum": 65535
+        },
         "webhookPort": {
             "type": "integer",
             "default": "4433",
             "minimum": 1024,
-            "maximum": 32767
+            "maximum": 65535
         },
         "autoCertificateUpdate": {
             "type": "boolean",

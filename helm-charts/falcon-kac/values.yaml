@@ -29,6 +29,9 @@ replicas: 1
 # Configure the webhook Port
 webhookPort: 4443
 
+# Configure the watcher Port
+watcherPort: 4080
+
 # Auto update the certificates every time there is an update
 autoCertificateUpdate: true
 

@@ -108,6 +108,7 @@ spec:
       containers:
       - args:
         - client
+        - "-port={{ .Values.webhookPort }}"
         env:
         - name: __CS_POD_NAMESPACE
           valueFrom:
@@ -171,6 +172,7 @@ spec:
       - args:
         - "client"
         - "-app=watcher"
+        - "-http-port={{ .Values.watcherPort }}"
         env:
         - name: __CS_POD_NAMESPACE
           valueFrom:
@@ -197,14 +199,14 @@ spec:
           failureThreshold: 3
           httpGet:
             path: /livez
-            port: 4080
+            port: {{ .Values.watcherPort }}
             scheme: HTTP
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
         name: falcon-watcher
         ports:
-        - containerPort: 4080
+        - containerPort: {{ .Values.watcherPort }}
           name: healthcheck
         resources:
           {{- toYaml .Values.falconWatcherResources | nindent 10 }}
@@ -219,7 +221,7 @@ spec:
           failureThreshold: 30
           httpGet:
             path: /startz
-            port: 4080
+            port: {{ .Values.watcherPort }}
             scheme: HTTP
           periodSeconds: 2
           successThreshold: 1
@@ -286,6 +288,12 @@ spec:
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.hostNetwork }}
+      hostNetwork: true
+      dnsPolicy: {{ default "ClusterFirstWithHostNet" .Values.dnsPolicy }}
+      {{- else if .Values.dnsPolicy}}
+      dnsPolicy: {{ .Values.dnsPolicy }}
       {{- end }}
       volumes:
       - name: {{ include "falcon-kac.name" . }}-tls-certs

@@ -2837,4 +2837,15 @@ entries:
     urls:
     - https://github.com/CrowdStrike/falcon-helm/releases/download/0.5.0/falcon-sensor-0.5.0.tgz
     version: 0.5.0
-generated: "2024-10-16T13:57:31.255579984Z"
+  registry-scanner:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2024-10-25T17:32:06.486382373Z"
+    description: CrowdStrike Self-hosted Registry Assessment
+    digest: 8199ed60e04565a7122424b2066270df4caf9d412d03937313a11a661504059d
+    name: registry-scanner
+    type: application
+    urls:
+    - https://github.com/CrowdStrike/falcon-helm/releases/download/registry-scanner-0.1.0/registry-scanner-0.1.0.tgz
+    version: 0.1.0
+generated: "2024-10-25T17:32:06.486668667Z"

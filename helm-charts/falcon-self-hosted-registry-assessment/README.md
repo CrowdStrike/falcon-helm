@@ -959,16 +959,16 @@ To verify that the Connector is receiving data:
 1. In the list, find the connector you created and check its status. If it's receiving data, the status is **Active**.
 
 To view the logs from this connector:
-1. Go to [**Next-Gen SEIM** > **Log management ** > **Advanced event search**](https://falcon.crowdstrike.com/investigate/search?end=&query=kubernetes.namespace%20%3D%20%22registry-scanner%22&repo=all&start=30m).  
+1. Go to [**Next-Gen SEIM** > **Log management ** > **Advanced event search**](https://falcon.crowdstrike.com/investigate/search?end=&query=kubernetes.namespace%20%3D%20%22falcon-self-hosted-registry-assessment%22&repo=all&start=30m).  
 1. Filter by the Kubernetes namespace by adding the following to the query box (adjust if you chose a different namespace)
-   `kubernetes.namespace = "registry-scanner"`. 
+   `kubernetes.namespace = "falcon-self-hosted-registry-assessment"`. 
 1. Keep this window open to monitor for results. Click **Run** once SHRA is installed.
 
 ### Configure saved searches to monitor SHRA
 
 Now that your SHRA logs are ingested by LogScale, you can configure scheduled searches to be notified of any issues your SHRA may have in connecting to registries or performing assessment. 
 
-1. Go to [**Next-Gen SEIM** > **Log management ** > **Advanced event search**](https://falcon.crowdstrike.com/investigate/search?end=&query=kubernetes.namespace%20%3D%20%22registry-scanner%22&repo=all&start=30m).  
+1. Go to [**Next-Gen SEIM** > **Log management ** > **Advanced event search**](https://falcon.crowdstrike.com/investigate/search?end=&query=kubernetes.namespace%20%3D%20%22falcon-self-hosted-registry-assessment%22&repo=all&start=30m).  
 
 1. Modify the query to search for errors. We recommend the following broad search filter:
 
@@ -1011,7 +1011,7 @@ Before you install, follow the configuration steps above to prepare your account
 1. Verify your installation.
 
    ```sh
-   helm show values crowdstrike/registry-scanner
+   helm show values crowdstrike/falcon-self-hosted-registry-assessment
    ```
 
 The job controller and executor are now live, and the first registry scans will begin according to your configured cron schedules associated with each registry.

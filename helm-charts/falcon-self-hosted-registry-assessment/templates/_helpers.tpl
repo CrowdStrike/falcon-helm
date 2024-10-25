@@ -166,6 +166,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- $cred = set $cred "registry_type" $v.type -}}
 {{- $cred = set $cred "registry_host" $v.host -}}
 {{- $cred = set $cred "registry_port" $v.port -}}
+{{- $cred = set $cred "credential_type" $v.credential_type -}}
 {{- $credDetails := dict -}}
 {{- $credsDict := (include "yamlToJson" $v.credentials | fromYaml )}}
 {{- $credString := ($credsDict | toString)}}

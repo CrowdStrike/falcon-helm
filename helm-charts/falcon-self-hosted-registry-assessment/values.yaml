@@ -9,8 +9,8 @@ executor:
   image:
     registry:
     repository: "registryassessmentexecutor"
-    # Overrides the image tag. In general, tags should not be used (including semver tags or `latest`). 
-    # This variable is provided for those who have yet to move off of using tags. The sha256 digest 
+    # Overrides the image tag. In general, tags should not be used (including semver tags or `latest`).
+    # This variable is provided for those who have yet to move off of using tags. The sha256 digest
     # should be used in place of tags for increased security and image immutability.
     tag: "0.9.0"
     # Setting a digest will override any tag and should be used instead of tags.
@@ -38,22 +38,22 @@ executor:
       - ReadWriteOnce
 
   assessmentStorage:
-    type: "PVC" # PVC or local
+    type: "PVC"  # PVC or local
     size: 100Gi
     pvc:
-      create: true # exclusive
+      create: true  # exclusive
       existingClaimName: ""
       storageClass: ""
       accessModes:
         - ReadWriteOnce
 
   logLevel: 3  # log level to be set for the service (1:error, 2:warning, 3:info, 4:debug)
-  
-  labels: { }
 
-  podAnnotations: { }
+  labels: {}
 
-  nodeSelector: { }
+  podAnnotations: {}
+
+  nodeSelector: {}
 
   resources: {}
   #    requests:
@@ -63,9 +63,9 @@ executor:
   #      cpu: "2"
   #      memory: 2Gi
 
-  tolerations: [ ]
+  tolerations: []
 
-  affinity: [ ]
+  affinity: []
   #  nodeAffinity:
   #    requiredDuringSchedulingIgnoredDuringExecution:
   #      nodeSelectorTerms:
@@ -81,15 +81,15 @@ executor:
 
   priorityClassName: ""
 
-  additionalEnv: [ ]
+  additionalEnv: []
   #    - name: "key"
   #      value: "thing"
 
-  additionalCMEnvFrom: [ ]
+  additionalCMEnvFrom: []
   #    - name: "test"
   #      optional: false
 
-  additionalSecretEnvFrom: [ ]
+  additionalSecretEnvFrom: []
 #    - name: "test"
 #      optional: false
 
@@ -128,19 +128,19 @@ jobController:
     accessModes:
       - "ReadWriteOnce"
 
-  labels: { }
+  labels: {}
 
   logLevel: 3  # log level to be set for the service (1:error, 2:warning, 3:info, 4:debug)
 
-  podAnnotations: { }
+  podAnnotations: {}
 
-  nodeSelector: { }
+  nodeSelector: {}
 
-  resources: { }
+  resources: {}
 
-  tolerations: [ ]
+  tolerations: []
 
-  affinity: [ ]
+  affinity: []
   #  nodeAffinity:
   #    requiredDuringSchedulingIgnoredDuringExecution:
   #      nodeSelectorTerms:
@@ -163,29 +163,29 @@ jobController:
   additionalSecretEnvFrom: []
 
 crowdstrikeConfig:
-  environment: "autodiscovery" # autodiscovery, us-1, us-2, eu-1, gov1, or gov2
+  environment: "autodiscovery"  # autodiscovery, us-1, us-2, eu-1, gov1, or gov2
   clientID: ""
   clientSecret: ""
 
   jobTypeConfigs:
     registryCollection:
-      threadsPerPod: 1 # Required.  the number of goroutines to create within a single executor
+      threadsPerPod: 1  # Required.  the number of goroutines to create within a single executor
       allowConcurrentIdentical: false
       runtimeMax: 480
       retriesMax: 0
-      jobRetentionMax: 604800 # Optional.  the max amount of time a job lives in the job database before being cleaned up. A value of 0 means the job will live forever.
+      jobRetentionMax: 604800  # Optional.  the max amount of time a job lives in the job database before being cleaned up. A value of 0 means the job will live forever.
     tagScrape:
-      threadsPerPod: 1 # Required.  the number of goroutines to create within a single executor
+      threadsPerPod: 1  # Required.  the number of goroutines to create within a single executor
       allowConcurrentIdentical: false
       runtimeMax: 480
       retriesMax: 0
-      jobRetentionMax: 604800 # Optional.  the max amount of time a job lives in the job database before being cleaned up. A value of 0 means the job will live forever.
+      jobRetentionMax: 604800  # Optional.  the max amount of time a job lives in the job database before being cleaned up. A value of 0 means the job will live forever.
     tagAssessment:
-      threadsPerPod: 8 # Required.  the number of goroutines to create within a single executor
+      threadsPerPod: 8  # Required.  the number of goroutines to create within a single executor
       allowConcurrentIdentical: false
       runtimeMax: 480
       retriesMax: 0
-      jobRetentionMax: 604800 # Optional.  the max amount of time a job lives in the job database before being cleaned up. A value of 0 means the job will live forever.
+      jobRetentionMax: 604800  # Optional.  the max amount of time a job lives in the job database before being cleaned up. A value of 0 means the job will live forever.
 
 registryConfigs:
   - type: dockerhub
@@ -201,7 +201,7 @@ registryConfigs:
 
 tls:
   enable: false
-  useCertManager: true # allow false
+  useCertManager: true  # allow false
   existingSecret: ""
   issuer: {}
 #    name: self-signed-issuer

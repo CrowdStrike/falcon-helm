@@ -8,6 +8,7 @@ on:
       - '!helm-charts/cs-k8s-protection-agent/**'
       - '!helm-charts/falcon-image-analyzer/**'
       - '!helm-charts/falcon-kac/**'
+      - '!helm-charts/falcon-self-hosted-registry-assessment/**'
 
 jobs:
   lint-test:

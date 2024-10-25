@@ -1,0 +1,158 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "ra-self-hosted-job-controller.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ra-self-hosted-job-controller.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: {{ include "ra-self-hosted-job-controller.fullname" . }}
+  selector:
+    matchLabels:
+  {{- include "ra-self-hosted-job-controller.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+    {{- include "ra-self-hosted-job-controller.labels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/job-controller-comfigmap.yaml") . | sha256sum }}
+    spec:
+      securityContext:
+        fsGroup: 2001
+     {{- if or (.Values.jobController.image.pullSecret) (.Values.jobController.image.registryConfigJSON) }}
+      imagePullSecrets:
+       {{ if .Values.jobController.image.registryConfigJSON }}
+        - name: {{ include "ra-self-hosted-job-controller.pullsecret-name" . }}
+       {{- end }}
+       {{- if .Values.jobController.image.pullSecret }}
+        - name: {{ .Values.jobController.image.pullSecret }}
+       {{- end }}
+     {{- end }}
+      initContainers:
+        - name: job-controller-init
+          image: {{ include "ra-self-hosted-job-controller.image" . }}
+          imagePullPolicy: {{ .Values.jobController.image.pullPolicy }}
+          env:
+            - name: "RUN_MODE"
+              value: "init"
+            - name: "SQLITE_DBDIR"
+              value: "/db"
+            - name: "STORAGE_ENGINE"
+              value: "sqlite"
+            - name: "LOG_LEVEL"
+              value: {{ .Values.jobController.logLevel | quote }}
+            {{- if .Values.tls.enable }}
+            - name: GRPC_USE_TLS
+              value: "true"
+            - name: GRPC_CERT_FILE
+              value: /etc/tls/tls.crt
+            - name: GRPC_KEY_FILE
+              value: /etc/tls/tls.key
+            {{- end }}
+          {{ if (or .Values.registryConfigs .Values.crowdstrikeConfig.jobTypeConfigs .Values.jobController.additionalCMEnvFrom .Values.jobController.additionalSecretEnvFrom) -}}
+          envFrom:
+            {{- if .Values.registryConfigs }}
+            - configMapRef:
+                name: {{ include "ra-self-hosted-job-controller.fullname" . }}
+            {{- end }}
+            {{- range .Values.jobController.additionalSecretEnvFrom }}
+            - secretRef:
+{{ . | toYaml | indent 16 }}
+            {{- end }}
+            {{- range .Values.jobController.additionalCMEnvFrom }}
+            - configMapRef:
+{{ . | toYaml | indent 16 }}
+            {{- end }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /db
+              name: db
+            {{ if .Values.tls.enable -}}
+            - mountPath: /etc/tls
+              name: tls
+            {{- end }}
+          securityContext:
+            runAsUser: 1001
+            runAsGroup: 2001
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+      containers:
+        - name: job-controller
+          image: {{ include "ra-self-hosted-job-controller.image" . }}
+          imagePullPolicy: {{ .Values.jobController.image.pullPolicy }}
+          env:
+            - name: "SQLITE_DBDIR"
+              value: "/db"
+            - name: "STORAGE_ENGINE"
+              value: "sqlite"
+            - name: "AGENT_HELM_VERSION"
+              value: {{ .Chart.Version | quote }}
+            - name: "LOG_LEVEL"
+              value: {{ .Values.jobController.logLevel | quote }}
+            {{- if .Values.tls.enable }}
+            - name: GRPC_USE_TLS
+              value: "true"
+            - name: GRPC_CERT_FILE
+              value: /etc/tls/tls.crt
+            - name: GRPC_KEY_FILE
+              value: /etc/tls/tls.key
+            {{- end }}
+            {{- if .Values.additionalEnv }}
+            {{- range .Values.additionalEnv }}
+            - name: {{ .name }}
+              value: {{ .value }}
+            {{- end }}
+            {{- end }}
+          {{ if (or .Values.registryConfigs .Values.crowdstrikeConfig.jobTypeConfigs .Values.jobController.additionalCMEnvFrom .Values.jobController.additionalSecretEnvFrom) -}}
+          envFrom:
+            {{- if .Values.registryConfigs }}
+            - configMapRef:
+                name: {{ include "ra-self-hosted-job-controller.fullname" . }}
+            {{- end }}
+            {{- range .Values.jobController.additionalSecretEnvFrom }}
+            - secretRef:
+{{ . | toYaml | indent 16 }}
+            {{- end }}
+            {{- range .Values.jobController.additionalCMEnvFrom }}
+            - configMapRef:
+{{ . | toYaml | indent 16 }}
+            {{- end }}
+          {{- end }}
+          ports:
+            - containerPort: 9000
+              name: grpc
+          volumeMounts:
+            - mountPath: /db
+              name: db
+            {{ if .Values.tls.enable -}}
+            - mountPath: /etc/tls
+              name: tls
+            {{- end }}
+          securityContext:
+            runAsUser: 1001
+            runAsGroup: 2001
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+      {{- if .Values.jobController.nodeSelector }}
+      nodeSelector:
+        {{- .Values.jobController.nodeSelector | toYaml | nindent 8 }}
+      {{- end }}
+      {{- if .Values.jobController.affinity }}
+      affinity:
+        {{- .Values.jobController.affinity | toYaml | nindent 8 }}
+      {{- end }}
+      {{- if .Values.jobController.priorityClassName }}
+      priorityClassName: {{- .Values.jobController.priorityClassName }}
+      {{- end }}
+      volumes:
+        - name: db
+          persistentVolumeClaim:
+            claimName: {{ include "ra-self-hosted-job-controller.db-pvc-name" . }}
+        {{ if .Values.tls.enable -}}
+        - name: tls
+          secret:
+            secretName: {{ include "ra-self-hosted.cert-secret-name" .}}
+        {{- end }}

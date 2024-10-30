@@ -73,10 +73,6 @@ affinity:
           operator: In
           values:
             - linux
-        - key: kubernetes.io/arch
-          operator: In
-          values:
-            - amd64
 
 priorityClassName: ""
 
@@ -111,6 +107,15 @@ exclusions:
   #   exclusions:
   #    registry: "index.docker.io,my.private.registry,localhost,localhost:1234"
   registry: ""
+
+
+# set this to true will bypass the kubernetes network and use the node/host network. This is needed in some
+# setups where proxy rules are strict and if we IAR to make calls especially for private registry/auth via the host.
+# NOTE That setting this to true will also set the dnsPolicy: "ClusterFirstWithHostNet"
+hostNetwork: false
+
+# Define ImageAnalyzer POD DNS Policy, defaults to "ClusterFirstWithHostNet" when hostNetwork = true
+dnsPolicy:
 
 # Use this param to provide the comma separated registry secrets of the form namsepace1:secretname1,namespace:secret2
 # each secret should be of type docker-registry for each of the private registry that is used.

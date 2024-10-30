@@ -15,11 +15,11 @@ The Falcon Image Analyzer Helm chart has been tested to deploy on the following 
 * SUSE Rancher K3s
 * Red Hat OpenShift Kubernetes
 
-## New updates in current release (1.1.10) for iar 1.0.16
-- adding `crowdstrikeConfig.enableKlogs` flag to enable native klogs for troubleshooting
-- support `autodiscovery|autodiscover|auto` values for `crowdstrikeConfig.agentRegion` field for commercial cloud customers ONLY. This will enable the IAR
-to discover the customer region automatically IF the customer belongs to commercial cloud (`us-1 | us-2 | eu-1`).
-**NOTE. FOR  GOV customers i.e. `gov1|gov2` this is NOT Supported. Please explicitly specify the region**
+## New updates in current release (1.1.11) for iar 1.0.17
+- Support for multiarch IAR. IAR now is supported on both amd64 and arm64 nodes from iar 1.0.17 onwards
+- add `hostNetwork` param in values to support usage of hostnetwork
+- add `dnsPolicy` param in values to support k8s DNS supported polices. no value implies `Default`. see 
+https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
 
 ## Dependencies
 
@@ -61,6 +61,8 @@ The following tables list the Falcon sensor configurable parameters and their de
 | `exclusions.namespace`                  optional   ( available in falcon-imageanalyzer >= 1.0.8 and Helm Chart v >= 1.1.3) | Set the value as a comma separate list of namespaces to be excluded. all pods in that namespace(s) will be excluded                                            | ""                                                                                                          |
 | `exclusions.registry`                  optional   ( available in falcon-imageanalyzer >= 1.0.8 and Helm Chart v >= 1.1.3)  | Set the value as a comma separate list of registries to be excluded. all images in that registry(s) will be excluded                                           | ""                                                                                                          |
 | `log.output`                  optional   ( available  Helm Chart v >= 1.1.7 & falcon-imageanalyzer >= 1.0.12)              | Set the value to for log output terminal. `2=stderr` and `1=stdout`                                                                                            | 2 ( stderr )                                                                                                |
+| `hostNetwork`                  optional   ( available  Helm Chart v >= 1.1.11)                                             | Set the value to `true` to use the hostNetwork instead of pod network                                                                                          | `false`                                                                                                     |
+| `dnsPolicy`                  optional   ( available  Helm Chart v >= 1.1.11)                                               | Set the value to any supported value from https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy                            | ``  no value implies `Default`                                                                              |
 | `scanStats.enabled`                  optional   ( available  Helm Chart v >= 1.1.8 & falcon-imageanalyzer >= 1.0.13)       | Set `enabled` to true for agent to send scan error and stats to cloud                                                                                          | false                                                                                                       |
 | `crowdstrikeConfig.clusterName`     required                                                                               | Cluster name                                                                                                                                                   | None                                                                                                        |
 | `crowdstrikeConfig.enableDebug`   optional                                                                                 | Set to `true` for debug level log verbosity.                                                                                                                   | false                                                                                                       |
@@ -339,6 +341,17 @@ for e.g.  a docker-registry secret can be created as below
 
 ```
 use the above secret as `"my-app-ns:regcred,my-app-ns:regcred2"`
+
+### PROXY Usage
+If a customer us using proxy settings . Please make sure to add the registry domains ```myreg.some.com``` in the ```NO_PROXY```.
+This is so that the IAR can connect to the registries without proxy and authenticate if needed using secrets provided or download the public free images.
+
+***Note that some registries domains also have other urls based on the auth challange that is sent by the registry service. Please make sure to add those as well to ```NO_PROXY```
+for e.g. for gitlab registries there exists the 
+- registry domain ```my-reg.gitlab.com``` 
+- and the other ```www.gitlab.com```
+
+- The above is very registry provider specific. One needs to ensure nothing ie being blocked by Proxy 
 
 ### Pod Eviction
 If for some reason pod evivictions are observed in the Cluster due to exceeding ephemeral storage

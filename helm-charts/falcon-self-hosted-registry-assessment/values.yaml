@@ -55,13 +55,13 @@ executor:
 
   nodeSelector: {}
 
-  resources: {}
-  #    requests:
-  #      cpu: "1"
-  #      memory: 1Gi
-  #    limits:
-  #      cpu: "2"
-  #      memory: 2Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 2
+      memory: 2Gi
 
   tolerations: []
 
@@ -136,7 +136,13 @@ jobController:
 
   nodeSelector: {}
 
-  resources: {}
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
 
   tolerations: []
 
@@ -177,14 +183,14 @@ crowdstrikeConfig:
     tagScrape:
       threadsPerPod: 1  # Required.  the number of goroutines to create within a single executor
       allowConcurrentIdentical: false
-      runtimeMax: 480
+      runtimeMax: 600
       retriesMax: 0
       jobRetentionMax: 604800  # Optional.  the max amount of time a job lives in the job database before being cleaned up. A value of 0 means the job will live forever.
     tagAssessment:
-      threadsPerPod: 8  # Required.  the number of goroutines to create within a single executor
+      threadsPerPod: 2  # Required.  the number of goroutines to create within a single executor
       allowConcurrentIdentical: false
-      runtimeMax: 480
-      retriesMax: 0
+      runtimeMax: 1200
+      retriesMax: 3
       jobRetentionMax: 604800  # Optional.  the max amount of time a job lives in the job database before being cleaned up. A value of 0 means the job will live forever.
 
 registryConfigs:

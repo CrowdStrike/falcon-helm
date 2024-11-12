@@ -182,7 +182,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- $jobs := list -}}
 {{- $heartBeatJob := dict }}
 {{- $heartBeatJob = set $heartBeatJob "type" "agent_heartbeat" -}}
-{{- $heartBeatJob = set $heartBeatJob "cron_schedule" "* * * * *" -}}
+{{- $heartBeatJob = set $heartBeatJob "cron_schedule" "*/5 * * * *" -}}
 {{- $jobs = append $jobs $heartBeatJob -}}
 {{- range $k, $v := .Values.registryConfigs -}}
 {{- $job := dict -}}

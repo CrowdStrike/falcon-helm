@@ -4,7 +4,7 @@
 platform purpose-built to stop breaches via a unified set of cloud-delivered
 technologies.
 
-This Helm Chart helps you deploy CrowdStrike's self-hosted registry scanner to create inventories of the container images in your registries. The software sends the inventories up to the CrowdStrike cloud where they are analyzed for vulnerabilities and reported in your Falcon console. With this scanner, your images stay in your environment. This approach is an alternative to CrowdStrike's cloud-based [Cloud Workload Protection](https://www.crowdstrike.com/platform/cloud-security/cwpp/) registry assessment options, where images are copied into the CrowdStrike registry to create the image inventories. 
+This Helm Chart helps you deploy CrowdStrike's Self-hosted Registry Assessment tool (SHRA) to create inventories of the container images in your registries. The software sends the inventories to the CrowdStrike cloud where they are analyzed for vulnerabilities and reported in your Falcon console. With SHRA, your images stay in your environment. This approach is an alternative to CrowdStrike's cloud-based [Cloud Workload Protection](https://www.crowdstrike.com/platform/cloud-security/cwpp/) registry assessment options, where images are copied into the CrowdStrike registry to create the image inventories. 
 
 Choosing to use the self-hosted approach vs CrowdStrike's cloud-based Cloud Workload Protection solution has a cost implication.
 For example, running these services in your environment requires additional storage and computing time.
@@ -18,16 +18,20 @@ These costs may or may not be offset by the savings for data egress costs incurr
 - [Requirements](#requirements)
 - [Create a basic config file](#create-a-basic-config-file)
 - [Customize your deployment](#customize-your-deployment)
+  - [Create the SHRA namespace](#create-the-shra-namespace)
   - [Configure your CrowdStrike credentials](#configure-your-crowdstrike-credentials)
-  - [Configure SHRA image download](#configure-shra-image-versions-and-download-registry)
-  - [Configure which registries to scan](#configure-which-registries-to-scan-and-how-often-to-scan-them)
+  - [Copy the SHRA images to your registry](#copy-the-shra-images-to-your-registry)
+  - [Configure which registries to scan](#configure-which-registries-to-scan)
+  - [Configure your scanning schedules](#configure-your-scanning-schedules)
+  - [Optional. Configure which repositories to scan](#optional-configure-which-repositories-to-scan)
   - [Configure persistent data storage](#configure-persistent-data-storage)
   - [Configure temporary storage](#configure-temporary-storage)
+  - [Configure SHRA scaling](#configure-shra-scaling-to-meet-your-scanning-needs)
   - [Allow traffic to CrowdStrike servers](#allow-traffic-to-crowdstrike-servers)
   - [Optional. Configure CrowdStrike allow list](#optional-configure-crowdstrike-allow-list)
   - [Optional. Configure gRPC over TLS](#optional-configure-grpc-over-tls)
   - [Optional. Configure HTPP Proxy](#optional-configure-http-proxy)
-  - [Forward SHRA Container Logs to Logscale](#forward-shra-container-logs-to-logscale)
+- [Forward SHRA Container Logs to Logscale](#forward-shra-container-logs-to-logscale)
 - [Install the SHRA Helm Chart](#install-the-shra-helm-chart)
 - [Update SHRA](#update-shra)
 - [Uninstall SHRA](#uninstall-shra)
@@ -53,46 +57,38 @@ These costs may or may not be offset by the savings for data egress costs incurr
 
 The following architecture diagram gives you insight into how SHRA works. 
 
-* Following our [configuration instructions](#customize-your-deployment), you: 
-  * Create a `values_override.yaml` file specific to your environment. 
-  * Add CrowdStrike's SHRA Helm Chart to your Helm repo or download the Chart from this GitHub repo.
-  * Download the SHRA container image files from CrowdStrike's registry and, best practice, save to your own registry.
-
-* You run the Helm install command to deploy the Chart. As the Helm is deployed:
-  * Your configured registry connections are validated.
-  * A jobs database is initialized in persistent storage.
-  * A registry assessment cache is initialized in persistent storage.
-  * A **Jobs Controller** Pod spins up.
+* Following our [configuration instructions](#customize-your-deployment), you create a `values_override.yaml` file specific to your environment, including:
+  * Your CrowdStrike identification and credentials.
+  * The container registry where you have placed the two SHRA images.
+  * The container registries you want SHRA to scan for new images, and how often to scan them.
+  * How SHRA should configure its persistent and temporary storage.
+  
+* You run the Helm install command. As the Helm Chart deploys SHRA:
+  * The jobs database and registry assessment cache are initialized in persistent storage.
+  * The **Jobs Controller** Pod spins up.
   * One or more **Executor** Pods spin up.
 
-* Per your configured schedule, the Jobs Controller tells the Executor(s) which registries to scan. 
-If multiple registries are configured within your installation, the jobs are worked in a round robin approach to balance between the registries.
-
-* The Executor(s) perform the following three tasks:
+* Per your configured schedule, the Jobs Controller tells one or more Executors which registries to scan. The Executors break up the work as follows:
    * `Registry scan`: identifies the repositories within your configured registries
    * `Repository scan`: identifies image tags within the repositories
-   * `Tag assessment`: downloads and uncompresses images that haven’t previously been scanned, creates a full inventory of what is in each image, then sends that inventory to CrowdStrike's cloud for analysis.
+   * `Tag assessment`: downloads, uncompresses, and inventories new images, then sends the inventories to CrowdStrike's cloud for analysis
 
-  To streamline work, `Tag assessment` uses a local registry assessment database to keep track of image tags previously scanned. 
-  If an image tag is not found in the local database, it asks the CrowdStrike cloud if the image is new. 
-  Only images that have not been inventoried before are unpacked and inventoried.
-
-* The CrowdStrike cloud assesses the image inventories.
-
-* Image assessment results are visible to you via the Falcon console. 
-Go to [**Cloud security > Vulnerabilities > Image assessments**](https://falcon.crowdstrike.com/cloud-security/cwpp/image-assessment/images), then click the **Images** tab. 
+* The CrowdStrike cloud assesses the image inventories to determine their potential vulnerabilities. Results are visible in the Falcon console. 
+  * Go to [**Cloud security > Vulnerabilities > Image assessments**](https://falcon.crowdstrike.com/cloud-security/cwpp/image-assessment/images), then click the **Images** tab. 
 Images scanned by SHRA have **Self-hosted registry** in the optional **Sources** column.
 
-![High level diagram showing the architecture and deployment for the Falcon Self-hosted Registry Assessment tool (SHRA). It depicts a user installing SHRA via the Helm Chart files and a values_override.yaml file. SHRA's two images, the Jobs Controller and Executor, and three related persistent volume claims are created inside the namespace "falcon-self-hosted-registry-assessment". Arrows depict the flow of new image inventories from the Executor's tag assessment component to the CrowdStrike cloud, where analysis results are visible to the user via the Falcon console.](self-hosted-registry-assessment-flow.jpg "Self-hosted Registry Assessment")
+![High level diagram showing the architecture and deployment for the Falcon Self-hosted Registry Assessment tool (SHRA). It depicts a user installing SHRA via the Helm Chart files and a values_override.yaml file. SHRA's two images, the Jobs Controller and Executor, and three related persistent volume claims are created inside the namespace falcon-self-hosted-registry-assessment. Arrows depict the flow of new image inventories from the Executor's tag assessment component to the CrowdStrike cloud, where analysis results are visible to the user via the Falcon console.](self-hosted-registry-assessment-flow.jpg "Self-hosted Registry Assessment")
 
-Three volume mounts are needed for SHRA:
-1. A 1+ GiB persistent volume for a job controller sqlite database.
-1. A 1+ GiB persistent volume used by the executor(s) for a registry assessment cache.
-1. A working volume to store and expand images for assessment.
+> [!TIP]  
+> Performance of the `Registry scan` and `Repository scan` jobs are networking bound, for the most part. 
+> By contrast, the `Tag assessment` job is mainly constrained by the amount of available disk space to unpack the images and perform the inventory. 
+> Ensure you provide sufficient disk space. For more information, see Configure temporary storage.
 
-**Note**: Performance of the `Registry scan` and `Repository scan` jobs are networking bound, for the most part. 
-By contrast, the `Tag assessment` job is mainly constrained by the amount of available disk space to unpack the images and perform the inventory. 
-Ensure you provide sufficient disk space. For more information, see Configure temporary storage.
+### How SHRA determines if an image is new
+
+To streamline work, the Executor's `Tag assessment` process uses a local registry assessment database to keep track of image tags previously scanned. 
+If an image tag is not found in the local database, it asks the CrowdStrike cloud if the image is new. 
+Only images that have not been inventoried before are unpacked and inventoried.
 
 ## Kubernetes cluster compatibility
 
@@ -113,12 +109,14 @@ The Falcon Self-hosted Registry Scanner Helm Chart has been tested to deploy on 
 * A client API key, as described in the configuration steps.
 * A x86_64 (AMD64) Kubernetes cluster.
 * [Helm](https://helm.sh/) 3.x is installed and supported by the Kubernetes provider.
-* 2 [Persistent Volume](#configure-persistent-data-storage) claims
-* 1 Volume (persistent or emptyDir) of [sufficient size](#configure-temporary-storage) for unpacking and assessing images
+* A 1+ GiB persistent volume for a job controller sqlite database. 
+* A 1+ GiB persistent volume used by the executor for a registry assessment cache.
+* A working volume to store and expand images for assessment.
 * Networking sufficient to communicate with CrowdStrike cloud services and your image registries.
 * Optional. [Cert Manager - Helm](https://cert-manager.io/docs/installation/helm/) if you wish to use TLS between the containers in this Chart. See [TLS Configuration](#optional-configure-grpc-over-tls).
 
-**Note:** For more information on SHRA's supported persistent volume storage schemes, see [Configure persistent data storage](#configure-persistent-data-storage).
+> [!NOTE]  
+> For more information on SHRA's persistent and temporary storage needs, see [Configure persistent data storage](#configure-persistent-data-storage) and [Configure temporary storage](#configure-temporary-storage).
 
 ## Create a basic config file
 
@@ -127,7 +125,8 @@ Before you install this Helm Chart, there are several config values to customize
 To start, copy the following code block into a new file called `values_override.yaml`.
 Follow the steps in [Customize your deployment](#customize-your-deployment) to configure these values.
 
-**Tip:** If you have experience deploying other CrowdStrike Helm Charts, you can refer to [Falcon Chart configuration options](#falcon-chart-configuration-options) for details on how to customize the fields in this minimal installation example. 
+> [!TIP]  
+> If you have experience deploying other CrowdStrike Helm Charts, you can refer to [Falcon Chart configuration options](#falcon-chart-configuration-options) for details on how to customize the fields in this minimal installation example. 
 
 ```yaml
 crowdstrikeConfig:
@@ -162,6 +161,7 @@ registryConfigs:
     credentials:
       username: ""
       password: ""
+    allowedRepositories: ""
     port: "443"
     host: "https://registry-1.docker.io"
     cronSchedule: "* * * * *"
@@ -169,6 +169,7 @@ registryConfigs:
     credentials:
       username: ""
       password: ""
+    allowedRepositories: ""
     port: "443"
     host: "https://registry-2.docker.io"
     cronSchedule: "0 0 * * *"
@@ -178,10 +179,28 @@ Continue to tailor this file for your environment by following the remaining ste
 
 ## Customize your deployment
 
-Configure your deployment of the Self-hosted Registry Assessment tool by editing values in your `values_override.yaml` files.
+Configure your deployment of the Self-hosted Registry Assessment tool by preparing a namespace for SHRA and adding your configuration details to your `values_override.yaml` file.
+
+> [!IMPORTANT]
+> Deployment of SHRA deployment with Helm isn’t complicated, but there are several detailed steps and some must happen in sequence. 
+> We strongly recommend that you follow these steps, in order, from top to bottom.
 
 The most commonly used parameters are described in the steps below. 
 For other options, refer to the [full set of configurations options](#falcon-chart-configuration-options) and the comments in provided `values.yaml`.
+
+### Create the SHRA namespace
+
+Create a namespace to use for deploying SHRA, storing Kubernetes secrets, and hosting optional utilities throughout the installation process.
+
+We recommend the namespace `falcon-self-hosted-registry-assessment`, and we use that namespace throughout these instructions.
+
+1. Create the namespace:
+   ``` sh
+   kubectl create namespace falcon-self-hosted-registry-assessment
+   ```
+1. As needed to meet your security requirements, create Kubernetes Roles and/or RoleBindings for this namespace and apply them. 
+   The SHRA Pods don't interact with the Kubernetes APIs and don't need any specific Kubernetes permissions, so only default access is needed.
+   For more information, see [Kubernetes documentation on RBAC authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/).
 
 ### Configure your CrowdStrike credentials 
 
@@ -197,68 +216,164 @@ Create your client ID and secret:
    * **Falcon Images Download**: Read
    * **Sensor Download**: Read  
 1. Click **Add**.
-1. From the **API client created** dialog, copy the **client ID** and **secret** to a password management or secret management service. 
+1. From the **API client created** dialog, copy the **client ID**, **secret**, and **Base URL** to a password management or secret management service. 
 
-**Note:** The API client secret will not be presented again, so don't close the dialog until you have this value safely saved. 
+> [!NOTE]  
+> The API client secret will not be presented again, so don't close the dialog until you have this value safely saved. 
 
 Export these variables for use in later steps:
 ```sh
 export FALCON_CLIENT_ID=<your-falcon-api-client-id>
 export FALCON_CLIENT_SECRET=<your-falcon-api-client-secret>
+export FALCON_BASE_URL=<your-base-url>
 ```
 
 Next, get your Customer ID (CID):
 1. In the Falcon console, go to [**Host setup and management** > **Deploy** > **Sensor downloads**](https://falcon.crowdstrike.com/host-management/sensor-downloads/all).
-1. Copy your Customer ID (CID) from the **How to Install** section and save it as the variable FALCON_CID.
+1. Copy your Customer ID (CID) from the **How to Install** section.
+1. Your CID has the following format: `0123456789ABCDEFGHIJKLMNOPQRSTUV-WX`. 
+   The hyphen and the last two characters at the end are a checksum value. 
+   Remove the checksum by removing those two characters and the hyphen. 
+   The resulting format is your **CID without checksum**, which has the following format: `0123456789ABCDEFGHIJKLMNOPQRSTUV`.
+1. Save your **CID without checksum** as the variable `FALCON_CID`.
 ```sh
- export FALCON_CID=0123456789ABCDEFGHIJKLMNOPQRSTUV-WX 
+ export FALCON_CID=<your-falcon-cid-without-checksum>
 ```
 
-Configure the following two parameters in your `values_override.yaml` file.
+In your `values_override.yaml` file, set `crowdstrikeConfig.clientID` and `crowdstrikeConfig.clientSecret` to the values you saved in `FALCON_CLIENT_ID` and `FALCON_CLIENT_SECRET`.
+
+For example, 
+```yaml
+crowdstrikeConfig:
+  clientID: "aabbccddee112233445566aabbccddee"
+  clientSecret: "aabbccddee112233445566aabbccddee11223344"
+```
+
+> [!NOTE]
+> Don't confuse these two identifiers:
+> - FALCON_CLIENT_ID is an OAuth2 credential with specific API scopes you granted. This is the one that goes in your `values_override.yaml` file.
+> - FALCON_CID is your customer identification number in the Falcon platform
+
 
 | Parameter                           |           | Description                                                                                           | Default   |
 |:------------------------------------|-----------|:------------------------------------------------------------------------------------------------------|:----------|
 | `crowdstrikeConfig.clientID`        | required  | The client id used to authenticate the self-hosted registry assessment service with CrowdStrike.      | ""        |
 | `crowdstrikeConfig.clientSecret`    | required  | The client secret used to authenticate the self-hosted registry assessment service with CrowdStrike.  | ""        |
 
-### Configure SHRA image versions and download registry
+### Copy the SHRA images to your registry
 
-Our self-hosted registry assessment tool is composed of two OCI images:
-* `job-controller` 
-* `executor`
+To strengthen your container supply chain security and maintain security best practices, we recommend you deploy the SHRA containers from your private registry.
 
-You specify what versions of `job-controller` and `executor` that you want to install.
-During installation, the SHRA Helm Chart downloads those images from your specified image registry and deploys with your custom configurations.
+The two OCI images you need are:
+- `falcon-jobcontroller`: The job controller manages scheduling and coordination.
+- `falcon-registryassessmentexecutor`: The executor finds and inventories new images to scan. 
 
-#### Login to our registry
+**What you'll do**:
+- Login to the CrowdStrike container registry
+- List available images
+- Copy your selected SHRA container image versions to your private registry
+- Add your registry URL and authentication info to your `values_override.yaml` file.
 
-To download the SHRA images, you need the `FALCON_CLIENT_ID`, `FALCON_CLIENT_SECRET`, and `FALCON_CID` environment variables you exported in earlier steps.
+The following steps guide you through the image copy process.
+
+#### Login to the CrowdStrike registry
+
+To view and download available SHRA images, login to the CrowdStrike registry using OAuth2 authentication.
+
+These steps use your OAuth2 credentials, which were saved as environment variables `FALCON_CLIENT_ID`, `FALCON_CLIENT_SECRET`, `FALCON_BASE_URL`, and `FALCON_CID` in earlier steps.
 If you're in a new terminal window or if running the commands above causes authentication errors, repeat the variable exports described in [Configure your CrowdStrike credentials](#configure-your-crowdstrike-credentials). 
 
-Run the following commands to get perform an OAuth handshake and log in to our Docker registry:
+1. Run the following commands to perform an OAuth2 handshake:
 
-```bash
-ENCODED_CREDENTIALS=$(echo -n "$FALCON_CLIENT_ID:$FALCON_CLIENT_SECRET" | base64)
-TOKEN_URL="https://api.crowdstrike.com/oauth2/token"
-ACCESS_TOKEN=$(curl -X POST "$TOKEN_URL" \
-     -H "Authorization: Basic $ENCODED_CREDENTIALS" \
-     -H "Content-Type: application/x-www-form-urlencoded" \
-     -d "grant_type=client_credentials" | jq -r '.access_token')
-DOCKER_LOGIN_PASSWORD=$(curl -X 'GET' 'https://api.crowdstrike.com/container-security/entities/image-registry-credentials/v1' -H "Authorization: Bearer $ACCESS_TOKEN" -H "Content-Type: application/json" | jq -r '.resources[0].token')
-echo $DOCKER_LOGIN_PASSWORD | docker login -u fc-${FALCON_CID} registry.crowdstrike.com/falcon-selfhostedregistryassessment --password-stdin
-```
+   ```sh
+   ENCODED_CREDENTIALS=$(echo -n "$FALCON_CLIENT_ID:$FALCON_CLIENT_SECRET" | base64)
+   TOKEN_URL="${FALCON_BASE_URL}/oauth2/token"
+   curl -X POST "$TOKEN_URL" \
+      -H "Authorization: Basic $ENCODED_CREDENTIALS" \
+      -H "Content-Type: application/x-www-form-urlencoded" \
+      -d "grant_type=client_credentials"
+   ```
+
+1. Find and copy your `access_token` from the resulting JSON response:
+   ```json
+   {
+   "access_token": "your-access-token",
+   "expires_in": 1799,
+   "token_type": "bearer"
+   }
+   ```
+
+1. Save the `access_token` value for use in other commands:
+   ```sh
+   export ACCESS_TOKEN=<your-access-token>
+   ```
+
+1. Use your access token to get a docker login password:
+   ```sh
+   curl -X 'GET' "${FALCON_BASE_URL}/container-security/entities/image-registry-credentials/v1" \
+      -H "Authorization: Bearer $ACCESS_TOKEN" \
+      -H "Content-Type: application/json"
+   ```
+
+1. Find the `resources.token` value from the resulting JSON response:
+   ```json
+   {
+   "meta": {
+   "query_time": 0.040701966,
+   "trace_id": "aaaa1111-bb22-cc33-dd44-1234abcd1234"
+   },
+   "resources": [
+   {
+      "token": "your-resources-token"
+   }
+   ],
+   "errors": []
+   }
+   ```
+
+1. Save the `resources.token` value for use in other commands:
+   ```sh
+   export FALCON_REGISTRY_PASSWORD=<your-resources-token>
+   ```
+
+1. Determine your CrowdStrike registry URL. 
+   
+   Commercial customers use:
+   ``` sh
+   export FALCON_IMAGE_REPO="registry.crowdstrike.com/falcon-selfhostedregistryassessment/release"
+   ```
+
+   US-GOV-1 customers use:
+   ``` sh
+   export FALCON_IMAGE_REPO="registry.laggar.gcw.crowdstrike.com/falcon-selfhostedregistryassessment/release"
+   ```
+
+   US-GOV-2 customers use:
+   ``` sh
+   export FALCON_IMAGE_REPO="registry.us-gov-2.crowdstrike.mil/falcon-selfhostedregistryassessment/release"
+   ```
+
+1. Log in to our registry:
+   ```sh
+   echo $FALCON_REGISTRY_PASSWORD | docker login -u fc-${FALCON_CID} ${FALCON_IMAGE_REPO} --password-stdin
+   ```
+
+   Once complete, a **Login Succeeded** message is printed to the terminal window.
+
+> [!TIP]
+> If the steps above don't result in a successful login, ensure you have the correct `FALCON_BASE_URL` set and that your `FALCON_CID` is set properly to your **Client CID without checksum**. For more info, see [Configure your CrowdStrike Credentials](#configure-your-crowdstrike-credentials).
 
 #### List available images
 
 To see the available SHRA images, use a tool like [skopeo](https://github.com/containers/skopeo) to request a list of available tags.
 
-```bash
-skopeo list-tags --creds fc-$FALCON_CID:$DOCKER_LOGIN_PASSWORD docker://registry.crowdstrike.com/falcon-selfhostedregistryassessment/release/falcon-jobcontroller
-skopeo list-tags --creds fc-$FALCON_CID:$DOCKER_LOGIN_PASSWORD docker://registry.crowdstrike.com/falcon-selfhostedregistryassessment/release/falcon-registryassessmentexecutor
+```sh
+skopeo list-tags --creds fc-$FALCON_CID:$FALCON_REGISTRY_PASSWORD docker://${FALCON_IMAGE_REPO}/falcon-jobcontroller
+skopeo list-tags --creds fc-$FALCON_CID:$FALCON_REGISTRY_PASSWORD docker://${FALCON_IMAGE_REPO}/falcon-registryassessmentexecutor
 ```
 
 You can expect output from these commands to be similar to this:
-``` json
+```json
 {
     "Repository": "registry.crowdstrike.com/falcon-selfhostedregistryassessment/release/falcon-jobcontroller",
     "Tags": [
@@ -273,210 +388,184 @@ You can expect output from these commands to be similar to this:
 }
 ```
 
-#### Find your CrowdStrike registry
+#### Copy the SHRA images to your registry
 
-It's very important to match your configured registry with the CrowdStrike cloud you've been assigned.
-A mismatch between your assigned cloud and the CrowdStrike registry used will cause an authorization failure when you try to download the images.
+Copy the SHRA's `falcon-jobcontroller` and `falcon-registryassessmentexecutor` images from the CrowdStrike registry and store them in your private registry.
 
-If you access the Falcon console at `falcon.crowdstrike.com`, your assigned CrowdStrike cloud is `us-1`. 
-For all other clouds, the cloud location (`us-2`, `eu-1`, `gov-1`, or `gov-2`) is visible in the Falcon console URL.
+> [!NOTE]  
+> These steps assume that:
+>   * you're authenticated to the CrowdStrike registry (see [Login to the CrowdStrike registry](#login-to-the-crowdstrike-registry))
+>   * you're authenticated to your target registry and have authorization to push new images
+>   * following our directions, you have set the required environment variables 
 
-Determine your assigned cloud and select the matching CrowdStrike registry location from this list:
-* `us-1`, `us-2`, and `eu-1` use `registry.crowdstrike.com/falcon-self-hosted-scanner/release/falcon-self-hosted-scanner`
-* `gov-1` use `registry.laggar.gcw.crowdstrike.com/falcon-self-hosted-scanner/gov-1/release/falcon-self-hosted-scanner`
-* `gov-2` use `registry.us-gov-2.crowdstrike.mil/falcon-self-hosted-scanner/gov-2/release/falcon-self-hosted-scanner`
+1. Create new environment variables for your chosen versions of the two SHRA images. 
+   Replace `1.0.0` with the image tag you want to fetch.
+   ```sh
+   export $FALCON_SHRA_JC_VERSION="1.0.0"
+   export $FALCON_SHRA_EX_VERSION="1.0.0"
+   ```
 
+1. Set an environment variable with the URL for your private registry, where you'll store these images. 
+   We recommend using `falcon-selfhostedregistryassessment` in your repository name. 
+   Adjust this sample with your registry's URL and to match your repository naming scheme. 
+   ```sh
+   export $MY_SHRA_REPO=<your-registry-url>/falcon-selfhostedregistryassessment
+   ```
 
-#### Copy the SHRA images to your repository
+1. Use `skopeo copy` to copy the job controller image from our registry to yours. 
+   ```sh
+   skopeo copy docker://${FALCON_IMAGE_REPO}/falcon-jobcontroller:${FALCON_SHRA_JC_VERSION} \
+               docker://${MY_SHRA_REPO}/falcon-jobcontroller:${FALCON_SHRA_JC_VERSION}
+   ```
 
-We recommend that you pull the two SHRA images from the CrowdStrike registry and store them in your own registry.
+1. Repeat the process for the executor image.
+   ```sh
+   skopeo copy docker://${FALCON_IMAGE_REPO}/falcon-registryassessmentexecutor:${FALCON_SHRA_EX_VERSION} \
+               docker://${MY_SHRA_REPO}/falcon-registryassessmentexecutor:${FALCON_SHRA_EX_VERSION}                  
+   ```
 
-**Note**: These steps assume that:
-   * you created a container image registry to store the SHRA images
-   * you have the required permissions to write to that registry
-   * you've configured local authentication to your registry
-   * you have environment variables set for `FALCON_CLIENT_ID` and `FALCON_CLIENT_SECRET` as described in [Configure your CrowdStrike credentials](#configure-your-crowdstrike-credentials). 
+1. Optional. Verify the copy was successful. Use `skopeo list`, `docker pull`, or `docker images` commands to verify that the SHRA images are accessible now from your registry.
 
-Pull the jobcontroller and registryassessmentexecutor images. 
-Ensure that you use the desired tags rather than the defaults provided in the example below.
-```sh
-docker pull registry.crowdstrike.com/falcon-selfhostedregistryassessment/release/falcon-jobcontroller:1.0.0
-docker pull registry.crowdstrike.com/falcon-selfhostedregistryassessment/release/falcon-registryassessmentexecutor:1.0.0
-```
+Follow the next step to prepare your registry credentials. Then, add your registry url, repository paths, image versions, and credentials to `values_override.yaml` file. 
+For more info, see [Add registry and image details to the configuration](#add-registry-and-image-details-to-the-configuration).
 
-Once you've copied both images, use `docker images | grep falcon` to verify that you see both the `jobcontroller` and `registryassessmentexecutor` images in your registry.
+#### Prepare credentials for your registry
 
-#### Generate a credentials string for your registry
+The Helm Chart installation process requires authentication to your registry to download the SHRA images for deployment.
 
-If your private registry requires authentication, the Helm Chart configuration file needs that information. 
-For most registries, the needed credentials are a base64 encoded string of your Docker `config.json` file.
+You have two options for providing registry credentials:
 
-Use the following command to get the authentication string (modify as needed if your credentials are not located at ~/.docker/config.json):
-``` sh
-cat ~/.docker/config.json | base64 -
-```
+* **Option 1:** Use the following command to get a base64 encoded version of your Docker authentication string (modify as needed if your credentials are not located at ~/.docker/config.json):
+   ``` sh
+   cat ~/.docker/config.json | base64
+   ```
+   In the next step, use the resulting value to configure `executor.image.registryConfigJSON` and `jobController.image.registryConfigJSON`.
 
-Keep this value handy for the next step, you'll use it to configure `executor.image.registryConfigJSON` and `jobController.image.registryConfigJSON`.
+* **Option 2:** Create a Kubernetes imagePullSecret with your credentials in the `falcon-self-hosted-registry-assessment` namespace. 
+   Follow the Kubernetes instructions to [create your imagePullSecret](https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod).
+   In the next step, use your pullSecret's name to configure `executor.image.pullSecret` and `jobController.image.pullSecret`.
 
 #### Add registry and image details to the configuration
 
 Now that you've gathered the necessary information, verify and adjust image registry location, version tags, and authentication data in your `values_override.yaml` file. 
 
-| Parameter                                |                                         | Description                                                                                                                                      | Default                       |
-|:-----------------------------------------|:----------------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------|
-| `executor.image.registry`                |required                                 | The registry to pull the `executor` image from. We recommend that you store this image in your registry.                                         |                               |
-| `executor.image.repository`              |                                         | The repository for the `executor` image file.                                                                                                    | "registryassessmentexecutor"  |
-| `executor.image.digest`                  |required or `executor.image.tag`         | The sha256 digest designating the `executor` image to pull. This value overrides the `executor.image.tag` field.                                 | ""                            |
-| `executor.image.tag`                     |required or `executor.image.digest`      | Tag designating the `executor` image to pull. Ignored if `executor.image.digest` is supplied. We recommend use of `digest` instead of `tag`.     | ""                            |
-| `executor.image.pullPolicy`              |                                         | Policy for determining when to pull the `executor` image.                                                                                        | "IfNotPresent"                |
-| `executor.image.pullSecret`              |                                         | Use this to specify an existing secret in the namespace.                                                                                         | ""                            |
-| `executor.image.registryConfigJSON`      |                                         | `executor` pull token from CrowdStrike or the base64 encoded Docker secret for your private registry.                                            | ""                            |
-| `jobController.image.registry`           |required                                 | The registry to pull the `job-controller` image from. We recommend that you store this image in your registry.                                   | ""                            |
-| `jobController.image.repository`         |                                         | The repository for the `job-controller` image.                                                                                                   | "job-controller"              |
-| `jobController.image.digest`             |required or `jobController.image.tag`    | The sha256 digest for the `job-controller` image to pull. This value overrides the `jobController.image.tag` field.                              | ""                            |
-| `jobController.image.tag`                |required or `jobController.image.digest` | Tag for the `job-controller` image to pull. Ignored if `jobController.image.digest` is supplied. We recommend use of `digest` instead of `tag`.  | ""                            |
-| `jobController.image.pullPolicy`         |                                         | Policy for determining when to pull the `job-controller` image.                                                                                  | "IfNotPresent"                |
-| `jobController.image.pullSecret`         |                                         | Use this to specify an existing secret in the namespace                                                                                          | ""                            |
-| `jobController.image.registryConfigJSON` |                                         | `job-controller` pull token from CrowdStrike or the base64 encoded Docker secret for your private registry.                                      | ""                            |
+For example, using a pullSecret for authentication to the registry:
+```yaml
+executor:
+  image:
+    registry: "myregistry.example.com/falcon-selfhostedregistryassessment"
+    repository: "falcon-registryassessmentexecutor"
+    tag: "1.0.0"
+    pullSecret: "my-reg-credentials"
 
-### Configure which registries to scan and how often to scan them
+jobController:
+  image:
+    registry: "myregistry.example.com/falcon-selfhostedregistryassessment"
+    repository: "falcon-jobcontroller"
+    tag: "1.0.0"
+    pullSecret: "my-reg-credentials"
+```
+
+| Parameter                                |                                         | Description                                                                                                                                      | Default                              |
+|:-----------------------------------------|:----------------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------|
+| `executor.image.registry`                |required                                 | The registry to pull the `executor` image from. We recommend that you store this image in your registry.                                         |                                      |
+| `executor.image.repository`              |                                         | The repository for the `executor` image file.                                                                                                    | "falcon-registryassessmentexecutor"  |
+| `executor.image.digest`                  |required or `executor.image.tag`         | The sha256 digest designating the `executor` image to pull. This value overrides the `executor.image.tag` field.                                 | ""                                   |
+| `executor.image.tag`                     |required or `executor.image.digest`      | Tag designating the `executor` image to pull. Ignored if `executor.image.digest` is supplied. We recommend use of `digest` instead of `tag`.     | ""                                   |
+| `executor.image.pullPolicy`              |                                         | Policy for determining when to pull the `executor` image.                                                                                        | "IfNotPresent"                       |
+| `executor.image.pullSecret`              |                                         | Use this to specify an existing secret in the `falcon-self-hosted-registry-assessment` namespace.                                                | ""                                   |
+| `executor.image.registryConfigJSON`      |                                         | The base64 encoded Docker secret for your private registry.                                                                                      | ""                                   |
+| `jobController.image.registry`           |required                                 | The registry to pull the `job-controller` image from. We recommend that you store this image in your registry.                                   | ""                                   |
+| `jobController.image.repository`         |                                         | The repository for the `job-controller` image.                                                                                                   | "falcon-jobcontroller"               |
+| `jobController.image.digest`             |required or `jobController.image.tag`    | The sha256 digest for the `job-controller` image to pull. This value overrides the `jobController.image.tag` field.                              | ""                                   |
+| `jobController.image.tag`                |required or `jobController.image.digest` | Tag for the `job-controller` image to pull. Ignored if `jobController.image.digest` is supplied. We recommend use of `digest` instead of `tag`.  | ""                                   |
+| `jobController.image.pullPolicy`         |                                         | Policy for determining when to pull the `job-controller` image.                                                                                  | "IfNotPresent"                       |
+| `jobController.image.pullSecret`         |                                         | Use this to specify an existing secret in the `falcon-self-hosted-registry-assessment` namespace                                                 | ""                                   |
+| `jobController.image.registryConfigJSON` |                                         | The base64 encoded Docker secret for your private registry.                                                                                      | ""                                   |
+
+### Configure which registries to scan
 
 The Self-hosted Registry Assessment tool watches one or more registries.
 When multiple registries are configured, jobs are scheduled round robin to balance between them.
 
-Configure your list by adding an object within the `registryConfigs` array. 
+Find your registry type(s) in the sections below for configuration instructions, including authentication requirements and any additional required fields. 
 
-For example, if you have two registries, the first with a weekly scan schedule and the second with a daily scan schedule:
-```yaml 
-registryConfigs:
-  - type: dockerhub
-    credentials:
-      username: "myuser"
-      password: "xxxyyyzzz"
-    port: "5000"
-    host: "https://registry-1.docker.io"
-    cronSchedule: "0 0 * * 6"
-  - type: dockerhub
-    credentials:
-      username: "anotheruser"
-      password: "qqqrrrsss"
-    port: "5000"
-    host: "https://registry-2.docker.io"
-    cronSchedule: "0 0 * * *"
-```
+* [Amazon Elastic Container Registry (AWS ECR)](#amazon-elastic-container-registry-aws-ecr)
+* [Docker Hub](#docker-hub)
+* [Docker Registry V2](#docker-registry-v2)
+* [GitLab](#gitlab)
+* [Google Artifact Registry](#google-artifact-registry-gar)
+* [Google Container Registry](#google-container-registry-gcr)
+* [Harbor](#harbor)
+* [IBM Cloud Registry](#ibm-cloud-registry)
+* [JFrog Artifactory](#jfrog-artifactory)
+* [Mirantis Secure Registry (MCR)](#mirantis-secure-registry-mcr)
+* [Oracle Container Registry](#oracle-container-registry)
+* [Red Hat Quay.io](#red-hat-quayio)
+* [Sonatype Nexus](#sonatype-nexus)
 
-#### Registry Specific Configuration
+For each registry you want to add, create an entry in the `registryConfigs` array in your `values_override.yaml` file.
+Be sure to specify the correct `type` field for your registry so SHRA knows how to connect to it. 
 
-Each registry type has specific authentication requirements.
-Use the sections below to find your registry type and information on how to configure it.
-Depending on the registry type, additional fields may be required.
+> [!TIP]
+> For registry types with username and password authentication, we recommend [Kubernetes secrets](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry) instead of plaintext passwords. 
+> 1. Create your named secrets in the `falcon-self-hosted-registry-assessment` namespace.
+> 1. In your `values_override.yaml` file, replace the `username` and `password` parameters with `kubernetesSecretName` and `kubernetesSecretNamespace` (both are required).
 
-**Important**: Pay special attention to the `type` field for your given registry. 
+#### Amazon Elastic Container Registry (AWS ECR)
 
-Copy the correct registry configuration to your `values_overides.yaml` file and, unless otherwise specified, provide values for each field.
+Copy this registry configuration to your `values_override.yaml` file and provide the required information.
 
-##### ECR
-
-To access ECR the host needs to have direct access to the ECR registry. 
-
-Leave `credentials.aws_iam_role` and `credentials.aws_external_id` as empty strings. 
-These are placeholders for future support of role assumption. 
+Notes:
+* To access ECR, the host needs to have direct access to the ECR registry.
+* Leave the default empty strings for `credentials.aws_iam_role` and `credentials.aws_external_id`. These are placeholders for possible future support of role assumption.
 
 ```yaml
  - type: ecr
    credentials:
     aws_iam_role: ""
     aws_external_id: ""
+   allowedRepositories: ""
    port: "443"
    host: ""
    cronSchedule: "0 0 * * *"
 ```
+Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
 
-##### Docker Hub
+#### Docker Hub
+
+Copy this registry configuration to your `values_override.yaml` file and provide the required information.
 
 ```yaml
   - type: dockerhub
     credentials:
       username: ""
       password: ""
+    allowedRepositories: ""
     host: "https://registry-1.docker.io"
     cronSchedule: "0 0 * * *"
 ```
+Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
 
-##### Docker registry V2
+#### Docker Registry V2
+
+Copy this registry configuration to your `values_override.yaml` file and provide the required information.
 
 ```yaml
-  - type: docker
+  - type: basic
     credentials:
       username: ""
       password: ""
+    allowedRepositories: ""
     port: ""
     host: ""
     cronSchedule: "0 0 * * *"
 ```
+Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
 
-##### Sonartype Nexus
+#### Gitlab
 
-```yaml
-  - type: nexus
-    credentials:
-      username: ""
-      password: ""
-    host: ""
-    cronSchedule: "0 0 * * *"
-```
-
-##### Jfrog Artifactory
-
-```yaml
-  - type: artifactory
-    credentials:
-      username: ""
-      password: ""
-    port: ""
-    host: ""
-    cronSchedule: "0 0 * * *"
-```
-
-##### Quay
-
-Notes:
-- `username` has the format `<organization_name>+<robot_account_name>`
-- `domain_url` and `host` should have the same value. For the cloud-hosted solution, use `quay.io`. Otherwise, provide the domain of your self hosted quay installation.
-
-```yaml
-  - type: quay.io
-    credentials:
-      username: ""
-      password: ""
-      domain_url: ""
-    port: "443"
-    host: ""
-    cronSchedule: "* * * * *"
-```
-
-##### Oracle
-
-Notes:
-- `username` has the format `tenancy-namespace/user`
-- `credentials.compartment_ids` may be required. In the Oracle console, go to **Identity & Security**. Under Identity, click **Compartments**. This shows the list of compartments in your tenancy.
-Hover over the **OICD** column to copy the compartment ID that you want to register. If provided, there should be a single value in the list of compartment ids, use that value for this field.
-- `credentials.scope_name` required when using a compartment id
-
-```yaml
-  - type: oracle
-    credentials:
-      username: ""
-      password: ""
-      compartment_ids: [""]
-      scope_name: ""
-    port: "443"
-    host: "https://us-phoenix-1.ocir.io"
-    cronSchedule: "0 0 * * *"
-    credential_type: "oracle"
-```
-
-##### Gitlab
+Copy this registry configuration to your `values_override.yaml` file and provide the required information.
 
 Notes:
 * `domain_url` and `host` should both be the fully qualified domain name of your GitLab installation
@@ -487,53 +576,33 @@ Notes:
       username: ""
       password: ""
       domain_url: ""
+    allowedRepositories: ""
     port: ""
     host: ""
     cronSchedule: "0 0 * * *"
 ```
+Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
 
-##### Mirantis
+#### Google Artifact Registry (GAR)
 
-```yaml
-  - type: mirantis
-    credentials:
-      username: ""
-      password: ""
-    port: ""
-    host: ""
-    cronSchedule: "* * * * *"
-```
+Authentication to Google Artifact Registry (GAR) requires a private key. To get your private key:
 
-##### Harbor
-
-Notes:
-* `domain_url` and `host` should both be the fully qualified domain name of your Harbor installation
-
-```yaml
-  - type: harbor
-    credentials:
-      username: ""
-      password: ""
-      domain_url: ""
-    port: ""
-    host: ""
-    cronSchedule: "* * * * *"
-```
-
-##### Google Artifact Registry
-
-Notes:
-* `host` follows this URL format `https://<region>-docker.pkg.dev/` (for regional) or `https://<multi-region>-docker.pkg.dev/` (for multi-regional), using the subdomain for the region or multi-region of your GAR account. You can find the regional or multi-regional info in location column of the repository list in your GAR account.
-
-Authentication to GAR requires a private key
-
-1. In GCP console navigate to **IAM & Admin > Service accounts**.
+1. In your [GCP console](https://console.cloud.google.com/getting-started?pli=1), navigate to **IAM & Admin > Service accounts**.
 1. Click **Create Service Account**.
-1. Specify a service account name, grant it the **Storage Object Viewer** role, and click **Done**.
+1. Specify a service account name, grant it the following roles, then click **Done**.
+    * **Artifact Registry Reader**
+    * **Storage Object Viewer**
 1. Within the service accounts table, locate the newly created service account, click the **actions icon**, and select **Manage Keys**.
-1. Click the **KEYS** tab.
-1. Click the **ADD KEY** dropdown and select **Create new key**.
-1. Ensure **JSON** is selected and click **Create**. This downloads the newly created service account in JSON format. Use it to populate the `service_account_json` field below.
+1. Click the **Keys** tab.
+1. Click the **Add key** dropdown and select **Create new key**.
+1. Ensure **JSON** is selected and click **Create**. This downloads the newly created service account key in JSON format. Use it to populate the `service_account_json` fields below.
+
+Copy this registry configuration to your `values_override.yaml` file and provide the required information.
+Notes:
+* Configure `host` with the region subdomain or multi-region associated with your GAR account. Find the regional or multi-regional information in the **location** column of the repository list in your GAR account.
+    * https://<region>-docker.pkg.dev/ (for regional) or 
+    * https://<multi-region>-docker.pkg.dev/ (for multi-regional)
+* Set `scope_name` to the OAuth 2.0 style scope associated with the project ID. For example, `https://www.googleapis.com/auth/cloud-platform`. For more info, see [Google's documentation](https://cloud.google.com/compute/docs/access/service-accounts#accesscopesiam).
 
 ```yaml
   - type: gar
@@ -541,50 +610,86 @@ Authentication to GAR requires a private key
       scope_name: ""
       project_id: ""
       service_account_json:
+        type: "service_account"
+        project_id: ""
+        private_key_id: ""
         private_key: ""
         client_email: ""
-        project_id: ""
-        type: "service_account"
+    allowedRepositories: ""
     port: "443"
     host: ""
     cronSchedule: "* * * * *"
 ```
+Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
 
-##### Google Container Registry
+#### Google Container Registry (GCR)
+
+Authentication to Google Container Registry (GCR) requires a private key. To get your private key:
+
+1. In your [GCP console](https://console.cloud.google.com/getting-started?pli=1), navigate to **IAM & Admin > Service accounts**.
+1. Click **Create Service Account**.
+1. Specify a service account name, grant it the following role, then click **Done**.
+    * **Storage Object Viewer**
+1. Within the service accounts table, locate the newly created service account, click the **actions icon**, and select **Manage Keys**.
+1. Click the **Keys** tab.
+1. Click the **Add key** dropdown and select **Create new key**.
+1. Ensure **JSON** is selected and click **Create**. This downloads the newly created service account key in JSON format. Use it to populate the `service_account_json` fields below.
+
+Copy this registry configuration to your `values_override.yaml` file and provide the required information.
 
 Notes:
-* `host` follows this URL format `https://gcr.io/` or `https://[REGION].gcr.io/`, using the subdomain for the region of your GCR account. You can find the hostname URL in your GCR image list.
-
-Authentication to GAR requires a private key
-
-1. In GCP console navigate to **IAM & Admin > Service accounts**.
-1. Click **Create Service Account**.
-1. Specify a service account name, grant it the **Storage Object Viewer** role, and click **Done**.
-1. Within the service accounts table, locate the newly created service account, click the **actions icon**, and select **Manage Keys**.
-1. Click the **KEYS** tab.
-1. Click the **ADD KEY** dropdown and select **Create new key**.
-1. Ensure **JSON** is selected and click Create. This downloads the newly created service account in JSON format. Use it to populate the `service_account_json` field below.
+* Set host to one of the two following values. Substitute [REGION] with your GCR account's subdomain region (for example us). You can find the hostname URL in your GCR image list.
+    * https://gcr.io/ or 
+    * https://[REGION].gcr.io/
+* Set `service_account_email` to the same value as `client_email`.
 
 ```yaml
   - type: gcr
     credentials:
       project_id: ""
       service_account_json:
-        project_id: ""
-        service_account_email: ""
-        private_key_id: ""
-        client_email: ""
-        private_key: ""
         type: "service_account"
+        project_id: ""
+        private_key_id: ""
+        private_key: ""
+        client_email: ""
+        service_account_email: ""
+    allowedRepositories: ""
     port: "443"
     host: ""
     cronSchedule: "0 0 * * *"
 ```
+Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
+
+#### Harbor
+
+Copy this registry configuration to your `values_override.yaml` file and provide the required information.
+
+Notes:
+* Set both `domain_url` and `host` to the fully qualified domain name of your Harbor installation.
+
+
+```yaml
+  - type: harbor
+    credentials:
+      username: ""
+      password: ""
+      domain_url: ""
+    allowedRepositories: ""
+    port: ""
+    host: ""
+    cronSchedule: "* * * * *"
+```
+Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
 
 ##### IBM Cloud Registry
 
+Copy this registry configuration to your `values_override.yaml` file and provide the required information.
+
 Notes:
-* `host` and `credentials.domain_url` use this URL format: `https://icr.io` (for global) or `https://<region-key>.icr.io` (for regional)
+* Set both `host` and `credentials.domain_url` to:
+    * https://icr.io (for global) or 
+    * https://<region-key>.icr.io (for regional)
 
 ```yaml
   - type: icr
@@ -592,26 +697,178 @@ Notes:
       username: ""
       domain_url: ""
       password: ""
+    allowedRepositories: ""
     port: "443"
     host: ""
     cronSchedule: "0 0 * * *"
 ```
+Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
 
-#### Use Kubernetes secrets for registry authentication
+#### Jfrog Artifactory
 
-We recommend you follow security best practices and avoid saving your registry username and password in plaintext.
-To support you in this, our Helm Chart works with [Kubernetes secrets](https://kubernetes.io/docs/concepts/configuration/secret/).
+Copy this registry configuration to your `values_override.yaml` file and provide the required information.
 
-This works whether you pull Docker images with Kubernetes secrets or if you have another method that injects Docker credentials into Kubernetes secrets.
+```yaml
+  - type: artifactory
+    credentials:
+      username: ""
+      password: ""
+    allowedRepositories: ""
+    port: ""
+    host: ""
+    cronSchedule: "0 0 * * *"
+```
+Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
 
-First, create a named secret in the [Kubernetes imagePullsecrets](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry), with a namespace.
+#### Mirantis Secure Registry (MCR)
 
-Then, in your `values_override.yaml` file, replace the username and password parameters with `registryConfigs.*.credentials.kubernetesSecretName` and `registryConfigs.*.credentials.kubernetesSecretNamespace` (both are required).
+Copy this registry configuration to your `values_override.yaml` file and provide the required information.
 
-#### Configure your scanning schedules
+```yaml
+  - type: mirantis
+    credentials:
+      username: ""
+      password: ""
+    allowedRepositories: ""
+    port: ""
+    host: ""
+    cronSchedule: "* * * * *"
+```
+Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
+
+#### Oracle Container Registry
+
+Copy this registry configuration to your `values_override.yaml` file and provide the required information.
+
+Notes:
+* For `username` use the format `tenancy-namespace/user`.
+* You may need to provide `credentials.compartment_ids`. In the Oracle console, go to **Identity & Security**. Under Identity, click **Compartments**. This shows the list of compartments in your tenancy. 
+Hover over the **OICD** column to copy the compartment ID that you want to register. If provided, there should be a single value in the list of compartment ids, use that value for this field.
+* When using `compartment_ids`, the `credentials.scope_name` is required.
+
+```yaml
+  - type: oracle
+    credentials:
+      username: ""
+      password: ""
+      compartment_ids: [""]
+      scope_name: ""
+    allowedRepositories: ""
+    port: "443"
+    host: "https://us-phoenix-1.ocir.io"
+    cronSchedule: "0 0 * * *"
+    credential_type: "oracle"
+```
+Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
+
+#### Red Hat Quay.io
+Copy this registry configuration to your `values_override.yaml` file and provide the required information.
+
+Notes:
+- For `username` use the format `<organization_name>+<robot_account_name>`
+- Set `domain_url` and `host` to the same value. For the cloud-hosted solution, use `https://quay.io`. Otherwise, provide the domain of your self hosted quay installation.
+
+```yaml
+  - type: quay.io
+    credentials:
+      username: ""
+      password: ""
+      domain_url: ""
+    allowedRepositories: ""
+    port: "443"
+    host: ""
+    cronSchedule: "* * * * *"
+```
+Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
+
+#### Sonatype Nexus
+
+Copy this registry configuration to your `values_override.yaml` file and provide the required information.
+
+```yaml
+  - type: nexus
+    credentials:
+      username: ""
+      password: ""
+    allowedRepositories: ""
+    host: ""
+    cronSchedule: "0 0 * * *"
+```
+Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
+
+#### Validate the credentials locally
+
+The docker API spec notably lacks details on authentication; as such each registry implements authentication and access controls slightly differently. 
+It is highly recommended that you test the credentials you plan to use with SHRA. 
+Use the command line to validate that your credentials have the appropriate authorization to scan registries, list tags, and pull images. 
+
+```sh
+DOCKER_USERNAME=<your docker username for login>
+DOCKER_PASSWORD=<your docker password for login>
+REGISTRY=<your registry host>
+```
+
+Validate that you can login. The following command should return **Login Succeeded**
+```sh
+echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME $REGISTRY --password-stdin
+```
+
+Validate that you can list tags for a known repository. The following command should list the tags for a given repository.
+```sh
+REPOSITORY=<known repository name within the registry>
+skopeo list-tags --creds $DOCKER_USERNAME:$DOCKER_PASSWORD docker://$REGISTRY/$REPOSITORY
+```
+
+Validate that you can pull one of the tags within the repository. The following command should pull the image down to your local machine.
+```sh
+TAG=<known tag from the above skopeo list-tags command>
+docker pull $REGISTRY/$REPOSITORY:$TAG
+```
+
+If any of these validation tests returns an unexpected result, double-check your credentials and verify that you have the correct authorization. 
+If you're not able to authenticate to the registry and pull images with these credentials, neither can SHRA.
+
+#### Apply your changes to the configuration file
+
+Now that you've gathered the necessary information for your private registries, verify and adjust the following parameters in your `values_override.yaml` file.
+
+| Parameter                                                 |                                                      | Description                                                                                                             | Default |
+|:----------------------------------------------------------|:-----------------------------------------------------|:------------------------------------------------------------------------------------------------------------------------|:--------|
+| `registryConfigs.*.type`                                  | required                                             | The registry type being assessed. See [Supported registries](#supported-registries) for options.                        | ""      |
+| `registryConfigs.*.credentials.username`                  | required without `kubernetesSecretName`              | The username used to authenticate to the registry.                                                                      | ""      |
+| `registryConfigs.*.credentials.password`                  | required without `kubernetesSecretName`              | The password used to authenticate to the registry.                                                                      | ""      |
+| `registryConfigs.*.credentials.kubernetesSecretName`      | required with `kubernetesSecretNamespace`            | The Kubernetes secret name that contains registry credentials.                                                          | ""      |
+| `registryConfigs.*.credentials.kubernetesSecretNamespace` | required with `kubernetesSecretName`                 | The namespace containing the Kubernetes secret with credentials.                                                        | ""      |
+| `registryConfigs.*.port`                                  |                                                      | The port for connecting to the registry. Unless you specify a value here, SHRA uses port 80 for http and 443 for https. | ""      |
+| `registryConfigs.*.host`                                  | required                                             | The host for connecting to the registry.                                                                                | ""      |
+
+
+### Configure your scanning schedules
 
 You configure how often you want SHRA to scan each of your configured registries. 
 Specify your schedule as a unix-cron string in the `registryConfigs.*.cronSchedule` parameter for each registryConfigs section of your `values_override.yaml` file.
+
+For example, if you have two dockerhub registries, the first with a weekly scan schedule and the second with a daily scan schedule:
+
+```yaml 
+registryConfigs:
+  - type: dockerhub
+    credentials:
+      username: "myuser"
+      password: "xxxyyyzzz"
+    allowedRepositories: ""
+    port: "5000"
+    host: "https://registry-1.docker.io"
+    cronSchedule: "0 0 * * 6"
+  - type: dockerhub
+    credentials:
+      username: "anotheruser"
+      password: "qqqrrrsss"
+    allowedRepositories: ""
+    port: "5000"
+    host: "https://registry-2.docker.io"
+    cronSchedule: "0 0 * * *"
+```
 
 A unix-cron schedule is defined with the string format "* * * * *". 
 This set of 5 fields indicate when a job should be executed. A quick overview of the fields is:
@@ -643,19 +900,50 @@ Here are some common examples:
 | `"0 2 15 * *"`                           | Every 15th of the month, at 2:00 am.          |
 | `"0 */2 * * MON-FRI"`                    | Every 2 hours, Monday through Friday.         |
 
-**Note**: If you schedule the scans for a registry too closely and the previous scan is still running when it’s time for the next scan, the in-progress scan continues and the upcoming scan is skipped. 
+> [!NOTE]  
+> If you schedule the scans for a registry too closely and the previous scan is still running when it's time for the next scan, the in-progress scan continues and the upcoming scan is skipped. 
 
 | Parameter                                                 |                                                      | Description                                                                                                             | Default |
 |:----------------------------------------------------------|:-----------------------------------------------------|:------------------------------------------------------------------------------------------------------------------------|:--------|
-| `registryConfigs.*.type`                                  | required                                             | The registry type being assessed. See [Supported registries](#supported-registries) for options.                        | ""      |
-| `registryConfigs.*.credentials.username`                  | required without `kubernetesSecretName`              | The username used to authenticate to the registry.                                                                      | ""      |
-| `registryConfigs.*.credentials.password`                  | required without `kubernetesSecretName`              | The password used to authenticate to the registry.                                                                      | ""      |
-| `registryConfigs.*.credentials.kubernetesSecretName`      | required with `kubernetesSecretNamespace`            | The Kubernetes secret name that contains registry credentials.                                                          | ""      |
-| `registryConfigs.*.credentials.kubernetesSecretNamespace` | required with `kubernetesSecretName`                 | The namespace containing the Kubernetes secret with credentials.                                                        | ""      |
-| `registryConfigs.*.port`                                  |                                                      | The port for connecting to the registry. Unless you specify a value here, SHRA uses port 80 for http and 443 for https. | ""      |
-| `registryConfigs.*.host`                                  | required                                             | The host for connecting to the registry.                                                                                | ""      |
 | `registryConfigs.*.cronSchedule`                          | required                                             | A cron schedule that controls how often the top level registry collection job is created.                               | ""      |
 
+### Optional. Configure which repositories to scan
+
+By default, SHRA scans all repositories in your configured registries. 
+However, you can tailor SHRA with a repository allowlist to limit scanning to specific repositories within a registry.
+This reduces the overall scan load and limits the results to the repositories that are important to you.
+
+To create a list of allowed repositories within a registry, add a comma-separated list of repository names to the `registryConfigs.*.allowedRepositories` parameter. 
+This restricts SHRA to scan only the repositories you specify, rather than scanning all repositories in the registry.
+
+For example, your configuration might look like this:
+
+```yaml
+registryConfigs:
+  - type: dockerhub
+    credentials:
+      username: "myuser"
+      password: "xxxyyyzzz"
+    allowedRepositories: "myapp,my/other/app,mytestrepo"
+    port: "5000"
+    host: "https://registry-1.docker.io"
+    cronSchedule: "0 0 * * *"
+```
+
+In this example, SHRA onlys scans the myapp, my/other/app, and mytestrepo repositories in the specified dockerhub registry.
+All other repositories in this registry are excluded from the scans.
+
+> [!NOTE]  
+> The `allowedRepositories` parameter doesn't support wildcard characters or regex matches.
+> You must provide a comma-separated list of the specific repository names you want to include.
+
+> [!TIP]
+> If SHRA is already deployed when you change your `allowedRepositories` list, or make any other change to your `values_override.yaml` file, redeploy the Helm Chart. 
+> For more info, see [Update SHRA](#update-shra).
+
+| Parameter                                                 |       | Description                                                                                                                                                  | Default |
+|:----------------------------------------------------------|:------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------|
+| `registryConfigs.*.allowedRepositories`                   |       | A comma separated list of repositories to assess. No regex or wildcard support. If this value is not set, all repositories within the registry are assessed. | ""      |
 
 ### Configure persistent data storage
 
@@ -668,13 +956,14 @@ If you have multiple registries, or wish to scan registries faster, we recommend
 You can also adjust job controller retention periods to reduce the footprint of the jobs database.
 See [Change persistent storage retention](#change-persistent-storage-retention) for details.
 
-You have 2 options for SHRA’s persistent data storage:
+You have 2 options for SHRA's persistent data storage:
 * New persistent volume claims are created
 * You provide existing storage claim names
 
-**Important**: At deployment, SHRA tries to create the required storage claims. 
-However, since each Kubernetes installation uses different storage classes, SHRA cannot offer default storage classes that work universally. 
-**Your deployment will fail unless you configure the storage class type or specify names to existing storage claims.** 
+> [!IMPORTANT]  
+> At deployment, SHRA tries to create the required storage claims. 
+> However, since each Kubernetes installation uses different storage classes, SHRA cannot offer default storage classes that work universally. 
+> **Your deployment will fail unless you configure the storage class type or specify names to existing storage claims.** 
 
 To configure existing storage claim names, set `executor.dbStorage.storageClass` and/or `jobController.dbStorage.storageClass` to `false` and configure the matching `*dbStorage.existingClaimName` with your storage class name.
 See an example in the snippet below.
@@ -756,22 +1045,23 @@ Larger volume mounts allow for image scanning concurrency and faster results.
 
 The self-hosted scanner is forced to skip images that are too large to copy, unpack, and assess in the allocated storage space.
 
-You have 3 options for SHRA’s temporary data storage:
+You have 3 options for SHRA's temporary data storage:
 * A new Persistent Volume Claim, created during deployment
 * You provide an existing storage claim name
 * A new temp emptyDir, created during deployment
 
 Persistent Volume Claim is the default storage type and is recommended if your storage provider supports dynamic creation of storage volumes. 
 
-**Important:** At deployment, SHRA will try to create a Persistent Volume Claim. 
-However, since each Kubernetes installation uses different storage classes, SHRA cannot offer a default storage class that works universally. 
-**Your deployment will fail unless you configure the storage class type, specify `local` for an emptyDir, or specify the name of an existing storage claim.**
+> [!IMPORTANT]  
+> At deployment, SHRA will try to create a Persistent Volume Claim. 
+> However, since each Kubernetes installation uses different storage classes, SHRA cannot offer a default storage class that works universally. 
+> **Your deployment will fail unless you configure the storage class type, specify `local` for an emptyDir, or specify the name of an existing storage claim.**
 
 To use an existing storage claim, set `executor.assessmentStorage.pvc.create` to `false` and configure `executor.assessmentStorage.pvc.existingClaimName` with your storage class name.
 
 To have a new emptyDir created, set `executor.assessmentStorage.type` to `local` and if your deployment needs more than the default 100 gibibytes of storage, set the emptyDir size in `executor.assessmentStorage.size`. 
 
-To have a new persistent volume claim created, configure `executor.assessmentStorage.pvc.storageClass` with a value from the table of storage class options for SHRA’s supported runtimes in [Configure persistent data storage](#configure-persistent-data-storage).
+To have a new persistent volume claim created, configure `executor.assessmentStorage.pvc.storageClass` with a value from the table of storage class options for SHRA's supported runtimes in [Configure persistent data storage](#configure-persistent-data-storage).
 If your deployment needs more than the default 100 gibibytes of storage, set the PVC size in `executor.assessmentStorage.size`. 
 
 Configure your temporary storage location by editing the following lines to your `values_override.yaml` file. 
@@ -785,18 +1075,18 @@ Configure your temporary storage location by editing the following lines to your
 | `executor.assessmentStorage.pvc.storageClass`       |required     | Storage class to use when creating a persistent volume claim for the assessment storage. Examples include "ebs-sc" in AKS and "standard" in GKE.                                                                                                         | ""                |
 | `executor.assessmentStorage.pvc.accessModes`        |             | Array of access modes for this database claim.                                                                                                                                                                                                           | "- ReadWriteOnce" |
 
-### Configure SHRA scaling meet scanning needs
+### Configure SHRA scaling to meet your scanning needs
 
-We've tailored our Helm chart with the performant default values for the majority of situations.
-However, you can still scale your cluster to handle more throughput by adjusting the the number of executor pods running.
+We've tailored our Helm chart with performant default values to suit the majority of situations.
+However, you can still scale your cluster to handle more throughput by adjusting the number of Executor Pods running.
 
-Each executor pod can inventory approximately 100 images per hour, assuming an average image size of 1 GB. 
+Each Executor Pod can inventory approximately 100 images per hour, assuming an average image size of 1 GB. 
 
-To increase or decrease the number of executor pods, edit the `executor.replicaCount` values in your `values_override.yaml` file. 
+To increase or decrease the number of Executor Pods, edit the `executor.replicaCount` values in your `values_override.yaml` file. 
 
 | Parameter                    |             |Description                                                                                                                  | Default     |
 |:-----------------------------|------------:|:----------------------------------------------------------------------------------------------------------------------------|:------------|
-| `executor.replicaCount`      |             | The number of executor pods. This value can be increased for greater concurrency if CPU is the bottleneck.                  | 1           |
+| `executor.replicaCount`      |             | The number of Executor Pods. This value can be increased for greater concurrency if CPU is the bottleneck.                  | 1           |
 
 
 ### Allow traffic to CrowdStrike servers
@@ -816,14 +1106,14 @@ To protect your account, or add your SHRA IP details to the CrowdStrike allow li
 
 ### Optional. Configure gRPC over TLS
 
-The Job Controller and Executor pods communicate with one another over gRPC. 
-If you wish, you can configure TLS for communication between these pods with either [cert-manager](https://cert-manager.io/) or your own certificate files. 
+The Job Controller and Executor Pods communicate with one another over gRPC. 
+If you wish, you can configure TLS for communication between these Pods with either [cert-manager](https://cert-manager.io/) or your own certificate files. 
 
 To enable TLS (regardless of the option you choose) add the following line to your `values_override.yaml` file, then follow the steps below.
 
 | Parameter                                   | | Description                                                                                                                             | Default     |
 |:--------------------------------------------|-|:----------------------------------------------------------------------------------------------------------------------------------------|:------------|
-| `tls.enable`                                | | Set to `true` to enforce TLS communication between the executor pods and job-controller as they communicate job information over gRPC.  | false       |
+| `tls.enable`                                | | Set to `true` to enforce TLS communication between the Executor Pods and job-controller as they communicate job information over gRPC.  | false       |
 
 See [full `values.yaml` configuration options](#falcon-chart-configuration-options) for complete TLS configuration.
 
@@ -856,7 +1146,7 @@ Add the following line to your `values_override.yaml` file.
 
 #### Option 2. Enable gRPC TLS with custom secret
 
-If you have an existing certificate as a Kubernetes secret you wish to use for these pods, provide them as the `tls.existingSecret`.
+If you have an existing certificate as a Kubernetes secret you wish to use for these Pods, provide them as the `tls.existingSecret`.
 
 | Parameter                                 |   | Description                                                                                                    | Default     |
 |:------------------------------------------|---|:---------------------------------------------------------------------------------------------------------------|:------------|
@@ -864,7 +1154,7 @@ If you have an existing certificate as a Kubernetes secret you wish to use for t
 
 #### Option 3. Enable gRPC TLS with custom certificate files
 
-If you have existing certificate files you wish to use for these pods, provide them as the `tls.issuer`.
+If you have existing certificate files you wish to use for these Pods, provide them as the `tls.issuer`.
 
 | Parameter                                 |   | Description                                                                                                    | Default     |
 |:------------------------------------------|---|:---------------------------------------------------------------------------------------------------------------|:------------|
@@ -892,7 +1182,45 @@ Setting up this log collector is optional, but highly recommended.
 The best time to set up the log collector is before you deploy the Helm Chart.
 Your SHRA container logs are important diagnostic and troubleshooting tools.
 
-Note: If you need assistance with SHRA deployment or ongoing activity with your self-hosted registry scans, CrowdStrike will request that you add the log collector to your installation.
+> [!NOTE]
+> The SHRA logs collected through LogScale count towards your daily third-party data ingestion limit. 
+> To optimize data collection and avoid exceeding this limit, you can adjust SHRA's default logging level. See instructions below. 
+> For more details on managing your data ingestion and understanding limits,  see About Falcon Next-Gen SIEM.
+
+Configure LogScale by completing the following tasks:
+* Optional. Set the SHRA default log levels
+* Create the HEC Ingest Connector
+* Start the Kubernetes LogScale Collector in your SHRA namespace
+* Review logs in the UI
+* Configure saved searches to monitor SHRA
+
+> [!NOTE]  
+> If you need assistance with SHRA deployment or ongoing activity with your self-hosted registry scans, CrowdStrike will request that you add the log collector to your installation.
+
+### Configure SHRA log levels
+
+SHRA logs at the info level (3) by default. You can adjust this to optimize your data collection:
+* Error (1): Captures critical issues only
+* Warning (2): Includes errors and potential problems
+* Info (3): Adds general operational information
+* Debug (4): Provides detailed diagnostic data
+
+Each level includes all previous levels. For example, level 2 captures both warning and error logs.
+
+In your `values_override.yaml` file, set `executor.logLevel` and `jobController.logLevel` to your chosen log levels. 
+We recommend warn level (2) for both executor and job controller. 
+```yaml
+executor:
+  logLevel: 2
+jobController:
+  logLevel: 2
+```
+
+| Parameter                  |   | Description                                                                                                   | Default     |
+|:---------------------------|---|:--------------------------------------------------------------------------------------------------------------|:------------|
+| `executor.logLevel`        |   | Log level for the executor service (1:error, 2:warning, 3:info, 4:debug).                                                    | ""          |
+| `jobController.logLevel`   |   | Log level for the job controller service (1:error, 2:warning, 3:info, 4:debug).                                                  | ""          |
+
 
 ### Create the HEC Ingest Connector
 
@@ -902,8 +1230,8 @@ Perform the following steps to set up your Data Collector.
 If neeeded, see our complete documentation on [setup and configuration of the HEC Data Connector](https://falcon.crowdstrike.com/documentation/page/bdded008/hec-http-event-connector-guide). 
 
 1. In the Falcon console go to go to [**Next-Gen SIEM** > **Data sources**](https://falcon.crowdstrike.com/data-connectors/).
-1. Select **HEC / HTTP Event Connector**.
-1. On the **Add new connector** page, fill the following fields:
+2. Select **HEC / HTTP Event Connector**.
+3. On the **Add new connector** page, fill the following fields:
    * **Data details**:
      * **Data source**: `<Provide a name such as Self-hosted Registry Assessment Containers>`
      * **Data type**: `JSON`
@@ -911,16 +1239,17 @@ If neeeded, see our complete documentation on [setup and configuration of the HE
      * **Connector name**: `<Provide a name such as SHRA Log Connector>`
      * **Description**: `<Provide a description such as Logs to use for monitoring and alerts>`
    * **Parser details**: `json (Generic Source)`
-1. Agree to the terms for third party data sources and click **Save**.
-1. When the connector is created and ready to receive data, a message box appears at the top of the screen. 
+4. Agree to the terms for third party data sources and click **Save**.
+5. When the connector is created and ready to receive data, a message box appears at the top of the screen. 
 Click **Generate API key**. 
-1. From the **Connection setup** dialog, copy the **API key** and **API URL** to a password management or secret management service. 
+6. From the **Connection setup** dialog, copy the **API key** and **API URL** to a password management or secret management service. 
 
    Modify the API URL by removing `/services/collector` from the end. Your value will look like: `https://123abc.ingest.us-1.crowdstrike.com` where the first subdomain (`123abc` in this example) is specific to your connector.
 
-   **Note:** The API Key will not be presented again, so don't close the dialog until you have it safely saved. 
+> [!IMPORTANT]  
+> The API Key will not be presented again, so don't close the dialog until you have it safely saved. 
 
-1. Export these variables for use in later steps:
+7. Export these variables for use in later steps:
    ```sh
    export LOGSCALE_URL=<your-logscale-api-url without /services/collector>
    export LOGSCALE_KEY=<your-logscale-key>
@@ -1039,13 +1368,13 @@ The Chart's `values.yaml` file includes more comments and descriptions in-line f
 | `nameOverride`                                                                 |                                          | override generated name for k8bernetes labels                                                                                                                                                                                                                                                                                                                                                                                                                    | ""                           |
 | `fullnameOverride`                                                             |                                          | override generated name prefix for deployed Kubernetes objects                                                                                                                                                                                                                                                                                                                                                                                                   | ""                           |
 | `executor.replicaCount`                                                        |                                          | The number of executor pods. This value can be increased for greater concurrency if CPU is the bottleneck.                                                                                                                                                                                                                                                                                                                                                       | 1                            |
-| `executor.image.registry`                                                      | required                                 | The registry to pull the `executor` image from. We recommend that you store this image in your registry. See [Copy the SHRA images to your Registry](#option-1-copy-the-shra-images-to-your-registry).                                                                                                                                                                                                                                                           | ""                           |
-| `executor.image.repository`                                                    | required                                 | The repository for the `executor` image file.                                                                                                                                                                                                                                                                                                                                                                                                                    | "registryassessmentexecutor" |
-| `executor.image.digest`                                                        | required or `executor.image.tag`         | The sha256 digest designating the `executor` image to pull. This value overrides the `executor.image.tag` field.                                                                                                                                                                                                                                                                                                                                                 | ""                           |
-| `executor.image.tag`                                                           | required or `executor.image.digest`      | Tag designating the `executor` image to pull. Ignored if `executor.image.digest` is supplied. We recommend use of `digest` instead of `tag`.                                                                                                                                                                                                                                                                                                                     | ""                           |
-| `executor.image.pullPolicy`                                                    |                                          | Policy for determining when to pull the `executor` image.                                                                                                                                                                                                                                                                                                                                                                                                        | "IfNotPresent"               |
-| `executor.image.pullSecret`                                                    |                                          | Use this to specify an existing secret in the namespace.                                                                                                                                                                                                                                                                                                                                                                                                         | ""                           |
-| `executor.image.registryConfigJSON`                                            |                                          | `executor` pull token from CrowdStrike or the base64 encoded Docker secret for your private registry.                                                                                                                                                                                                                                                                                                                                                            | ""                           |
+| `executor.image.registry`                                                      | required                                 | The registry to pull the executor image from. We recommend that you store this image in your registry. See [Copy the SHRA images to your Registry](#option-1-copy-the-shra-images-to-your-registry).                                                                                                                                                                                                                                                             | ""                           |
+| `executor.image.repository`                                                    | required                                 | The repository for the executor image file.                                                                                                                                                                                                                                                                                                                                                                                                                      | "falcon-registryassessmentexecutor" |
+| `executor.image.digest`                                                        | required or `executor.image.tag`         | The sha256 digest designating the executor image to pull. This value overrides the `executor.image.tag` field.                                                                                                                                                                                                                                                                                                                                                   | ""                           |
+| `executor.image.tag`                                                           | required or `executor.image.digest`      | Tag designating the executor image to pull. Ignored if `executor.image.digest` is supplied. We recommend use of `digest` instead of `tag`.                                                                                                                                                                                                                                                                                                                       | ""                           |
+| `executor.image.pullPolicy`                                                    |                                          | Policy for determining when to pull the executor image.                                                                                                                                                                                                                                                                                                                                                                                                          | "IfNotPresent"               |
+| `executor.image.pullSecret`                                                    |                                          | Use this to specify an existing secret in the `falcon-self-hosted-registry-assessment` namespace.                                                                                                                                                                                                                                                                                                                                                                | ""                           |
+| `executor.image.registryConfigJSON`                                            |                                          | The base64 encoded Docker secret for your private registry.                                                                                                                                                                                                                                                                                                                                                                                                      | ""                           |
 | `executor.dbStorage.create`                                                    | required                                 | `true` to create a persistent volume claim (PVC) storage for the executor's db cache file. `false` to use existing storage.                                                                                                                                                                                                                                                                                                                                      | true                         |
 | `executor.dbStorage.storageClass`                                              | required                                 | Storage class to use when creating a persistent volume claim for the `executor` db cache. Examples include "ebs-sc" in AKS and "standard" in GKE.                                                                                                                                                                                                                                                                                                                | ""                           |
 | `executor.dbStorage.existingClaimName`                                         |                                          | Name of existing storage to use instead of creating one. Required if `executor.dbStorage.create` is `false`.                                                                                                                                                                                                                                                                                                                                                     | ""                           |
@@ -1068,13 +1397,13 @@ The Chart's `values.yaml` file includes more comments and descriptions in-line f
 | `executor.additionalEnv`                                                       |                                          | Additional environment variables to set for the executor pods.                                                                                                                                                                                                                                                                                                                                                                                                   | []                           |
 | `executor.additionalCMEEnvFrom`                                                |                                          | Additional environment variables set from an existing config map.                                                                                                                                                                                                                                                                                                                                                                                                | []                           |
 | `executor.additionalSecretEnvFrom`                                             |                                          | Additional environment variables set from an existing secret.                                                                                                                                                                                                                                                                                                                                                                                                    | []                           |
-| `jobController.image.registry`                                                 | required                                 | The registry to pull the `job-controller` image from. We recommend that you store this image in your registry.                                                                                                                                                                                                                                                                                                                                                   | ""                           |
-| `jobController.image.repository`                                               | required                                 | The repository for the `job-controller` image.                                                                                                                                                                                                                                                                                                                                                                                                                   | "job-controller"             |
-| `jobController.image.digest`                                                   | required or `jobController.image.tag`    | The sha256 digest for the `job-controller` image to pull. This value overrides the `jobController.image.tag` field.                                                                                                                                                                                                                                                                                                                                              | ""                           |
-| `jobController.image.tag`                                                      | required or `jobController.image.digest` | Tag designating the `job-controller` image to pull. Ignored if `jobController.image.digest` is supplied. We recommend use of `digest` instead of `tag`.                                                                                                                                                                                                                                                                                                          | ""                           |
-| `jobController.image.pullPolicy`                                               |                                          | Policy for determining when to pull the `job-controller` image.                                                                                                                                                                                                                                                                                                                                                                                                  | "IfNotPresent"               |
-| `jobController.image.pullSecret`                                               |                                          | Use this to specify an existing secret in the namespace.                                                                                                                                                                                                                                                                                                                                                                                                         | ""                           |
-| `jobController.image.registryConfigJSON`                                       |                                          | `job-controller` pull token from CrowdStrike or the base64 encoded Docker secret for your private registry.                                                                                                                                                                                                                                                                                                                                                      | ""                           |
+| `jobController.image.registry`                                                 | required                                 | The registry to pull the job controller image from. We recommend that you store this image in your registry.                                                                                                                                                                                                                                                                                                                                                     | ""                           |
+| `jobController.image.repository`                                               | required                                 | The repository for the job controller image.                                                                                                                                                                                                                                                                                                                                                                                                                     | "falcon-jobcontroller"       |
+| `jobController.image.digest`                                                   | required or `jobController.image.tag`    | The sha256 digest for the job controller image to pull. This value overrides the `jobController.image.tag` field.                                                                                                                                                                                                                                                                                                                                                | ""                           |
+| `jobController.image.tag`                                                      | required or `jobController.image.digest` | Tag designating the job controller image to pull. Ignored if `jobController.image.digest` is supplied. We recommend use of `digest` instead of `tag`.                                                                                                                                                                                                                                                                                                            | ""                           |
+| `jobController.image.pullPolicy`                                               |                                          | Policy for determining when to pull the job controller image.                                                                                                                                                                                                                                                                                                                                                                                                    | "IfNotPresent"               |
+| `jobController.image.pullSecret`                                               |                                          | Use this to specify an existing secret in the `falcon-self-hosted-registry-assessment` namespace.                                                                                                                                                                                                                                                                                                                                                                | ""                           |
+| `jobController.image.registryConfigJSON`                                       |                                          | The base64 encoded Docker secret for your private registry.                                                                                                                                                                                                                                                                                                                                                                                                      | ""                           |
 | `jobController.service.type`                                                   |                                          | Job Controller and Executor(s) communicate over IP via gRPC. This value sets the service type for executor(s) to communicate with Job Controller.                                                                                                                                                                                                                                                                                                                | "ClusterIP"                  |
 | `jobController.service.port`                                                   |                                          | The port that job-controller uses for its gRPC server with the executor(s)                                                                                                                                                                                                                                                                                                                                                                                       | "9000"                       |
 | `jobController.dbStorage.create`                                               | required                                 | `true` to create a persistent volume (PVC) storage for the job controller sqlite database file.                                                                                                                                                                                                                                                                                                                                                                  | true                         |
@@ -1118,7 +1447,7 @@ The Chart's `values.yaml` file includes more comments and descriptions in-line f
 | `registryConfigs.*.credentials.kubernetesSecretName`                           | required with `kubernetesSecretNamespace` | The Kubernetes secret name that contains registry credentials.                                                                                                                                                                                                                                                                                                                                                                                                  | ""                           |
 | `registryConfigs.*.credentials.kubernetesSecretNamespace`                      | required with `kubernetesSecretName`     | The namespace containing the Kubernetes secret with credentials.                                                                                                                                                                                                                                                                                                                                                                                                 | ""                           |
 | `registryConfigs.*.port`                                                       |                                          | The port for connecting to the registry. Unless you specify a value here, SHRA uses port 80 for http and 443 for https.                                                                                                                                                                                                                                                                                                                                          | ""                           |
-| `registryConfigs.*.allowedRepositories`                                        |                                          | A comma separated list of repositories that should be assessed. If this value is not set, the default behavior, then all repositories within a registry will be assessed.                                                                                                                                                                                                                                                                                        | ""                           |
+| `registryConfigs.*.allowedRepositories`                                        |                                          | A comma separated list of repositories to assess. No regex or wildcard support. If this value is not set, all repositories within the registry are assessed.                                                                                                                                                                                                                                                                                                     | ""                           |
 | `registryConfigs.*.host`                                                       |                                          | The host for connecting to the registry.                                                                                                                                                                                                                                                                                                                                                                                                                         | ""                           |
 | `registryConfigs.*.cronSchedule`                                               |                                          | A cron schedule that controls how often the top level registry collection job is created.                                                                                                                                                                                                                                                                                                                                                                        | ""                           |
 | `tls.enable`                                                                   |                                          | Set to `true` to enforce TLS communication between the executor pods and job-controller as they communicate job information over gRPC.                                                                                                                                                                                                                                                                                                                           | false                        |

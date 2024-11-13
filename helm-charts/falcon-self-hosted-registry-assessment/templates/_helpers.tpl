@@ -2,7 +2,7 @@
 Expand the name of the chart.
 */}}
 {{- define "ra-self-hosted.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- default "shra" .Values.nameOverride | trunc 40 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -12,19 +12,19 @@ If release name contains chart name it will be used as a full name.
 */}}
 {{- define "ra-self-hosted.fullname" -}}
 {{- if .Values.fullnameOverride }}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- .Values.fullnameOverride | trunc 40 | trimSuffix "-" }}
 {{- else }}
-{{- $name := default .Chart.Name .Values.nameOverride }}
+{{- $name := default "shra" .Values.nameOverride }}
 {{- if contains $name .Release.Name }}
-{{- .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- .Release.Name | trunc 40 | trimSuffix "-" }}
 {{- else }}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
+{{- printf "%s-%s" .Release.Name $name | trunc 50 | trimSuffix "-" }}
 {{- end }}
 {{- end }}
 {{- end }}
 
 {{- define "ra-self-hosted-executor.fullname" -}}
-{{- printf "%s-%s" (include "ra-self-hosted.fullname" .) "executor" | trunc 63 | trimSuffix "-" }}
+{{- printf "%s-%s" (include "ra-self-hosted.fullname" .) "executor" | trunc 52 | trimSuffix "-" }}
 {{- end -}}
 
 {{- define "ra-self-hosted-executor.pullsecret-name" -}}
@@ -32,7 +32,7 @@ If release name contains chart name it will be used as a full name.
 {{- end -}}
 
 {{- define "ra-self-hosted-job-controller.fullname" -}}
-{{- printf "%s-%s" (include "ra-self-hosted.fullname" .) "job-controller" | trunc 63 | trimSuffix "-" }}
+{{- printf "%s-%s" (include "ra-self-hosted.fullname" .) "job-controller" | trunc 52 | trimSuffix "-" }}
 {{- end -}}
 
 {{- define "ra-self-hosted-job-controller.pullsecret-name" -}}

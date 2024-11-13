@@ -16,7 +16,7 @@ spec:
       labels:
     {{- include "ra-self-hosted.labels-executor" . | nindent 8 }}
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/executor-comfigmap.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/executor-configmap.yaml") . | sha256sum }}
 {{ if .Values.executor.podAnnotations -}}
 {{- .Values.executor.podAnnotations | indent 8 -}}
 {{- end }}

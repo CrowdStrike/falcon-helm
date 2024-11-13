@@ -16,7 +16,7 @@ spec:
       labels:
     {{- include "ra-self-hosted-job-controller.labels" . | nindent 8 }}
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/job-controller-comfigmap.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/job-controller-configmap.yaml") . | sha256sum }}
     spec:
       securityContext:
         fsGroup: 2001

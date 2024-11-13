@@ -401,15 +401,15 @@ Copy the SHRA's `falcon-jobcontroller` and `falcon-registryassessmentexecutor` i
 1. Create new environment variables for your chosen versions of the two SHRA images. 
    Replace `1.0.0` with the image tag you want to fetch.
    ```sh
-   export $FALCON_SHRA_JC_VERSION="1.0.0"
-   export $FALCON_SHRA_EX_VERSION="1.0.0"
+   export FALCON_SHRA_JC_VERSION="1.0.0"
+   export FALCON_SHRA_EX_VERSION="1.0.0"
    ```
 
 1. Set an environment variable with the URL for your private registry, where you'll store these images. 
    We recommend using `falcon-selfhostedregistryassessment` in your repository name. 
    Adjust this sample with your registry's URL and to match your repository naming scheme. 
    ```sh
-   export $MY_SHRA_REPO=<your-registry-url>/falcon-selfhostedregistryassessment
+   export MY_SHRA_REPO=<your-registry-url>/falcon-selfhostedregistryassessment
    ```
 
 1. Use `skopeo copy` to copy the job controller image from our registry to yours. 
@@ -1331,7 +1331,7 @@ Before you install, follow the configuration steps above to prepare your account
    helm upgrade --install -f </path/to/values_override.yaml> \
          --create-namespace \
          --namespace falcon-self-hosted-registry-assessment \
-         falcon-self-hosted-registry-assessment \
+         falcon-shra \
          crowdstrike/falcon-self-hosted-registry-assessment
    ```
 

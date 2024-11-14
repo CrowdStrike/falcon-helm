@@ -786,6 +786,16 @@ entries:
   falcon-self-hosted-registry-assessment:
   - apiVersion: v2
     appVersion: 1.0.0
+    created: "2024-11-14T15:31:48.699371894Z"
+    description: CrowdStrike Self-hosted Registry Assessment
+    digest: f861e4026b047812b6947b87c8d7dc7fd1eeda58cfc14c829c533948f6fad86e
+    name: falcon-self-hosted-registry-assessment
+    type: application
+    urls:
+    - https://github.com/CrowdStrike/falcon-helm/releases/download/falcon-self-hosted-registry-assessment-1.0.1/falcon-self-hosted-registry-assessment-1.0.1.tgz
+    version: 1.0.1
+  - apiVersion: v2
+    appVersion: 1.0.0
     created: "2024-11-12T20:11:52.138912542Z"
     description: CrowdStrike Self-hosted Registry Assessment
     digest: 9e39f6c1d6565fb0125cc857e04f1ab4fd0eddc918761d961d0544bd6a6dc27e
@@ -2869,4 +2879,4 @@ entries:
     urls:
     - https://github.com/CrowdStrike/falcon-helm/releases/download/registry-scanner-0.1.0/registry-scanner-0.1.0.tgz
     version: 0.1.0
-generated: "2024-11-12T20:11:52.139164965Z"
+generated: "2024-11-14T15:31:48.699591627Z"

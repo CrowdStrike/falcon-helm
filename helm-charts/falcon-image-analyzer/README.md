@@ -340,6 +340,17 @@ for e.g.  a docker-registry secret can be created as below
 ```
 use the above secret as `"my-app-ns:regcred,my-app-ns:regcred2"`
 
+### PROXY Usage
+If a customer us using proxy settings . Please make sure to add the registry domains ```myreg.some.com``` in the ```NO_PROXY```.
+This is so that the IAR can connect to the registries without proxy and authenticate if needed using secrets provided or download the public free images.
+
+***Note that some registries domains also have other urls based on the auth challange that is sent by the registry service. Please make sure to add those as well to ```NO_PROXY```
+for e.g. for gitlab registries there exists the 
+- registry domain ```my-reg.gitlab.com``` 
+- and the other ```www.gitlab.com```
+
+- The above is very registry provider specific. One needs to ensure nothing ie being blocked by Proxy 
+
 ### Pod Eviction
 If for some reason pod evivictions are observed in the Cluster due to exceeding ephemeral storage
 please set the `priorityClassName`  to `system-node-critical` or `system-cluster-critical` in `config-values.yaml` and update.

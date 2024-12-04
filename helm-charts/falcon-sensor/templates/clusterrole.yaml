@@ -1,4 +1,4 @@
-{{- if .Values.container.enabled }}
+{{- if or .Values.container.enabled .Values.node.enabled }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -8,7 +8,11 @@ metadata:
     app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
+    {{ if .Values.container.enabled }}
     app.kubernetes.io/component: "container_sensor"
+    {{ else if .Values.node.enabled }}
+    app.kubernetes.io/component: "kernel_sensor"
+    {{ end }}
     crowdstrike.com/provider: crowdstrike
     helm.sh/chart: {{ include "falcon-sensor.chart" . }}
 rules:
@@ -16,6 +20,22 @@ rules:
   - ""
   resources:
   - secrets
+  {{- if and .Values.node.enabled }}
+  - pods
+  - services
+  - nodes
+  - daemonsets
+  - replicasets
+  - deployments
+  - jobs
+  - ingresses
+  - cronjobs
+  - persistentvolumes
+  {{- end }}
   verbs:
   - get
+  {{- if .Values.node.enabled }}
+  - watch
+  - list
+  {{- end }}
 {{- end }}

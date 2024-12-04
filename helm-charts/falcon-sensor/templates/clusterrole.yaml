@@ -1,4 +1,4 @@
-{{- if .Values.container.enabled }}
+{{- if or .Values.container.enabled .Values.node.enabled }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -16,6 +16,22 @@ rules:
   - ""
   resources:
   - secrets
+  {{- if and .Values.node.enabled (not .Values.node.disableCDP) }}
+  - pods
+  - services
+  - nodes
+  - daemonsets
+  - replicasets
+  - deployments
+  - jobs
+  - ingresses
+  - cronjobs
+  - persistentvolumes
+  {{- end }}
   verbs:
   - get
+  {{- if and .Values.node.enabled (not .Values.node.disableCDP) }}
+  - watch
+  - list
+  {{- end }}
 {{- end }}

@@ -42,8 +42,8 @@ spec:
               value: "/storage"
             - name: SQLITE_DBPATH
               value: "/db"
-            - name: "ENVIRONMENT"
-              value: {{ .Values.crowdstrikeConfig.environment }}
+            - name: "REGION"
+              value: {{ .Values.crowdstrikeConfig.region }}
             - name: "CLIENT_ID"
               value: {{ .Values.crowdstrikeConfig.clientID }}
             - name: "CLIENT_SECRET"
@@ -103,8 +103,8 @@ spec:
               value: "/storage"
             - name: SQLITE_DBPATH
               value: "/db"
-            - name: "ENVIRONMENT"
-              value: {{ .Values.crowdstrikeConfig.environment }}
+            - name: "REGION"
+              value: {{ .Values.crowdstrikeConfig.region }}
             - name: "CLIENT_ID"
               value: {{ .Values.crowdstrikeConfig.clientID }}
             - name: "CLIENT_SECRET"
@@ -113,6 +113,8 @@ spec:
               value: "sqlite"
             - name: "LOG_LEVEL"
               value: {{ .Values.executor.logLevel | quote }}
+            - name: "CATALOG_PER_PAGE_RATE"
+              value: {{ .Values.executor.catalogPerPageRate | quote }}
           {{ if (or .Values.registryConfigs .Values.executor.additionalCMEnvFrom .Values.executor.additionalSecretEnvFrom) -}}
           envFrom:
             {{- if .Values.registryConfigs }}

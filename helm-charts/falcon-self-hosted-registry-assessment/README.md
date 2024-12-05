@@ -40,8 +40,10 @@ These costs may or may not be offset by the savings for data egress costs incurr
 ## Supported registries
 
 * Amazon Elastic Container Registry (AWS ECR)
+* Azure Container Registry
 * Docker Hub
 * Docker Registry V2
+* GitHub
 * GitLab
 * Google Artifact Registry (GAR)
 * Google Container Registry (GCR)
@@ -50,6 +52,7 @@ These costs may or may not be offset by the savings for data egress costs incurr
 * JFrog Artifactory
 * Mirantis Secure Registry (MSR)
 * Oracle Container Registry
+* Red Hat OpenShift
 * Red Hat Quay.io
 * Sonatype Nexus
 
@@ -437,9 +440,11 @@ When multiple registries are configured, jobs are scheduled round robin to balan
 Find your registry type(s) in the sections below for configuration instructions, including authentication requirements and any additional required fields. 
 
 * [Amazon Elastic Container Registry (AWS ECR)](#amazon-elastic-container-registry-aws-ecr)
+* [Azure Container Registry](#azure-container-registry)
 * [Docker Hub](#docker-hub)
 * [Docker Registry V2](#docker-registry-v2)
 * [GitLab](#gitlab)
+* [Github](#github)
 * [Google Artifact Registry](#google-artifact-registry-gar)
 * [Google Container Registry](#google-container-registry-gcr)
 * [Harbor](#harbor)
@@ -447,6 +452,7 @@ Find your registry type(s) in the sections below for configuration instructions,
 * [JFrog Artifactory](#jfrog-artifactory)
 * [Mirantis Secure Registry (MCR)](#mirantis-secure-registry-mcr)
 * [Oracle Container Registry](#oracle-container-registry)
+* [Red Hat Openshift](#red-hat-openshift)
 * [Red Hat Quay.io](#red-hat-quayio)
 * [Sonatype Nexus](#sonatype-nexus)
 
@@ -476,6 +482,22 @@ Notes:
    port: "443"
    host: ""
    cronSchedule: "0 0 * * *"
+```
+Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
+
+#### Azure Container Registry
+
+Copy this registry configuration to your `values_override.yaml` file and provide the required information.
+
+```yaml
+  - type: acr
+    credentials:
+      username: ""
+      password: ""
+    allowedRepositories: ""
+    port: "443"
+    host: ""
+    cronSchedule: "0 0 * * *"
 ```
 Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
 
@@ -510,7 +532,26 @@ Copy this registry configuration to your `values_override.yaml` file and provide
 ```
 Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
 
-#### Gitlab
+#### GitHub
+
+Copy this registry configuration to your `values_override.yaml` file and provide the required information. 
+
+* `domain_url` and `host` should both be the fully qualified domain name of your Githab installation. The values provided in the example below are for Github cloud. 
+
+```yaml
+  - type: github
+    credentials:
+      username: ""
+      domain_url: "https://api.github.com"
+      password: ""
+    allowedRepositories: ""
+    port: "443"
+    host: "https://ghcr.io"
+    cronSchedule: "0 0 * * *"
+```
+Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
+
+#### GitLab
 
 Copy this registry configuration to your `values_override.yaml` file and provide the required information.
 
@@ -705,6 +746,22 @@ Hover over the **OICD** column to copy the compartment ID that you want to regis
     host: "https://us-phoenix-1.ocir.io"
     cronSchedule: "0 0 * * *"
     credential_type: "oracle"
+```
+Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
+
+#### Red Hat OpenShift
+
+Copy this registry configuration to your `values_override.yaml` file and provide the required information.
+
+```yaml
+  - type: openshift
+    credentials:
+      username: ""
+      password: ""
+    allowedRepositories: ""
+    port: ""
+    host: ""
+    cronSchedule: "* * * * *"
 ```
 Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
 
@@ -1036,11 +1093,20 @@ To increase or decrease the number of Executor Pods, edit the `executor.replicaC
 | `executor.replicaCount`      |             | The number of Executor Pods. This value can be increased for greater concurrency if CPU is the bottleneck.                  | 1           |
 
 
+<!-- markdown-link-check-disable -->
 ### Allow traffic to CrowdStrike servers
 
-SHRA requires internet access to your assigned CrowdStrike upload servers. 
-If your network requires it, configure your allow lists with your assigned CrowdStrike cloud servers. 
-For more info, see [CrowdStrike domains and IP addresses to allow](https://falcon.crowdstrike.com/documentation/page/a2a7fc0e/crowdstrike-oauth2-based-apis#e590c681).
+SHRA requires internet access to your assigned CrowdStrike authenication API and upload servers. 
+If your network requires it, configure your allow lists with your assigned CrowdStrike cloud servers.  
+
+| Region | Authentication API | Upload Servers |   
+|:----:|:--:|:--:| 
+| US-1 | https://api.crowdstrike.com | https://container-upload.us-1.crowdstrike.com |
+| US-2 | https://api.us-2.crowdstrike.com | https://container-upload.us-2.crowdstrike.com |
+| EU-1 | https://api.eu-1.crowdstrike.com | https://container-upload.eu-1.crowdstrike.com |
+| US-GOV-1 | https://api.laggar.gcw.crowdstrike.com | https://container-upload.laggar.gcw.crowdstrike.com |
+| US-GOV-2 | https://api.us-gov-2.crowdstrike.mil | https://container-upload.us-gov-2.crowdstrike.mil |
+<!-- markdown-link-check-enable -->
 
 ### Optional. Configure CrowdStrike allow list
 
@@ -1278,6 +1344,7 @@ Before you install, follow the configuration steps above to prepare your account
    helm upgrade --install -f </path/to/values_override.yaml> \
          --create-namespace \
          --namespace falcon-self-hosted-registry-assessment \
+         --wait \
          falcon-shra \
          crowdstrike/falcon-self-hosted-registry-assessment
    ```
@@ -1303,7 +1370,7 @@ After making changes to your `values_override.yaml` file, use the `helm upgrade`
 
 To uninstall, run the following command:
 ```sh
-helm uninstall falcon-self-hosted-registry-assessment --namespace falcon-self-hosted-registry-assessment \
+helm uninstall falcon-shra --namespace falcon-self-hosted-registry-assessment \
       && kubectl delete namespace falcon-self-hosted-registry-assessment
 ```
 

@@ -48,6 +48,7 @@ executor:
         - ReadWriteOnce
 
   logLevel: 3  # log level to be set for the service (1:error, 2:warning, 3:info, 4:debug)
+  catalogPerPageRate: 100  # page size per catalog request
 
   labels: {}
 
@@ -169,7 +170,7 @@ jobController:
   additionalSecretEnvFrom: []
 
 crowdstrikeConfig:
-  environment: "autodiscovery"  # autodiscovery, us-1, us-2, eu-1, gov1, or gov2
+  region: "autodiscovery"  # autodiscovery, us-1, us-2, eu-1, gov1, or gov2
   clientID: ""
   clientSecret: ""
 
@@ -193,17 +194,7 @@ crowdstrikeConfig:
       retriesMax: 3
       jobRetentionMax: 604800  # Optional.  the max amount of time a job lives in the job database before being cleaned up. A value of 0 means the job will live forever.
 
-registryConfigs:
-  - type: dockerhub
-    credentials:
-      username: ""
-      password: ""
-      kubernetesSecretName: ""
-      kubernetesSecretNamespace: ""
-    allowedRepositories: ""
-    port: ""
-    host: ""
-    cronSchedule: "* * * * *"
+registryConfigs: []
 
 tls:
   enable: false

@@ -40,8 +40,10 @@ These costs may or may not be offset by the savings for data egress costs incurr
 ## Supported registries
 
 * Amazon Elastic Container Registry (AWS ECR)
+* Azure Container Registry
 * Docker Hub
 * Docker Registry V2
+* GitHub
 * GitLab
 * Google Artifact Registry (GAR)
 * Google Container Registry (GCR)
@@ -50,6 +52,7 @@ These costs may or may not be offset by the savings for data egress costs incurr
 * JFrog Artifactory
 * Mirantis Secure Registry (MSR)
 * Oracle Container Registry
+* Red Hat OpenShift
 * Red Hat Quay.io
 * Sonatype Nexus
 
@@ -216,7 +219,7 @@ Create your client ID and secret:
    * **Falcon Images Download**: Read
    * **Sensor Download**: Read  
 1. Click **Add**.
-1. From the **API client created** dialog, copy the **client ID**, **secret**, and **Base URL** to a password management or secret management service. 
+1. From the **API client created** dialog, copy the **client ID** and **secret** to a password management or secret management service. 
 
 > [!NOTE]  
 > The API client secret will not be presented again, so don't close the dialog until you have this value safely saved. 
@@ -225,19 +228,6 @@ Export these variables for use in later steps:
 ```sh
 export FALCON_CLIENT_ID=<your-falcon-api-client-id>
 export FALCON_CLIENT_SECRET=<your-falcon-api-client-secret>
-export FALCON_BASE_URL=<your-base-url>
-```
-
-Next, get your Customer ID (CID):
-1. In the Falcon console, go to [**Host setup and management** > **Deploy** > **Sensor downloads**](https://falcon.crowdstrike.com/host-management/sensor-downloads/all).
-1. Copy your Customer ID (CID) from the **How to Install** section.
-1. Your CID has the following format: `0123456789ABCDEFGHIJKLMNOPQRSTUV-WX`. 
-   The hyphen and the last two characters at the end are a checksum value. 
-   Remove the checksum by removing those two characters and the hyphen. 
-   The resulting format is your **CID without checksum**, which has the following format: `0123456789ABCDEFGHIJKLMNOPQRSTUV`.
-1. Save your **CID without checksum** as the variable `FALCON_CID`.
-```sh
- export FALCON_CID=<your-falcon-cid-without-checksum>
 ```
 
 In your `values_override.yaml` file, set `crowdstrikeConfig.clientID` and `crowdstrikeConfig.clientSecret` to the values you saved in `FALCON_CLIENT_ID` and `FALCON_CLIENT_SECRET`.
@@ -248,12 +238,6 @@ crowdstrikeConfig:
   clientID: "aabbccddee112233445566aabbccddee"
   clientSecret: "aabbccddee112233445566aabbccddee11223344"
 ```
-
-> [!NOTE]
-> Don't confuse these two identifiers:
-> - FALCON_CLIENT_ID is an OAuth2 credential with specific API scopes you granted. This is the one that goes in your `values_override.yaml` file.
-> - FALCON_CID is your customer identification number in the Falcon platform
-
 
 | Parameter                           |           | Description                                                                                           | Default   |
 |:------------------------------------|-----------|:------------------------------------------------------------------------------------------------------|:----------|
@@ -268,125 +252,83 @@ The two OCI images you need are:
 - `falcon-jobcontroller`: The job controller manages scheduling and coordination.
 - `falcon-registryassessmentexecutor`: The executor finds and inventories new images to scan. 
 
+There are a few ways to get the available image tags, including the [Falcon sensor pull script](https://github.com/CrowdStrike/falcon-scripts/tree/main/bash/containers/falcon-container-sensor-pull) and tools like [skopeo](https://github.com/containers/skopeo). 
+These instructions use the Falcon sensor pull script.
+
 **What you'll do**:
-- Login to the CrowdStrike container registry
+- Download the Falcon sensor pull script
 - List available images
 - Copy your selected SHRA container image versions to your private registry
 - Add your registry URL and authentication info to your `values_override.yaml` file.
 
 The following steps guide you through the image copy process.
 
-#### Login to the CrowdStrike registry
+#### Download the Falcon sensor pull script
 
-To view and download available SHRA images, login to the CrowdStrike registry using OAuth2 authentication.
+Get the latest version of our Falcon sensor pull script from our [GitHub repo](https://github.com/CrowdStrike/falcon-scripts/tree/main/bash/containers/falcon-container-sensor-pull).
 
-These steps use your OAuth2 credentials, which were saved as environment variables `FALCON_CLIENT_ID`, `FALCON_CLIENT_SECRET`, `FALCON_BASE_URL`, and `FALCON_CID` in earlier steps.
-If you're in a new terminal window or if running the commands above causes authentication errors, repeat the variable exports described in [Configure your CrowdStrike credentials](#configure-your-crowdstrike-credentials). 
-
-1. Run the following commands to perform an OAuth2 handshake:
-
-   ```sh
-   ENCODED_CREDENTIALS=$(echo -n "$FALCON_CLIENT_ID:$FALCON_CLIENT_SECRET" | base64)
-   TOKEN_URL="${FALCON_BASE_URL}/oauth2/token"
-   curl -X POST "$TOKEN_URL" \
-      -H "Authorization: Basic $ENCODED_CREDENTIALS" \
-      -H "Content-Type: application/x-www-form-urlencoded" \
-      -d "grant_type=client_credentials"
+1. Download the Falcon sensor pull script:
    ```
-
-1. Find and copy your `access_token` from the resulting JSON response:
-   ```json
-   {
-   "access_token": "your-access-token",
-   "expires_in": 1799,
-   "token_type": "bearer"
-   }
+   curl -sSL -o falcon-container-sensor-pull.sh "https://raw.githubusercontent.com/CrowdStrike/falcon-scripts/main/bash/containers/falcon-container-sensor-pull/falcon-container-sensor-pull.sh"
    ```
-
-1. Save the `access_token` value for use in other commands:
-   ```sh
-   export ACCESS_TOKEN=<your-access-token>
+1. Make the local script executable:
    ```
-
-1. Use your access token to get a docker login password:
-   ```sh
-   curl -X 'GET' "${FALCON_BASE_URL}/container-security/entities/image-registry-credentials/v1" \
-      -H "Authorization: Bearer $ACCESS_TOKEN" \
-      -H "Content-Type: application/json"
+   chmod u+x ./falcon-container-sensor-pull.sh
    ```
-
-1. Find the `resources.token` value from the resulting JSON response:
-   ```json
-   {
-   "meta": {
-   "query_time": 0.040701966,
-   "trace_id": "aaaa1111-bb22-cc33-dd44-1234abcd1234"
-   },
-   "resources": [
-   {
-      "token": "your-resources-token"
-   }
-   ],
-   "errors": []
-   }
-   ```
-
-1. Save the `resources.token` value for use in other commands:
-   ```sh
-   export FALCON_REGISTRY_PASSWORD=<your-resources-token>
-   ```
-
-1. Determine your CrowdStrike registry URL. 
-   
-   Commercial customers use:
-   ``` sh
-   export FALCON_IMAGE_REPO="registry.crowdstrike.com/falcon-selfhostedregistryassessment/release"
-   ```
-
-   US-GOV-1 customers use:
-   ``` sh
-   export FALCON_IMAGE_REPO="registry.laggar.gcw.crowdstrike.com/falcon-selfhostedregistryassessment/release"
-   ```
-
-   US-GOV-2 customers use:
-   ``` sh
-   export FALCON_IMAGE_REPO="registry.us-gov-2.crowdstrike.mil/falcon-selfhostedregistryassessment/release"
-   ```
-
-1. Log in to our registry:
-   ```sh
-   echo $FALCON_REGISTRY_PASSWORD | docker login -u fc-${FALCON_CID} ${FALCON_IMAGE_REPO} --password-stdin
-   ```
-
-   Once complete, a **Login Succeeded** message is printed to the terminal window.
-
-> [!TIP]
-> If the steps above don't result in a successful login, ensure you have the correct `FALCON_BASE_URL` set and that your `FALCON_CID` is set properly to your **Client CID without checksum**. For more info, see [Configure your CrowdStrike Credentials](#configure-your-crowdstrike-credentials).
 
 #### List available images
 
-To see the available SHRA images, use a tool like [skopeo](https://github.com/containers/skopeo) to request a list of available tags.
+These steps use the environment variables `FALCON_CLIENT_ID` and `FALCON_CLIENT_SECRET` set in earlier steps. 
+If you're in a new terminal window or if running the commands below causes authentication errors, repeat the variable exports described in [Configure your CrowdStrike credentials](#configure-your-crowdstrike-credentials).
 
-```sh
-skopeo list-tags --creds fc-$FALCON_CID:$FALCON_REGISTRY_PASSWORD docker://${FALCON_IMAGE_REPO}/falcon-jobcontroller
-skopeo list-tags --creds fc-$FALCON_CID:$FALCON_REGISTRY_PASSWORD docker://${FALCON_IMAGE_REPO}/falcon-registryassessmentexecutor
-```
+1. Use the pull script to fetch the image tags for the SHRA job controller image to see available tag versions:
+   ```
+   ./falcon-container-sensor-pull.sh \
+     --client-id ${FALCON_CLIENT_ID} \
+     --client-secret ${FALCON_CLIENT_SECRET} \
+     --list-tags \
+     --type falcon-jobcontroller
+   ```
+   You can expect output similar to this:
+   ```
+   {
+   "name": "falcon-jobcontroller",
+   "repository": "registry.crowdstrike.com/falcon-selfhostedregistryassessment/release/falcon-jobcontroller",
+   "tags": [
+      "1.0.0",
+      "1.0.1"
+   ]
+   }
+   ```
 
-You can expect output from these commands to be similar to this:
-```json
-{
-    "Repository": "registry.crowdstrike.com/falcon-selfhostedregistryassessment/release/falcon-jobcontroller",
-    "Tags": [
-        "1.0.0"
-    ]
-}
-{
-    "Repository": "registry.crowdstrike.com/falcon-selfhostedregistryassessment/release/falcon-registryassessmentexecutor",
-    "Tags": [
-        "1.0.0"
-    ]
-}
-```
+1. Repeat the process for the executor image:
+   ```
+   ./falcon-container-sensor-pull.sh \
+   --client-id ${FALCON_CLIENT_ID} \
+   --client-secret ${FALCON_CLIENT_SECRET} \
+   --list-tags \
+   --type falcon-registryassessmentexecutor
+   ```
+   You can expect output similar to this:
+   ```
+   {
+   "name": "falcon-registryassessmentexecutor",
+   "repository": "registry.crowdstrike.com/falcon-selfhostedregistryassessment/release/falcon-registryassessmentexecutor",
+   "tags": [
+      "1.0.0",
+      "1.0.1",
+      "1.0.2"
+   ]
+   }
+   ```
+
+1. Make a note of the latest image tag for both the executor and job-controller images. 
+   For example, in the sample output, the latest tags are `1.0.1` for falcon-jobcontroller and `1.0.2` for falcon-registryassessmentexecutor.
+
+> [!TIP]
+> For stronger matching, we recommend using digests instead of tags to identify images. 
+> Use a tool like [skopeo](https://github.com/containers/skopeo) to discover available SHRA image digests.
+> If needed, use the Falcon sensor pull script’s `--dump-credentials` option to retrieve your CrowdStrike registry credentials.
 
 #### Copy the SHRA images to your registry
 
@@ -394,7 +336,6 @@ Copy the SHRA's `falcon-jobcontroller` and `falcon-registryassessmentexecutor` i
 
 > [!NOTE]  
 > These steps assume that:
->   * you're authenticated to the CrowdStrike registry (see [Login to the CrowdStrike registry](#login-to-the-crowdstrike-registry))
 >   * you're authenticated to your target registry and have authorization to push new images
 >   * following our directions, you have set the required environment variables 
 
@@ -412,16 +353,24 @@ Copy the SHRA's `falcon-jobcontroller` and `falcon-registryassessmentexecutor` i
    export MY_SHRA_REPO=<your-registry-url>/falcon-selfhostedregistryassessment
    ```
 
-1. Use `skopeo copy` to copy the job controller image from our registry to yours. 
-   ```sh
-   skopeo copy docker://${FALCON_IMAGE_REPO}/falcon-jobcontroller:${FALCON_SHRA_JC_VERSION} \
-               docker://${MY_SHRA_REPO}/falcon-jobcontroller:${FALCON_SHRA_JC_VERSION}
+1. Use the Falcon sensor pull script to copy the SHRA job controller image to your registry:
+   ```
+   ./falcon-container-sensor-pull.sh \
+   --client-id ${FALCON_CLIENT_ID} \
+   --client-secret ${FALCON_CLIENT_SECRET} \
+   --copy ${MY_SHRA_REPO}/falcon-jobcontroller \
+   --type falcon-jobcontroller \
+   --version ${FALCON_SHRA_JC_VERSION}
    ```
 
-1. Repeat the process for the executor image.
-   ```sh
-   skopeo copy docker://${FALCON_IMAGE_REPO}/falcon-registryassessmentexecutor:${FALCON_SHRA_EX_VERSION} \
-               docker://${MY_SHRA_REPO}/falcon-registryassessmentexecutor:${FALCON_SHRA_EX_VERSION}                  
+1. Repeat the process for the executor image:
+   ```
+   ./falcon-container-sensor-pull.sh \
+   --client-id ${FALCON_CLIENT_ID} \
+   --client-secret ${FALCON_CLIENT_SECRET} \
+   --copy ${MY_SHRA_REPO}/falcon-registryassessmentexecutor \
+   --type falcon-registryassessmentexecutor \
+   --version ${FALCON_SHRA_EX_VERSION}
    ```
 
 1. Optional. Verify the copy was successful. Use `skopeo list`, `docker pull`, or `docker images` commands to verify that the SHRA images are accessible now from your registry.
@@ -491,9 +440,11 @@ When multiple registries are configured, jobs are scheduled round robin to balan
 Find your registry type(s) in the sections below for configuration instructions, including authentication requirements and any additional required fields. 
 
 * [Amazon Elastic Container Registry (AWS ECR)](#amazon-elastic-container-registry-aws-ecr)
+* [Azure Container Registry](#azure-container-registry)
 * [Docker Hub](#docker-hub)
 * [Docker Registry V2](#docker-registry-v2)
 * [GitLab](#gitlab)
+* [Github](#github)
 * [Google Artifact Registry](#google-artifact-registry-gar)
 * [Google Container Registry](#google-container-registry-gcr)
 * [Harbor](#harbor)
@@ -501,6 +452,7 @@ Find your registry type(s) in the sections below for configuration instructions,
 * [JFrog Artifactory](#jfrog-artifactory)
 * [Mirantis Secure Registry (MCR)](#mirantis-secure-registry-mcr)
 * [Oracle Container Registry](#oracle-container-registry)
+* [Red Hat Openshift](#red-hat-openshift)
 * [Red Hat Quay.io](#red-hat-quayio)
 * [Sonatype Nexus](#sonatype-nexus)
 
@@ -508,7 +460,8 @@ For each registry you want to add, create an entry in the `registryConfigs` arra
 Be sure to specify the correct `type` field for your registry so SHRA knows how to connect to it. 
 
 > [!TIP]
-> For registry types with username and password authentication, we recommend [Kubernetes secrets](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry) instead of plaintext passwords. 
+> For registry types with username and password authentication, we recommend Kubernetes secrets instead of plaintext passwords.
+> We support two [Kubernetes secret types](https://kubernetes.io/docs/concepts/configuration/secret/#secret-types): [`dockercfg`](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_create/kubectl_create_secret_docker-registry/) and [`dockerconfigjson`](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry).
 > 1. Create your named secrets in the `falcon-self-hosted-registry-assessment` namespace.
 > 1. In your `values_override.yaml` file, replace the `username` and `password` parameters with `kubernetesSecretName` and `kubernetesSecretNamespace` (both are required).
 
@@ -529,6 +482,22 @@ Notes:
    port: "443"
    host: ""
    cronSchedule: "0 0 * * *"
+```
+Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
+
+#### Azure Container Registry
+
+Copy this registry configuration to your `values_override.yaml` file and provide the required information.
+
+```yaml
+  - type: acr
+    credentials:
+      username: ""
+      password: ""
+    allowedRepositories: ""
+    port: "443"
+    host: ""
+    cronSchedule: "0 0 * * *"
 ```
 Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
 
@@ -563,7 +532,26 @@ Copy this registry configuration to your `values_override.yaml` file and provide
 ```
 Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
 
-#### Gitlab
+#### GitHub
+
+Copy this registry configuration to your `values_override.yaml` file and provide the required information. 
+
+* `domain_url` and `host` should both be the fully qualified domain name of your Githab installation. The values provided in the example below are for Github cloud. 
+
+```yaml
+  - type: github
+    credentials:
+      username: ""
+      domain_url: "https://api.github.com"
+      password: ""
+    allowedRepositories: ""
+    port: "443"
+    host: "https://ghcr.io"
+    cronSchedule: "0 0 * * *"
+```
+Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
+
+#### GitLab
 
 Copy this registry configuration to your `values_override.yaml` file and provide the required information.
 
@@ -761,6 +749,22 @@ Hover over the **OICD** column to copy the compartment ID that you want to regis
 ```
 Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
 
+#### Red Hat OpenShift
+
+Copy this registry configuration to your `values_override.yaml` file and provide the required information.
+
+```yaml
+  - type: openshift
+    credentials:
+      username: ""
+      password: ""
+    allowedRepositories: ""
+    port: ""
+    host: ""
+    cronSchedule: "* * * * *"
+```
+Continue to add additional registries, or proceed to [Validate your registry credentials locally](#validate-the-credentials-locally).
+
 #### Red Hat Quay.io
 Copy this registry configuration to your `values_override.yaml` file and provide the required information.
 
@@ -837,7 +841,7 @@ Now that you've gathered the necessary information for your private registries, 
 | `registryConfigs.*.type`                                  | required                                             | The registry type being assessed. See [Supported registries](#supported-registries) for options.                        | ""      |
 | `registryConfigs.*.credentials.username`                  | required without `kubernetesSecretName`              | The username used to authenticate to the registry.                                                                      | ""      |
 | `registryConfigs.*.credentials.password`                  | required without `kubernetesSecretName`              | The password used to authenticate to the registry.                                                                      | ""      |
-| `registryConfigs.*.credentials.kubernetesSecretName`      | required with `kubernetesSecretNamespace`            | The Kubernetes secret name that contains registry credentials.                                                          | ""      |
+| `registryConfigs.*.credentials.kubernetesSecretName`      | required with `kubernetesSecretNamespace`            | The Kubernetes secret name that contains registry credentials. The [secret type](https://kubernetes.io/docs/concepts/configuration/secret/#secret-types) must be a [kubernetes.io/dockercfg](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_create/kubectl_create_secret_docker-registry/) or a kubernetes.io/dockerconfigjson type secret.                                                         | ""      |
 | `registryConfigs.*.credentials.kubernetesSecretNamespace` | required with `kubernetesSecretName`                 | The namespace containing the Kubernetes secret with credentials.                                                        | ""      |
 | `registryConfigs.*.port`                                  |                                                      | The port for connecting to the registry. Unless you specify a value here, SHRA uses port 80 for http and 443 for https. | ""      |
 | `registryConfigs.*.host`                                  | required                                             | The host for connecting to the registry.                                                                                | ""      |
@@ -1089,11 +1093,20 @@ To increase or decrease the number of Executor Pods, edit the `executor.replicaC
 | `executor.replicaCount`      |             | The number of Executor Pods. This value can be increased for greater concurrency if CPU is the bottleneck.                  | 1           |
 
 
+<!-- markdown-link-check-disable -->
 ### Allow traffic to CrowdStrike servers
 
-SHRA requires internet access to your assigned CrowdStrike upload servers. 
-If your network requires it, configure your allow lists with your assigned CrowdStrike cloud servers. 
-For more info, see [CrowdStrike domains and IP addresses to allow](https://falcon.crowdstrike.com/documentation/page/a2a7fc0e/crowdstrike-oauth2-based-apis#e590c681).
+SHRA requires internet access to your assigned CrowdStrike authenication API and upload servers. 
+If your network requires it, configure your allow lists with your assigned CrowdStrike cloud servers.  
+
+| Region | Authentication API | Upload Servers |   
+|:----:|:--:|:--:| 
+| US-1 | https://api.crowdstrike.com | https://container-upload.us-1.crowdstrike.com |
+| US-2 | https://api.us-2.crowdstrike.com | https://container-upload.us-2.crowdstrike.com |
+| EU-1 | https://api.eu-1.crowdstrike.com | https://container-upload.eu-1.crowdstrike.com |
+| US-GOV-1 | https://api.laggar.gcw.crowdstrike.com | https://container-upload.laggar.gcw.crowdstrike.com |
+| US-GOV-2 | https://api.us-gov-2.crowdstrike.mil | https://container-upload.us-gov-2.crowdstrike.mil |
+<!-- markdown-link-check-enable -->
 
 ### Optional. Configure CrowdStrike allow list
 
@@ -1331,6 +1344,7 @@ Before you install, follow the configuration steps above to prepare your account
    helm upgrade --install -f </path/to/values_override.yaml> \
          --create-namespace \
          --namespace falcon-self-hosted-registry-assessment \
+         --wait \
          falcon-shra \
          crowdstrike/falcon-self-hosted-registry-assessment
    ```
@@ -1356,7 +1370,7 @@ After making changes to your `values_override.yaml` file, use the `helm upgrade`
 
 To uninstall, run the following command:
 ```sh
-helm uninstall falcon-self-hosted-registry-assessment --namespace falcon-self-hosted-registry-assessment \
+helm uninstall falcon-shra --namespace falcon-self-hosted-registry-assessment \
       && kubectl delete namespace falcon-self-hosted-registry-assessment
 ```
 
@@ -1444,7 +1458,7 @@ The Chart's `values.yaml` file includes more comments and descriptions in-line f
 | `registryConfigs.*.type`                                                       |                                          | The registry type being assessed. See [Supported registries](#supported-registries) for options.                                                                                                                                                                                                                                                                                                                                                                 | ""                           |
 | `registryConfigs.*.credentials.username`                                       | required without `kubernetesSecretName`  | The username used to authenticate to the registry.                                                                                                                                                                                                                                                                                                                                                                                                               | ""                           |
 | `registryConfigs.*.credentials.password`                                       | required without `kubernetesSecretName`  | The password used to authenticate to the registry.                                                                                                                                                                                                                                                                                                                                                                                                               | ""                           |
-| `registryConfigs.*.credentials.kubernetesSecretName`                           | required with `kubernetesSecretNamespace` | The Kubernetes secret name that contains registry credentials.                                                                                                                                                                                                                                                                                                                                                                                                  | ""                           |
+| `registryConfigs.*.credentials.kubernetesSecretName`                           | required with `kubernetesSecretNamespace` | The Kubernetes secret name that contains registry credentials. [secret type](https://kubernetes.io/docs/concepts/configuration/secret/#secret-types) must be a [kubernetes.io/dockercfg](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_create/kubectl_create_secret_docker-registry/) or a kubernetes.io/dockerconfigjson type secret.                                                                                                                                                                                                                                                                                                                                                                                                 | ""                           |
 | `registryConfigs.*.credentials.kubernetesSecretNamespace`                      | required with `kubernetesSecretName`     | The namespace containing the Kubernetes secret with credentials.                                                                                                                                                                                                                                                                                                                                                                                                 | ""                           |
 | `registryConfigs.*.port`                                                       |                                          | The port for connecting to the registry. Unless you specify a value here, SHRA uses port 80 for http and 443 for https.                                                                                                                                                                                                                                                                                                                                          | ""                           |
 | `registryConfigs.*.allowedRepositories`                                        |                                          | A comma separated list of repositories to assess. No regex or wildcard support. If this value is not set, all repositories within the registry are assessed.                                                                                                                                                                                                                                                                                                     | ""                           |

@@ -104,6 +104,9 @@ node:
     postDelete:
       enabled: true
 
+  # When enabled, Cloud data protection module is enabled
+  cdpRolesEnabled: true
+
 container:
   # When enabled, Helm chart deploys the Falcon Container Sensor to Pods through Webhooks
   enabled: false

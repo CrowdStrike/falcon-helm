@@ -2,7 +2,7 @@
 
 [![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/falcon-helm)](https://artifacthub.io/packages/search?repo=falcon-helm)
 
-[Falcon](https://www.crowdstrike.com/) is the [CrowdStrike](https://www.crowdstrike.com/)
+[Falcon](https://www.crowdstrike.com/) isa the [CrowdStrike](https://www.crowdstrike.com/)
 platform purpose-built to stop breaches via a unified set of cloud-delivered
 technologies that prevent all types of attacks — including malware and much
 more.

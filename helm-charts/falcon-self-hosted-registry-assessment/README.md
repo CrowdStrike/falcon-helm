@@ -470,8 +470,10 @@ Be sure to specify the correct `type` field for your registry so SHRA knows how 
 Copy this registry configuration to your `values_override.yaml` file and provide the required information.
 
 Notes:
-* To access ECR, the host needs to have direct access to the ECR registry.
-* Leave the default empty strings for `credentials.aws_iam_role` and `credentials.aws_external_id`. These are placeholders for possible future support of role assumption.
+* To access ECR, the host needs either direct access or the ability to assume an IAM role with appropriate permissions for the ECR registry.
+* If role assumption is needed to retrieve ECR tokens, supply both `credentials.aws_iam_role` and `credentials.aws_external_id`. 
+  Ensure the roles have a trust-relationship configured to allow the service account access to the resources in the SHRA namespace (the default namespace used in these setup instructions is `falcon-self-hosted-registry-assessment`).
+  For additional information on IAM Roles, refer to the [AWS documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-user.html).
 
 ```yaml
  - type: ecr
@@ -1092,7 +1094,6 @@ To increase or decrease the number of Executor Pods, edit the `executor.replicaC
 |:-----------------------------|------------:|:----------------------------------------------------------------------------------------------------------------------------|:------------|
 | `executor.replicaCount`      |             | The number of Executor Pods. This value can be increased for greater concurrency if CPU is the bottleneck.                  | 1           |
 
-
 <!-- markdown-link-check-disable -->
 ### Allow traffic to CrowdStrike servers
 
@@ -1321,7 +1322,6 @@ Now that your SHRA logs are ingested by LogScale, you can configure scheduled se
 1. Follow our NG-SEIM instuctions to [Schedule your search](https://falcon.crowdstrike.com/documentation/page/a4275adf/scheduled-searches-for-edr). You'll be notified when any issues arise that you need to correct regarding registry connections. 
 
 
-
 ## Install the SHRA Helm Chart
 
 Before you install, follow the configuration steps above to prepare your accounts and create a `values_override.yaml` file with your customizations.
@@ -1459,7 +1459,9 @@ The Chart's `values.yaml` file includes more comments and descriptions in-line f
 | `registryConfigs.*.credentials.username`                                       | required without `kubernetesSecretName`  | The username used to authenticate to the registry.                                                                                                                                                                                                                                                                                                                                                                                                               | ""                           |
 | `registryConfigs.*.credentials.password`                                       | required without `kubernetesSecretName`  | The password used to authenticate to the registry.                                                                                                                                                                                                                                                                                                                                                                                                               | ""                           |
 | `registryConfigs.*.credentials.kubernetesSecretName`                           | required with `kubernetesSecretNamespace` | The Kubernetes secret name that contains registry credentials. [secret type](https://kubernetes.io/docs/concepts/configuration/secret/#secret-types) must be a [kubernetes.io/dockercfg](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_create/kubectl_create_secret_docker-registry/) or a kubernetes.io/dockerconfigjson type secret.                                                                                                                                                                                                                                                                                                                                                                                                 | ""                           |
-| `registryConfigs.*.credentials.kubernetesSecretNamespace`                      | required with `kubernetesSecretName`     | The namespace containing the Kubernetes secret with credentials.                                                                                                                                                                                                                                                                                                                                                                                                 | ""                           |
+| `registryConfigs.*.credentials.kubernetesSecretNamespace`                      | required with `kubernetesSecretName`     | The namespace containing the Kubernetes secret with credentials.    | ""    |
+| `registryConfigs.[*].credentials.aws_iam_role`        |   | Specify the assumed role, if any, when connectin to ECR.                 |         |
+| `registryConfigs.[*].credentials.aws_external_id` |   | Specify the External ID for the connecting to the assumed role specified in `registryConfigs.[*].credentials.aws_iam_role` for the associated registry config. |         |
 | `registryConfigs.*.port`                                                       |                                          | The port for connecting to the registry. Unless you specify a value here, SHRA uses port 80 for http and 443 for https.                                                                                                                                                                                                                                                                                                                                          | ""                           |
 | `registryConfigs.*.allowedRepositories`                                        |                                          | A comma separated list of repositories to assess. No regex or wildcard support. If this value is not set, all repositories within the registry are assessed.                                                                                                                                                                                                                                                                                                     | ""                           |
 | `registryConfigs.*.host`                                                       |                                          | The host for connecting to the registry.                                                                                                                                                                                                                                                                                                                                                                                                                         | ""                           |

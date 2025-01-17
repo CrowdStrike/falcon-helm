@@ -8,11 +8,11 @@ metadata:
     app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-    {{ if .Values.container.enabled }}
+    {{- if .Values.container.enabled }}
     app.kubernetes.io/component: "container_sensor"
     {{ else if .Values.node.enabled }}
     app.kubernetes.io/component: "kernel_sensor"
-    {{ end }}
+    {{ end -}}
     crowdstrike.com/provider: crowdstrike
     helm.sh/chart: {{ include "falcon-sensor.chart" . }}
 rules:
@@ -20,7 +20,7 @@ rules:
   - ""
   resources:
   - secrets
-  {{- if and .Values.node.enabled }}
+  {{- if .Values.node.enabled }}
   - pods
   - services
   - nodes

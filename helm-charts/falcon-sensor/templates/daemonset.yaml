@@ -180,6 +180,7 @@ spec:
       priorityClassName: {{ include "falcon-sensor.priorityClassName" . }}
     {{- end }}
       hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       hostPID: true
       hostIPC: true
 {{- end }}

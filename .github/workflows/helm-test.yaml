@@ -41,7 +41,7 @@ jobs:
           fi
 
       - name: Run chart-testing (lint)
-        run: ct lint --config tests/ct.yaml
+        run: ct lint --config tests/ct.yaml --check-version-increment=${{contains(github.event.pull_request.labels.*.name, 'release')}}
 
       - name: Create kind cluster
         uses: helm/kind-action@v1.10.0

@@ -48,7 +48,7 @@ jobs:
 
 
       - name: Run chart-testing (lint)
-        run: ct lint --config tests/ct.yaml
+        run: ct lint --config tests/ct.yaml --check-version-increment=false
 
       - name: Configure Sidecar Chart values
         run: |

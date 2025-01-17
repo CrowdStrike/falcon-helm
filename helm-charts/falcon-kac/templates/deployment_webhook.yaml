@@ -143,7 +143,9 @@ spec:
         - containerPort: {{ .Values.webhookPort }}
           name: webhook-port
         resources:
+          {{- if .Values.falconClientResources }}
           {{- toYaml .Values.falconClientResources | nindent 10 }}
+          {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -207,7 +209,9 @@ spec:
         - containerPort: 4080
           name: healthcheck
         resources:
+          {{- if .Values.falconWatcherResources }}
           {{- toYaml .Values.falconWatcherResources | nindent 10 }}
+          {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -247,7 +251,9 @@ spec:
           timeoutSeconds: 1
         name: falcon-ac
         resources:
+          {{- if .Values.falconWatcherResources }}
           {{- toYaml .Values.falconAcResources | nindent 10 }}
+          {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

@@ -85,6 +85,11 @@ spec:
           {{- toYaml . | nindent 10 }}
         {{- end }}
     {{- end }}
+      # We add nobody fsGroup to allow default projected service account to be readable
+      # by extensibility processes (that run in a user namespace).
+      # It is set as supplemental group for any process in the container.
+      securityContext:
+        fsGroup: 65534
       initContainers:
       # This init container creates empty falconstore file so that when
       # it's mounted into the sensor-node-container, k8s would just use it

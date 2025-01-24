@@ -4,6 +4,26 @@
 nameOverride: ""
 fullnameOverride: ""
 
+podSecurityContext:
+  runAsUser: 1001
+  runAsGroup: 2001
+  fsGroup: 2001
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  runAsUser: 1001
+  runAsGroup: 2001
+  runAsNonRoot: true
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  seccompProfile:
+    type: RuntimeDefault
+  capabilities:
+    drop:
+    - ALL
+
 executor:
   replicaCount: 1
   image:
@@ -46,6 +66,28 @@ executor:
       storageClass: ""
       accessModes:
         - ReadWriteOnce
+
+  # Use to override the global podSecurityContext        
+  # podSecurityContext:
+  #   runAsUser: 1001
+  #   runAsGroup: 2001
+  #   fsGroup: 2001
+  #   runAsNonRoot: true
+  #   seccompProfile:
+  #     type: RuntimeDefault
+
+  # Use to override the global securityContext
+  # securityContext:
+  #   runAsUser: 1001
+  #   runAsGroup: 2001
+  #   runAsNonRoot: true
+  #   readOnlyRootFilesystem: true
+  #   allowPrivilegeEscalation: false
+  #   seccompProfile:
+  #     type: RuntimeDefault
+  #   capabilities:
+  #     drop:
+  #     - ALL
 
   logLevel: 3  # log level to be set for the service (1:error, 2:warning, 3:info, 4:debug)
   catalogPerPageRate: 100  # page size per catalog request
@@ -168,6 +210,28 @@ jobController:
   additionalCMEnvFrom: []
 
   additionalSecretEnvFrom: []
+
+  # Use to override the global podSecurityContext        
+  # podSecurityContext:
+  #   runAsUser: 1001
+  #   runAsGroup: 2001
+  #   fsGroup: 2001
+  #   runAsNonRoot: true
+  #   seccompProfile:
+  #     type: RuntimeDefault
+  
+  # Use to override the global securityContext
+  # securityContext:
+  #   runAsUser: 1001
+  #   runAsGroup: 2001
+  #   runAsNonRoot: true
+  #   readOnlyRootFilesystem: true
+  #   allowPrivilegeEscalation: false
+  #   seccompProfile:
+  #     type: RuntimeDefault
+  #   capabilities:
+  #     drop:
+  #     - ALL
 
 crowdstrikeConfig:
   region: "autodiscovery"  # autodiscovery, us-1, us-2, eu-1, gov1, or gov2

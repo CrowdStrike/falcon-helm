@@ -23,7 +23,11 @@ spec:
     spec:
       serviceAccountName: {{ include "ra-self-hosted-executor.fullname" . }}
       securityContext:
-        fsGroup: 2001
+{{ if .Values.executor.podSecurityContext -}}
+{{ .Values.executor.podSecurityContext | toYaml | indent 8 }}
+{{- else -}}
+{{ .Values.podSecurityContext | toYaml | indent 8 }}
+{{- end }}
      {{- if or (.Values.executor.image.pullSecret) (.Values.executor.image.registryConfigJSON) }}
       imagePullSecrets:
        {{ if .Values.executor.image.registryConfigJSON }}
@@ -89,11 +93,11 @@ spec:
 {{ .Values.executor.resources | toYaml | indent 12 }}
           {{- end }}
           securityContext:
-            runAsUser: 1001
-            runAsGroup: 2001
-            runAsNonRoot: true
-            readOnlyRootFilesystem: true
-            allowPrivilegeEscalation: false
+{{ if .Values.executor.securityContext }}
+{{ .Values.executor.securityContext | toYaml | indent 12 }}
+{{- else -}}
+{{ .Values.securityContext | toYaml | indent 12 }}
+{{- end }}
       containers:
         - name: executor
           image: {{ include "ra-self-hosted-executor.image" . }}
@@ -152,11 +156,11 @@ spec:
 {{ .Values.executor.resources | toYaml | indent 12 }}
           {{- end }}
           securityContext:
-            runAsUser: 1001
-            runAsGroup: 2001
-            runAsNonRoot: true
-            readOnlyRootFilesystem: true
-            allowPrivilegeEscalation: false
+{{ if .Values.executor.securityContext }}
+{{ .Values.executor.securityContext | toYaml | indent 19 }}
+{{- else -}}
+{{ .Values.securityContext | toYaml | indent 12 }}
+{{- end }}
       {{- if .Values.executor.nodeSelector }}
       nodeSelector:
         {{- .Values.executor.nodeSelector | toYaml | nindent 8 }}

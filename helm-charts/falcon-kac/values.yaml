@@ -114,28 +114,27 @@ affinity:
           values:
           - amd64
 
+# Default limits for all KAC Pods. Review resource consumption for
+# each Pod in your environment and update accordingly
 falconClientResources:
   limits:
-    cpu: 750m
     memory: 384Mi
   requests:
-    cpu: 500m
+    cpu: 250m
     memory: 384Mi
 
 falconWatcherResources:
   limits:
-    cpu: 750m
     memory: 384Mi
   requests:
-    cpu: 500m
+    cpu: 250m
     memory: 384Mi
 
 falconAcResources:
   limits:
-    cpu: 300m
     memory: 256Mi
   requests:
-    cpu: 300m
+    cpu: 100m
     memory: 256Mi
 
 # Update Webhook and roll out new Deployment on helm upgrade

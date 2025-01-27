@@ -235,6 +235,7 @@ jobController:
 
 crowdstrikeConfig:
   region: "autodiscovery"  # autodiscovery, us-1, us-2, eu-1, gov1, or gov2
+  # clientSecretRef: "" # use that instead `clientID` and `clientSecret`
   clientID: ""
   clientSecret: ""
 

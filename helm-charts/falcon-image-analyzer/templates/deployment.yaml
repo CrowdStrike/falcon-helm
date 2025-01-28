@@ -44,7 +44,7 @@ spec:
       {{- if .Values.gcp.enabled }}
       initContainers:
         - name: {{ .Chart.Name }}-init-container
-          image: "gcr.io/google.com/cloudsdktool/cloud-sdk:alpine"
+          image: "gcr.io/google.com/cloudsdktool/google-cloud-cli:alpine"
           imagePullPolicy: "Always"
           command:
             - '/bin/bash'

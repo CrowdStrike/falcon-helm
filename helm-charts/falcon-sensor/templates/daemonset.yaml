@@ -105,7 +105,9 @@ spec:
           - '-c'
           - >-
             echo "Running /opt/CrowdStrike/falcon-daemonset-init -i";
-            /opt/CrowdStrike/falcon-daemonset-init -i
+            /opt/CrowdStrike/falcon-daemonset-init -i;
+            echo "Running /opt/CrowdStrike/configure-cluster-id";
+            test -f "/opt/CrowdStrike/configure-cluster-id" && /opt/CrowdStrike/configure-cluster-id || echo "/opt/CrowdStrike/configure-cluster-id not found. Skipping."
         {{- if or .Values.node.gke.autopilot .Values.node.daemonset.resources }}
         resources:
           requests:

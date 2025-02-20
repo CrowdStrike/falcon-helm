@@ -309,6 +309,7 @@ spec:
         emptyDir:
           sizeLimit: 64Mi
 ---
+{{- if .Values.webhook.enable -}}
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
@@ -438,4 +439,4 @@ webhooks:
     scope: '*'
   sideEffects: None
   timeoutSeconds: 10
-
+{{- end }}

@@ -157,6 +157,7 @@ When a new container image is available, you can update your Falcon KAC by passi
    ```
 
 ## Uninstall Falcon KAC
+
 - Uninstall the admission controller from the falcon-kac namespace:
   ```
   helm uninstall falcon-kac -n falcon-kac
@@ -166,6 +167,7 @@ When a new container image is available, you can update your Falcon KAC by passi
   ```
   kubectl delete ns falcon-kac
   ```
+
 # Falcon Configuration Options
 
 The following tables lists the Falcon KAC  configurable parameters and their default values.
@@ -184,3 +186,4 @@ The following tables lists the Falcon KAC  configurable parameters and their def
 | `clusterVisibility.resourceSnapshots.enabled`  | Enable cluster snapshots                              | `true`                |
 | `clusterVisibility.resourceSnapshots.interval` | Interval between cluster snapshots                    | `22h`                 |
 | `clusterVisibility.resourceWatcher.enabled`    | Enable Cluster Visbility                              | `true`                |
+| `webhoo.enable          `                      | Enable ValidatingWebhookConfiguration                 | `true`                |

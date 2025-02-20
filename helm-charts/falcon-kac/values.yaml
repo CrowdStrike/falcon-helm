@@ -146,6 +146,10 @@ autoDeploymentUpdate: true
 nameOverride: ""
 fullnameOverride: ""
 webhook:
+  # If you don't need the validationWebhook cause you already have another application in place
+  # you can disable it completely
+  enable: true
+
   failurePolicy: Ignore
   # Comma sparated list of namespaces in which we need to disable validation e.g test1,test2
   disableNamespaces:

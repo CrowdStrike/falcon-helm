@@ -19,6 +19,7 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - namespaces
   - secrets
   {{- if .Values.node.enabled }}
   - pods

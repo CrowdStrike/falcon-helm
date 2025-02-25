@@ -59,6 +59,10 @@ falcon:
   tags:
   provisioning_token:
 
+
+admissionControl:
+  enabled: true
+
 # These variables can be used to customize the way KAC provides visibility into
 # resources on your Kubernetes cluster. The variables are initially set to the
 # default values which will be used if they are commented out.
@@ -122,6 +126,13 @@ falconClientResources:
   requests:
     cpu: 250m
     memory: 384Mi
+
+falconClientNoWebhookResources:
+  limits:
+    memory: 128Mi
+  requests:
+    cpu: 125m
+    memory: 128Mi
 
 falconWatcherResources:
   limits:

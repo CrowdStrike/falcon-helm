@@ -144,7 +144,11 @@ spec:
         - containerPort: {{ .Values.webhookPort }}
           name: webhook-port
         resources:
+          {{- if .Values.admissionControl.enabled }}
           {{- toYaml .Values.falconClientResources | nindent 10 }}
+          {{- else }}
+          {{- toYaml .Values.falconClientNoWebhookResources | nindent 10 }}
+          {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -309,6 +313,7 @@ spec:
         emptyDir:
           sizeLimit: 64Mi
 ---
+{{- if .Values.admissionControl.enabled }}
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
@@ -438,4 +443,4 @@ webhooks:
     scope: '*'
   sideEffects: None
   timeoutSeconds: 10
-
+{{- end }}

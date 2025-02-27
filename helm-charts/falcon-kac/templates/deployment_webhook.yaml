@@ -1,3 +1,4 @@
+{{ include "validateValues" . }}
 {{- $name := (printf "%s" (include "falcon-kac.name" .)) -}}
 {{- $fullName := (printf "%s.%s.svc" $name .Release.Namespace) -}}
 {{- $webhookName := (printf "webhook") -}}

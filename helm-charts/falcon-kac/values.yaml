@@ -59,7 +59,8 @@ falcon:
   tags:
   provisioning_token:
 
-
+# If set to false, KAC ceaces to act as an admission webhook.
+# It no longer inspects admission review requests, although the container continues to run.
 admissionControl:
   enabled: true
 

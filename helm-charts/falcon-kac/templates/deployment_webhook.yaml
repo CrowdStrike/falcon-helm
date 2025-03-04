@@ -126,6 +126,8 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
+        - name: __CS_ADMISSION_CONTROL_ENABLED
+          value: "{{ .Values.admissionControl.enabled }}"
         envFrom:
         - configMapRef:
             name: {{ include "falcon-kac.fullname" . }}-config

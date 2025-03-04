@@ -131,7 +131,7 @@ falconClientNoWebhookResources:
   limits:
     memory: 128Mi
   requests:
-    cpu: 125m
+    cpu: 100m
     memory: 128Mi
 
 falconWatcherResources:

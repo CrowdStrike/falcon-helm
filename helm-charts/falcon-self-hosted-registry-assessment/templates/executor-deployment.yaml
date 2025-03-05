@@ -44,10 +44,14 @@ spec:
               value: "/db"
             - name: "REGION"
               value: {{ .Values.crowdstrikeConfig.region }}
+            {{- if .Values.crowdstrikeConfig.clientID }}
             - name: "CLIENT_ID"
               value: {{ .Values.crowdstrikeConfig.clientID }}
+            {{- end }}
+            {{- if .Values.crowdstrikeConfig.clientSecret }}
             - name: "CLIENT_SECRET"
               value: {{ .Values.crowdstrikeConfig.clientSecret }}
+            {{- end }}
             - name: "STORAGE_ENGINE"
               value: "sqlite"
             - name: "AGENT_RUN_MODE"
@@ -105,10 +109,14 @@ spec:
               value: "/db"
             - name: "REGION"
               value: {{ .Values.crowdstrikeConfig.region }}
+            {{- if .Values.crowdstrikeConfig.clientID }}
             - name: "CLIENT_ID"
               value: {{ .Values.crowdstrikeConfig.clientID }}
+            {{- end }}
+            {{- if .Values.crowdstrikeConfig.clientSecret }}
             - name: "CLIENT_SECRET"
               value: {{ .Values.crowdstrikeConfig.clientSecret }}
+            {{- end }}
             - name: "STORAGE_ENGINE"
               value: "sqlite"
             - name: "LOG_LEVEL"

@@ -224,11 +224,15 @@ Create your client ID and secret:
 > [!NOTE]  
 > The API client secret will not be presented again, so don't close the dialog until you have this value safely saved. 
 
-Export these variables for use in later steps:
+Export these variables for use in later steps when configuring the logscale exporter:
 ```sh
 export FALCON_CLIENT_ID=<your-falcon-api-client-id>
 export FALCON_CLIENT_SECRET=<your-falcon-api-client-secret>
 ```
+
+There are two options for setting your CrowdStrike client id and secret for SHRA: explicitly in helm or via kubernetes secrets/configmaps.
+
+#### Option 1. Explicitly Set CrowdStrike credentials in values_override.yaml
 
 In your `values_override.yaml` file, set `crowdstrikeConfig.clientID` and `crowdstrikeConfig.clientSecret` to the values you saved in `FALCON_CLIENT_ID` and `FALCON_CLIENT_SECRET`.
 
@@ -243,6 +247,53 @@ crowdstrikeConfig:
 |:------------------------------------|-----------|:------------------------------------------------------------------------------------------------------|:----------|
 | `crowdstrikeConfig.clientID`        | required  | The client id used to authenticate the self-hosted registry assessment service with CrowdStrike.      | ""        |
 | `crowdstrikeConfig.clientSecret`    | required  | The client secret used to authenticate the self-hosted registry assessment service with CrowdStrike.  | ""        |
+
+
+#### Option 2. Set CrowdStrike credentials using existing Kubernetes secret or configmap
+
+You can use existing Kubernetes secrets or configmaps to provide your CrowdStrike credential environment variables to the SHRA pods. This is useful when you want to manage credential settings separately from the Helm chart deployment.
+
+You may already have a secret or configmap you want to use, otherwise create your Kubernetes secret or configmap in the falcon-self-hosted-registry-assessment namespace.
+It must contain both of the following keys:
+- CLIENT_ID 
+- CLIENT_SECRET
+  For example, create a Kubernetes a secret:
+
+   ```sh
+   kubectl create secret generic crowdstrike-credentials \
+     --namespace falcon-self-hosted-registry-assessment \
+     --from-literal=CLIENT_ID="aabbccddee112233445566aabbccddee" \
+     --from-literal=CLIENT_SECRET="aabbccddee112233445566aabbccddee11223344"
+   ```
+
+If using a Kubernetes secret, add the following reference to your values_override.yaml file in executor section. Update name to match the name of your secret.
+
+   ```yaml
+   executor:
+     additionalSecretEnvFrom:
+       - name: "crowdstrike-credentials"
+         optional: false
+   ```
+
+If using a Kubernetes configmap, add the following references to your values_override.yaml file in the executor section. Update name to match the name of your configmap.
+   ```yaml
+   executor:
+     additionalCMEnvFrom:
+       - name: "crowdstrike-credentials"
+         optional: false
+   ```
+
+The `name` field references the secret name that is already created (here matching the secret we created in step 0):
+
+The `optional` field determines whether the pods will start if the secret is missing:
+- `optional: false` (default) - Pods will fail to start if the secret doesn't exist
+- `optional: true` - Pods will start even if the secret is missing
+
+After completing the remaining steps to configure and install SHRA, return here to verify that the environment variables are properly configured in the pod's environment:
+
+```sh
+kubectl exec -n falcon-self-hosted-registry-assessment <pod-name> -- env | grep -i client
+```
 
 ### Copy the SHRA images to your registry
 
@@ -538,7 +589,7 @@ Continue to add additional registries, or proceed to [Validate your registry cre
 
 Copy this registry configuration to your `values_override.yaml` file and provide the required information. 
 
-* `domain_url` and `host` should both be the fully qualified domain name of your Githab installation. The values provided in the example below are for Github cloud. 
+* `domain_url` and `host` should both be the fully qualified domain name of your Github installation. The values provided in the example below are for Github cloud. 
 
 ```yaml
   - type: github
@@ -1027,6 +1078,10 @@ Add and adjust the following lines in your `values_override.yaml` file to config
 | `jobController.dbStorage.accessModes`        |         | Array of access modes for the job controller's database claim.                                                                                            | "- ReadWriteOnce"    |
 | `jobController.dbStorage.storageClass`       |required | Storage class to use when creating a persistent volume claim for the job controller database. Examples include "ebs-sc" in AKS and "standard" in GKE.     | ""                   |
 
+#### Storage Driver Considerations When Sharing a Persistent Volume Claim for Executor Database Storage
+
+The primary focus of the Executor Database is to act as a local cache so that SHRA is aware of what it has already scanned and to speed up future assessments. If you are running multiple executor pods, they could share a single database and the database will be shared across all pods making them aware of the work of each other. The `executor.dbStorage.accessModes` field is set to `ReadWriteOnce` by default as this mode is supported by all storage drivers, however it prohibits sharing of a single database volume across pods. If you will be using multiple executor pods and wish to share a executor database, you will need to use the `ReadWriteMany` setting. Be sure that your storageClass supports this mode.
+
 #### Change persistent storage retention
 
 To reduce the footprint of the `job controller` database, you can adjust data retention periods for each of the three main jobs it schedules for `executor`.
@@ -1082,7 +1137,11 @@ Configure your temporary storage location by editing the following lines to your
 | `executor.assessmentStorage.pvc.create`             |             | If `true`, creates the persistent volume claim for assessment storage. Default setting is to create a PVC unless you modify the config.                                                                                                                  | true              |
 | `executor.assessmentStorage.pvc.existingClaimName`  |             | An existing storage claim name you wish to use instead of the one created above. Required if `executor.assessmentStorage.pvc.create` is false.                                                                                                           | ""                |
 | `executor.assessmentStorage.pvc.storageClass`       |required     | Storage class to use when creating a persistent volume claim for the assessment storage. Examples include "ebs-sc" in AKS and "standard" in GKE.                                                                                                         | ""                |
-| `executor.assessmentStorage.pvc.accessModes`        |             | Array of access modes for this database claim.                                                                                                                                                                                                           | "- ReadWriteOnce" |
+| `executor.assessmentStorage.pvc.accessModes`        |             | Array of access modes for the assessment storage volume claim.                                                                                                                                                                                                           | "- ReadWriteOnce" |
+
+#### Storage Driver Considerations When Sharing a Persistent Volume Claim for Assessment Storage
+
+The `executor.assessmentStorage.pvc.accessModes` field is set to `ReadWriteOnce` by default as this mode is supported by all storage drivers. If you will be using multiple executor pods  to that will share a single volume for unpacking images, you will need to use the `ReadWriteMany` setting. Be sure that your storageClass supports this mode.
 
 ### Configure SHRA scaling to meet your scanning needs
 
@@ -1520,7 +1579,7 @@ The Chart's `values.yaml` file includes more comments and descriptions in-line f
 | `executor.assessmentStorage.pvc.create`                                        |                                           | If `true`, creates the persistent volume claim for assessment storage. Default setting is to create a PVC unless you modify the config.                                                                                                                                                                                                                                                                                                                   | true                                |
 | `executor.assessmentStorage.pvc.existingClaimName`                             |                                           | An existing storage claim name you wish to use instead of the one created above. Required if `executor.assessmentStorage.pvc.create` is `false`.                                                                                                                                                                                                                                                                                                          | ""                                  |
 | `executor.assessmentStorage.pvc.storageClass`                                  | required                                  | Storage class to use when creating a persistent volume claim for the assessment storage. Examples include "ebs-sc" in AKS and "standard" in GKE.                                                                                                                                                                                                                                                                                                          | ""                                  |
-| `executor.assessmentStorage.pvc.accessModes`                                   |                                           | Array of access modes for the assessment storage volume claim.                                                                                                                                                                                                                                                                                                                                                                                            | "- ReadWriteOnce"                   |
+| `executor.assessmentStorage.pvc.accessModes`                                   |                                           | Array of access modes for the assessment storage volume claim. Please see [Storage Driver Considerations](#storage-driver-considerations-when-sharing-a-persistent-volume-claim-for-assessment-storage) if you should set this to ReadWriteMany                                                                                                                                                                                                                                                                                                                                                                                            | "- ReadWriteOnce"                   |
 | `executor.logLevel`                                                            |                                           | Log level for the `executor` service (1:error, 2:warning, 3:info, 4:debug)                                                                                                                                                                                                                                                                                                                                                                                | 3                                   |
 | `executor.labels`                                                              |                                           | Additional labels to apply to the executor pods.                                                                                                                                                                                                                                                                                                                                                                                                          | {}                                  |
 | `executor.podAnnotations`                                                      |                                           | Additional pod annotations to apply to the executor pods.                                                                                                                                                                                                                                                                                                                                                                                                 | {}                                  |

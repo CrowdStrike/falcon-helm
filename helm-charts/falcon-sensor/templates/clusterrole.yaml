@@ -21,21 +21,45 @@ rules:
   resources:
   - namespaces
   - secrets
-  {{- if .Values.node.enabled }}
+  verbs:
+  - get
+{{- if .Values.node.enabled }}
+- apiGroups:
+  - ""
+  resources:
   - pods
   - services
   - nodes
+  - persistentvolumes
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - apps
+  resources:
   - daemonsets
   - replicasets
   - deployments
-  - jobs
-  - ingresses
-  - cronjobs
-  - persistentvolumes
-  {{- end }}
   verbs:
   - get
-  {{- if .Values.node.enabled }}
+  - watch
+  - list
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  - cronjobs
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - get
   - watch
   - list
   {{- end }}

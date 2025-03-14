@@ -19,7 +19,6 @@ The Falcon Helm chart has been tested to deploy on the following Kubernetes dist
 # Dependencies
 
 1. Requires a x86_64 or ARM64 Kubernetes cluster
-1. Deploying CrowdStrike sensors to multi-architecture Kubernetes clusters is not currently supported.
 1. Must be a CrowdStrike customer with access to the Falcon Linux Sensor (container image) and Falcon Container from the CrowdStrike Container Registry.
 1. Kubernetes nodes must be Linux distributions supported by CrowdStrike.
 1. Before deploying the Helm chart, you should have a Falcon Linux Sensor and/or Falcon Container sensor in your own container registry or use CrowdStrike's registry before installing the Helm Chart. See the Deployment Considerations for more.

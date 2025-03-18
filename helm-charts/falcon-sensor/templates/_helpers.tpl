@@ -124,3 +124,21 @@ resources:
 {{- end -}}
 {{- end -}}
 {{- end -}}
+
+
+{{/*
+Create init script for daemonset
+*/}}
+{{- define "falcon-sensor.initArgs" -}}
+args:
+  - '-c'
+  - >-
+      echo "Running /opt/CrowdStrike/falcon-daemonset-init -i";
+{{- if .Values.node.gke.autopilot }}
+      /opt/CrowdStrike/falcon-daemonset-init -i
+{{- else -}}
+      /opt/CrowdStrike/falcon-daemonset-init -i;
+      echo "Running /opt/CrowdStrike/configure-cluster-id";
+      test -f "/opt/CrowdStrike/configure-cluster-id" && /opt/CrowdStrike/configure-cluster-id || echo "/opt/CrowdStrike/configure-cluster-id not found. Skipping."
+{{- end -}}
+{{- end -}}

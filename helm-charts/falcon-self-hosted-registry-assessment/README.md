@@ -112,7 +112,7 @@ The Falcon Self-hosted Registry Scanner Helm Chart has been tested to deploy on 
 * A client API key, as described in the configuration steps.
 * A x86_64 (AMD64) Kubernetes cluster.
 * [Helm](https://helm.sh/) 3.x is installed and supported by the Kubernetes provider.
-* A 1+ GiB persistent volume for a job controller sqlite database. 
+* A 1+ GiB persistent volume for a job controller SQLite database. 
 * A 1+ GiB persistent volume used by the executor for a registry assessment cache.
 * A working volume to store and expand images for assessment.
 * Networking sufficient to communicate with CrowdStrike cloud services and your image registries.
@@ -230,6 +230,12 @@ export FALCON_CLIENT_ID=<your-falcon-api-client-id>
 export FALCON_CLIENT_SECRET=<your-falcon-api-client-secret>
 ```
 
+There are two options for setting your CrowdStrike client ID and secret for SHRA:
+* explicitly in helm
+* via Kubernetes secrets or configmaps
+
+#### Option 1. Configure your CrowdStrike credentials in values_override.yaml
+
 In your `values_override.yaml` file, set `crowdstrikeConfig.clientID` and `crowdstrikeConfig.clientSecret` to the values you saved in `FALCON_CLIENT_ID` and `FALCON_CLIENT_SECRET`.
 
 For example, 
@@ -241,8 +247,58 @@ crowdstrikeConfig:
 
 | Parameter                           |           | Description                                                                                           | Default   |
 |:------------------------------------|-----------|:------------------------------------------------------------------------------------------------------|:----------|
-| `crowdstrikeConfig.clientID`        | required  | The client id used to authenticate the self-hosted registry assessment service with CrowdStrike.      | ""        |
+| `crowdstrikeConfig.clientID`        | required  | The client ID used to authenticate the self-hosted registry assessment service with CrowdStrike.      | ""        |
 | `crowdstrikeConfig.clientSecret`    | required  | The client secret used to authenticate the self-hosted registry assessment service with CrowdStrike.  | ""        |
+
+
+#### Option 2. Configure your CrowdStrike credentials using Kubernetes secrets or configmaps
+
+You can use existing Kubernetes secrets or configmaps to provide your CrowdStrike credential environment variables to the SHRA pods. This is useful when you want to manage credential settings separately from the Helm chart deployment.
+
+Your Kubernetes secret must be in the `falcon-self-hosted-registry-assessment` and must have the following 2 keys:
+- CLIENT_ID 
+- CLIENT_SECRET
+
+You may already have a secret or configmap you want to use. If not, create one.
+
+For example, to create a Kubernetes secret:
+
+```sh
+kubectl create secret generic crowdstrike-credentials \
+   --namespace falcon-self-hosted-registry-assessment \
+   --from-literal=CLIENT_ID="aabbccddee112233445566aabbccddee" \
+   --from-literal=CLIENT_SECRET="aabbccddee112233445566aabbccddee11223344"
+```
+
+To use a Kubernetes secret for your credentials, add the following reference to the `executor` section of your `values_override.yaml` file. Update `name` to match the name of your secret.
+
+   ```yaml
+   executor:
+     additionalSecretEnvFrom:
+       - name: "crowdstrike-credentials"
+         optional: false
+   ```
+
+To use a Kubernetes configmap for your credentials, add the following references to the `executor` section of your `values_override.yaml` file. Update `name` to match the name of your configmap.
+
+   ```yaml
+   executor:
+     additionalCMEnvFrom:
+       - name: "crowdstrike-credentials"
+         optional: false
+   ```
+
+In both cases, ensure the value in the `name` field matches your secret name or configmap name. 
+
+Use the `optional` field to specify whether the pods should start if the secret is missing:
+- **`optional: false`** (default) - Pods will fail to start if the secret doesn't exist
+- **`optional: true`** - Pods will start even if the secret is missing
+
+After completing the remaining steps to configure and install SHRA, return here to verify that the environment variables are properly configured in the pod's environment:
+
+```sh
+kubectl exec -n falcon-self-hosted-registry-assessment <pod-name> -- env | grep -i client
+```
 
 ### Copy the SHRA images to your registry
 
@@ -538,7 +594,8 @@ Continue to add additional registries, or proceed to [Validate your registry cre
 
 Copy this registry configuration to your `values_override.yaml` file and provide the required information. 
 
-* `domain_url` and `host` should both be the fully qualified domain name of your Githab installation. The values provided in the example below are for Github cloud. 
+Notes:
+* Set `domain_url` and `host` to the fully qualified domain name of your GitHub installation. The values provided in the example below are for GitHub cloud. 
 
 ```yaml
   - type: github
@@ -1021,11 +1078,25 @@ Add and adjust the following lines in your `values_override.yaml` file to config
 | `executor.dbStorage.size`                    |         | Size of the storage claim to create for the executor's database.                                                                                          | "1Gi"                |
 | `executor.dbStorage.accessModes`             |         | Array of access modes for the executor's database claim.                                                                                                  | "- ReadWriteOnce"    |
 | `executor.dbStorage.storageClass`            |required | Storage class to use when creating a persistent volume claim for the `executor` db cache. Examples include "ebs-sc" in AKS and "standard" in GKE.         | ""                   |
-| `jobController.dbStorage.create`             |required | `true` to create a persistent volume (PVC) storage for the job controller sqlite database file.                                                           | true                 |
+| `jobController.dbStorage.create`             |required | `true` to create a persistent volume (PVC) storage for the job controller SQLite database file.                                                           | true                 |
 | `jobController.dbStorage.existingClaimName`  |         | Name of existing storage to use instead of creating one. Required if `jobController.dbStorage.create` is `false`.                                         | ""                   |
 | `jobController.dbStorage.size`               |         | Size of the storage claim to create for the job controller's database.                                                                                    | "1Gi"                |
 | `jobController.dbStorage.accessModes`        |         | Array of access modes for the job controller's database claim.                                                                                            | "- ReadWriteOnce"    |
 | `jobController.dbStorage.storageClass`       |required | Storage class to use when creating a persistent volume claim for the job controller database. Examples include "ebs-sc" in AKS and "standard" in GKE.     | ""                   |
+
+#### Storage driver considerations when sharing a PVC for the Executor Database
+
+The primary focus of the Executor Database is to act as a local cache.
+This ensures that SHRA is aware of what it has already scanned and speeds up future assessments. 
+If you are running multiple executor pods, and your storageClass supports it, the executor pods can share a single database. 
+With a single database, all pods are aware of the work performed by the other pods.  
+
+By default, the `executor.dbStorage.accessModes` field is set to `ReadWriteOnce`, as this mode is supported by all storage drivers. However, this setting prohibits sharing of a single database volume across pods. 
+
+To share an executor database across your executor pods:
+
+1. Confirm that your storageClass supports the `ReadWriteMany` mode.
+2. Set  `executor.dbStorage.accessModes` to `ReadWriteMany`. 
 
 #### Change persistent storage retention
 
@@ -1082,7 +1153,19 @@ Configure your temporary storage location by editing the following lines to your
 | `executor.assessmentStorage.pvc.create`             |             | If `true`, creates the persistent volume claim for assessment storage. Default setting is to create a PVC unless you modify the config.                                                                                                                  | true              |
 | `executor.assessmentStorage.pvc.existingClaimName`  |             | An existing storage claim name you wish to use instead of the one created above. Required if `executor.assessmentStorage.pvc.create` is false.                                                                                                           | ""                |
 | `executor.assessmentStorage.pvc.storageClass`       |required     | Storage class to use when creating a persistent volume claim for the assessment storage. Examples include "ebs-sc" in AKS and "standard" in GKE.                                                                                                         | ""                |
-| `executor.assessmentStorage.pvc.accessModes`        |             | Array of access modes for this database claim.                                                                                                                                                                                                           | "- ReadWriteOnce" |
+| `executor.assessmentStorage.pvc.accessModes`        |             | Array of access modes for the assessment storage volume claim.                                                                                                                                                                                                           | "- ReadWriteOnce" |
+
+#### Storage driver considerations when sharing a PVC for assessment storage
+
+If you are running multiple executor pods, and your storageClass supports it, the executor pods can share a single volume for unpacking images. 
+
+By default, the `executor.assessmentStorage.pvc.accessModes` field is set to `ReadWriteOnce`, as this mode is supported by all storage drivers. However, this setting prohibits sharing of a single database volume across pods. 
+
+To share a single volume for image unpacking across your executor pods:
+
+1. Confirm that your storageClass supports the `ReadWriteMany` mode.
+2. Set  `executor.assessmentStorage.pvc.accessModes` to `ReadWriteMany`. 
+
 
 ### Configure SHRA scaling to meet your scanning needs
 
@@ -1181,6 +1264,10 @@ If you have existing certificate files you wish to use for these Pods, provide t
 
 If needed, you can route HTTP traffic through a proxy for your registry connections and/or CrowdStrike connections.
 
+There are 2 options for configuring HTTP proxy:
+* with static proxy values
+* with Kubernetes secretes or configmaps
+
 #### Option 1. Set static proxy values
 
 There are three environment variables you can set for the executor by configuring `proxyConfig` in your `values_override.yaml` file:
@@ -1191,26 +1278,28 @@ There are three environment variables you can set for the executor by configurin
 | `proxyConfig.HTTPS_PROXY`                 |   | Proxy URL for HTTPS requests unless overridden by NO_PROXY.                                                   | ""          |
 | `proxyConfig.NO_PROXY`                    |   | Hosts to exclude from proxying. Provide as a string of comma-separated values.                                | ""          |
 
-#### Option 2. Set proxy values using existing Kubernetes secret or configmap
+#### Option 2. Set proxy values with Kubernetes secrets or configmaps
 
-You can use existing Kubernetes secrets or configmaps to provide proxy environment variables to the SHRA pods. This is useful when you want to manage proxy settings separately from the Helm chart deployment.
+You can use existing Kubernetes secrets or configmaps to provide proxy environment variables. This is useful when you want to manage proxy settings separately from the Helm chart deployment.
 
-You may already have a secret or configmap you want to use, otherwise create your Kubernetes secret or configmap in the falcon-self-hosted-registry-assessment namespace.
-It must contain one or more of the following keys:
-- HTTP_PROXY (Proxy URL for HTTP requests unless overridden by NO_PROXY.)
+Your Kubernetes secret must be in the `falcon-self-hosted-registry-assessment` and must have the 1 or more of the following 3 keys:
+- HTTP_PROXY (Proxy URL for HTTP requests unless overridden by NO_PROXY.) 
 - HTTPS_PROXY (Proxy URL for HTTPS requests unless overridden by NO_PROXY.)
 - NO_PROXY (Hosts to exclude from proxying. Provide as a string of comma-separated values.)
-  For example, create a Kubernetes a secret:
 
-   ```sh
-   kubectl create secret generic proxy-config \
-     --namespace falcon-self-hosted-registry-assessment \
-     --from-literal=HTTP_PROXY="http://proxy.example.com:8080" \
-     --from-literal=HTTPS_PROXY="http://proxy.example.com:8080" \
-     --from-literal=NO_PROXY="localhost,127.0.0.1,.svc.cluster.local"
-   ```
+You may already have a secret or configmap you want to use. If not, create one.
 
-If using a Kubernetes secret, add the following references to your values_override.yaml file in both the executor and job controller sections. Update name to match the name of your secret.
+For example, to create a Kubernetes secret:  
+
+```sh
+kubectl create secret generic proxy-config \
+   --namespace falcon-self-hosted-registry-assessment \
+   --from-literal=HTTP_PROXY="http://proxy.example.com:8080" \
+   --from-literal=HTTPS_PROXY="http://proxy.example.com:8080" \
+   --from-literal=NO_PROXY="localhost,127.0.0.1,.svc.cluster.local"
+```
+
+To use a Kubernetes secret, add the following references to the `executor` and `jobController` sections of your `values_override.yaml file`. Update `name` to match the name of your secret.
 
    ```yaml
    executor:
@@ -1224,7 +1313,7 @@ If using a Kubernetes secret, add the following references to your values_overri
          optional: false
    ```
 
-If using a Kubernetes configmap, add the following references to your values_override.yaml file in both the executor and job controller sections. Update name to match the name of your configmap.
+To use a Kubernetes configmap, add the following references to the `executor` and `jobController` sections of your `values_override.yaml` file . Update name to match the name of your configmap.
    ```yaml
    executor:
      additionalCMEnvFrom:
@@ -1237,11 +1326,11 @@ If using a Kubernetes configmap, add the following references to your values_ove
          optional: false
    ```
 
-The `name` field references the secret name that is already created (here matching the secret we created in step 0):
+Use the `optional` field to specify whether the pods should start if the secret is missing:
 
 The `optional` field determines whether the pods will start if the secret is missing:
-- `optional: false` (default) - Pods will fail to start if the secret doesn't exist
-- `optional: true` - Pods will start even if the secret is missing
+- **`optional: false`** (default) - Pods will fail to start if the secret doesn't exist
+- **`optional: true`** - Pods will start even if the secret is missing
 
 After completing the remaining steps to configure and install SHRA, return here to verify that the environment variables are properly configured in the pod's environment:
 
@@ -1441,24 +1530,30 @@ helm uninstall falcon-shra --namespace falcon-self-hosted-registry-assessment \
 ## FAQ
 
 ### Common scan errors
+To configure logging, see [Logs and Logscale Queries](#logs-and-logscale-queries).
 
 #### Context deadline exceeded
-The context deadline exceeded error may appear in your SHRA log files. To configure logging, see [Logs and Logscale Queries](#logs-and-logscale-queries).
-This error occurs when the job wasn't able to complete in the configured time limit. You can increase various timeout values through the Helm Chart to resolve this problem.
-Most often, we find the solution is to increase the maximum time for tag assessment. Try adding `crowdstrikeConfig.jobTypeConfigs.tagAssessment.runtimeMax` to your values_override.yaml file. 
+The context deadline exceeded error may appear in your SHRA log files.
+This error occurs when the job wasn't able to complete in the configured time limit. 
+
+You can increase various timeout values through the Helm Chart to resolve this problem.
+Most often, we find the solution is to increase the maximum time for tag assessment. Try adding `crowdstrikeConfig.jobTypeConfigs.tagAssessment.runtimeMax` to your `values_override.yaml` file. 
 To see a list of all available configuration options and defaults, see [Falcon Chart configuration options](#falcon-chart-configuration-options).
-After you make changes to your values_override.yaml file, apply them with helm upgrade`. For more information, see [Update SHRA](#update-shra).
+
+After you make changes to your `values_override.yaml` file, apply them with `helm upgrade`. For more information, see [Update SHRA](#update-shra).
 
 #### Unable to pull and save image or 400/500 errors
-In most cases this is due to a misconfiguration in the credentials to your registry. This could be as simple as having the wrong url or port. It could be something more complex such as not having proper
-permissions for that specific user to connect or pull from the registry. Refer to [Configure your CrowdStrike credentials](#configure-your-crowdstrike-credentials-).
-If you make any changes you will need to run a helm upgrade to apply those changes. Refer to [Update SHRA](#update-shra)
+In most cases, this is due to a misconfiguration in the credentials to your registry. This could be as simple as having the wrong url or port. It could be something more complex such as not having proper
+permissions for that specific user to connect or pull from the registry. 
+
+Refer to [Configure your CrowdStrike credentials](#configure-your-crowdstrike-credentials-).
+If you make any changes you will need to run a `helm upgrade` to apply those changes. Refer to [Update SHRA](#update-shra)
 
 #### Unable to get image inventory
-SHRA pulls your images from your registries to the local cluster, then uncompresses them. If there's insufficient disk space to both hold the image and the uncompressed version of that image, an error occurs. 
+SHRA pulls your images from your registries to the local cluster, then uncompresses them. If there's insufficient disk space to hold both the image and the uncompressed version of that image, an error occurs. 
 
 To overcome this error we need to give the executor more space. This can be done by modifying `executor.assessmentStorage.size`. Refer to [Configure temporary storage](#configure-temporary-storage).
-Once that is complete, you will need to run a helm upgrade to apply those changes. Refer to [Update SHRA](#update-shra)
+Once that is complete, you will need to run a `helm upgrade` to apply those changes. Refer to [Update SHRA](#update-shra)
 
 ### How to speed up the process
 
@@ -1466,12 +1561,13 @@ Once that is complete, you will need to run a helm upgrade to apply those change
 The work can be parallelized further by adding additional executors. Refer to [Configure SHRA scaling](#configure-shra-scaling-meet-scanning-needs).
 
 #### Speed up by increase amount of catalog requests per page
-Docker requests 100 catalog items per page. In order to request all the catalog items we need to keep getting all the data one page at a time until there are no more pages.
-In order to speed up this process we can increase the amount of items that are requested per page. This can be done by modifying `executor.catalogPerPageRate`. Refer to [Falcon Chart configuration options](#falcon-chart-configuration-options).
-If you make any changes you will need to run a helm upgrade to apply those changes. Refer to [Update SHRA](#update-shra).
+By default, Docker requests 100 catalog items per page. To get the full list of catalog items, SHRA requests the data one page at a time until there are no more pages.
+
+You can speed this up by increasing the number of items that are requested per page. This can be done by modifying `executor.catalogPerPageRate`. Refer to [Falcon Chart configuration options](#falcon-chart-configuration-options).
+If you make any changes you will need to run a `helm upgrade` to apply those changes. Refer to [Update SHRA](#update-shra).
 
 #### Speed up by increasing the size of the persistent claim for assessment
-When larger images are present, the amount of images that can be worked on at once can get limited by the storage size.
+When larger images are present, the number of images that can be worked on at once is limited by the storage size.
 
 To increase the amount of storage size set the persistent volume claim size in `executor.assessmentStorage.size`. Refer to [Configure temporary storage](#configure-temporary-storage).
 
@@ -1489,10 +1585,11 @@ Job Controller Database:
 ```commandline
 kubectl -n <namespace-where-shra-is-installed> cp <pod-name>:/db/jobcontroller.db <local path where you want to copy the file to>
 ```
-The databases use the sqlite format. Once you're retrieved the files, use a tool with sqlite support to view them.
+The databases use the SQLite format. Once you're retrieved the files, use a tool with SQLite support to view them.
 
 #### Database space issues
-For any issues related to either the executor or job controller database running out of space, update the `*.dbStorage.size`. Refer to [Configure temporary storage](#configure-temporary-storage).
+For issues related to either the executor or job controller database running out of space, update the `*.dbStorage.size` settings in your`value_overrides.yaml` file. Refer to [Configure temporary storage](#configure-temporary-storage).
+
 If you make any changes you will need to run a helm upgrade to apply those changes. Refer to [Update SHRA](#update-shra)
 
 ## Falcon Chart configuration options
@@ -1520,7 +1617,7 @@ The Chart's `values.yaml` file includes more comments and descriptions in-line f
 | `executor.assessmentStorage.pvc.create`                                        |                                           | If `true`, creates the persistent volume claim for assessment storage. Default setting is to create a PVC unless you modify the config.                                                                                                                                                                                                                                                                                                                   | true                                |
 | `executor.assessmentStorage.pvc.existingClaimName`                             |                                           | An existing storage claim name you wish to use instead of the one created above. Required if `executor.assessmentStorage.pvc.create` is `false`.                                                                                                                                                                                                                                                                                                          | ""                                  |
 | `executor.assessmentStorage.pvc.storageClass`                                  | required                                  | Storage class to use when creating a persistent volume claim for the assessment storage. Examples include "ebs-sc" in AKS and "standard" in GKE.                                                                                                                                                                                                                                                                                                          | ""                                  |
-| `executor.assessmentStorage.pvc.accessModes`                                   |                                           | Array of access modes for the assessment storage volume claim.                                                                                                                                                                                                                                                                                                                                                                                            | "- ReadWriteOnce"                   |
+| `executor.assessmentStorage.pvc.accessModes`                                   |                                           | Array of access modes for the assessment storage volume claim. Please see [Storage Driver Considerations](#storage-driver-considerations-when-sharing-a-pvc-for-assessment-storage) if you should set this to ReadWriteMany                                                                                                                                                                                                                                                                                                                                                                                            | "- ReadWriteOnce"                   |
 | `executor.logLevel`                                                            |                                           | Log level for the `executor` service (1:error, 2:warning, 3:info, 4:debug)                                                                                                                                                                                                                                                                                                                                                                                | 3                                   |
 | `executor.labels`                                                              |                                           | Additional labels to apply to the executor pods.                                                                                                                                                                                                                                                                                                                                                                                                          | {}                                  |
 | `executor.podAnnotations`                                                      |                                           | Additional pod annotations to apply to the executor pods.                                                                                                                                                                                                                                                                                                                                                                                                 | {}                                  |
@@ -1532,7 +1629,7 @@ The Chart's `values.yaml` file includes more comments and descriptions in-line f
 | `executor.additionalEnv`                                                       |                                           | Additional environment variables to set for the executor pods.                                                                                                                                                                                                                                                                                                                                                                                            | []                                  |
 | `executor.additionalCMEEnvFrom`                                                |                                           | Additional environment variables set from an existing configmap.                                                                                                                                                                                                                                                                                                                                                                                          | []                                  |
 | `executor.additionalSecretEnvFrom`                                             |                                           | Additional environment variables set from an existing secret.                                                                                                                                                                                                                                                                                                                                                                                             | []                                  |
-| `executor.catalogPerPageRate`                                                  |                                           | The amount of items to request per page on a catalog request.                                                                                                                                                                                                                                                                                                                                                                                             | []                                  |
+| `executor.catalogPerPageRate`                                                  |                                           | The number of items to request per page on a catalog request.                                                                                                                                                                                                                                                                                                                                                                                             | []                                  |
 | `jobController.image.registry`                                                 | required                                  | The registry to pull the job controller image from. We recommend that you store this image in your registry.                                                                                                                                                                                                                                                                                                                                              | ""                                  |
 | `jobController.image.repository`                                               | required                                  | The repository for the job controller image.                                                                                                                                                                                                                                                                                                                                                                                                              | "falcon-jobcontroller"              |
 | `jobController.image.digest`                                                   | required or `jobController.image.tag`     | The sha256 digest for the job controller image to pull. This value overrides the `jobController.image.tag` field.                                                                                                                                                                                                                                                                                                                                         | ""                                  |
@@ -1542,7 +1639,7 @@ The Chart's `values.yaml` file includes more comments and descriptions in-line f
 | `jobController.image.registryConfigJSON`                                       |                                           | The base64 encoded Docker secret for your private registry.                                                                                                                                                                                                                                                                                                                                                                                               | ""                                  |
 | `jobController.service.type`                                                   |                                           | Job Controller and Executor(s) communicate over IP via gRPC. This value sets the service type for executor(s) to communicate with Job Controller.                                                                                                                                                                                                                                                                                                         | "ClusterIP"                         |
 | `jobController.service.port`                                                   |                                           | The port that job-controller uses for its gRPC server with the executor(s)                                                                                                                                                                                                                                                                                                                                                                                | "9000"                              |
-| `jobController.dbStorage.create`                                               | required                                  | `true` to create a persistent volume (PVC) storage for the job controller sqlite database file.                                                                                                                                                                                                                                                                                                                                                           | true                                |
+| `jobController.dbStorage.create`                                               | required                                  | `true` to create a persistent volume (PVC) storage for the job controller SQLite database file.                                                                                                                                                                                                                                                                                                                                                           | true                                |
 | `jobController.dbStorage.existingClaimName`                                    |                                           | Name of existing storage to use instead of creating one. Required if `jobController.dbStorage.create` is `false`.                                                                                                                                                                                                                                                                                                                                         | ""                                  |
 | `jobController.dbStorage.size`                                                 |                                           | Size of the storage claim to create for the job controller's database.                                                                                                                                                                                                                                                                                                                                                                                    | "1Gi"                               |
 | `jobController.dbStorage.storageClass`                                         | required                                  | Storage class to use when creating a persistent volume claim for the job controller database. Examples include "ebs-sc" in AKS and "standard" in GKE.                                                                                                                                                                                                                                                                                                     | ""                                  |
@@ -1559,7 +1656,7 @@ The Chart's `values.yaml` file includes more comments and descriptions in-line f
 | `jobController.additionalCMEEnvFrom`                                           |                                           | Additional environment variables set from an existing configmap.                                                                                                                                                                                                                                                                                                                                                                                          | []                                  |
 | `jobController.additionalSecretEnvFrom`                                        |                                           | Additional environment variables set from an existing secret.                                                                                                                                                                                                                                                                                                                                                                                             | []                                  |
 | `crowdstrikeConfig.region`                                                     |                                           | The region for this CID in CrowdStrike's cloud. Valid values are "autodiscover", "us-1", "us-2", "eu-1", "gov1", and "gov2".                                                                                                                                                                                                                                                                                                                              | "autodiscover"                      |
-| `crowdstrikeConfig.clientID`                                                   | required                                  | The client id used to authenticate the self-hosted registry assessment service with CrowdStrike.                                                                                                                                                                                                                                                                                                                                                          | ""                                  |
+| `crowdstrikeConfig.clientID`                                                   | required                                  | The client ID used to authenticate the self-hosted registry assessment service with CrowdStrike.                                                                                                                                                                                                                                                                                                                                                          | ""                                  |
 | `crowdstrikeConfig.clientSecret`                                               | required                                  | The client secret used to authenticate the self-hosted registry assessment service with CrowdStrike.                                                                                                                                                                                                                                                                                                                                                      | ""                                  |
 | `crowdstrikeConfig.jobTypeConfigs.registryCollection.threadsPerPod`            |                                           | The number of threads working on registry collection jobs. This job type is IO bound. Increasing this value allows collecting repositories from multiple registries concurrently. Increase this number if you have a significant number (100+) of registries.                                                                                                                                                                                             | 1                                   |
 | `crowdstrikeConfig.jobTypeConfigs.registryCollection.allowConcurrentIdentical` |                                           | We strongly recommend you leave this set to the default `false`. Set to `true` to allow the same registry to be scraped by multiple worker threads simultaneously.                                                                                                                                                                                                                                                                                        | false                               |

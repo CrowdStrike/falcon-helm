@@ -35,6 +35,7 @@ These costs may or may not be offset by the savings for data egress costs incurr
 - [Install the SHRA Helm Chart](#install-the-shra-helm-chart)
 - [Update SHRA](#update-shra)
 - [Uninstall SHRA](#uninstall-shra)
+- [FAQ](#faq)
 - [Falcon Chart configuration options](#falcon-chart-configuration-options)
 
 ## Supported registries
@@ -1555,6 +1556,35 @@ SHRA pulls your images from your registries to the local cluster, then uncompres
 To overcome this error we need to give the executor more space. This can be done by modifying `executor.assessmentStorage.size`. Refer to [Configure temporary storage](#configure-temporary-storage).
 Once that is complete, you will need to run a `helm upgrade` to apply those changes. Refer to [Update SHRA](#update-shra)
 
+#### Validating registry credentials
+Some issues around registry scanning stem from incorrect credential scope or permissions. To validate that the credentials can do everything our scanner needs, do the following with the credentials you wish to validate. These tests will require that you have the credentials, a working docker client, and [skopeo](https://github.com/containers/skopeo). If you're unable to complete any of these steps, resolve the issue before moving to the next step.
+
+1. Validate authentication via docker
+```sh
+docker login -u <registry_username> <registry_url>
+```
+After entering your password, you should see `Login Succeeded`
+
+2. Validate catalog list via skopeo
+```sh
+skopeo list-repos --creds=<registry_username>:<registry_password> docker://<registry_url>
+```
+This should list out all of the repositories that you wish to have scanned. 
+
+3. Validate the repository list via skopeo
+```sh
+skopeo list-tags --creds=<registry_username>:<registry_password> docker://<registry_url>/<repository_name>
+```
+This should list out all of the tags that you wish to have scanned.
+
+4. Pull an image via docker 
+```sh 
+docker pull <registry_url>/<repository_name>:<image_tag>
+```
+Your client should successfully pull the image
+
+If a repository or tag does not appear in the above outputs, SHRA will not be able to see it. If the client is unable to pull the image, then SHRA will not be able to pull the image.
+
 ### How to speed up the process
 
 #### Speed up by increase executors
@@ -1586,6 +1616,15 @@ Job Controller Database:
 kubectl -n <namespace-where-shra-is-installed> cp <pod-name>:/db/jobcontroller.db <local path where you want to copy the file to>
 ```
 The databases use the SQLite format. Once you're retrieved the files, use a tool with SQLite support to view them.
+Each record in the database has an accompanying status value from 0 to 6:
+
+* **0 - Ready:** the job is ready to be started again after a cancellation.
+* **1 - Waiting:** work on the job is waiting due to repository constraints, number of executors, or space.
+* **2 - In Progress:** assessment is in progress.
+* **3 - Done:** the job was processed successfully.
+* **4 - Failed:** the job failed. Check the executor log for more details. Often, failures are due to credential issues. Occasionally can be due to problems with an image or other issues.
+* **5 - Canceled:** processing was canceled.
+* **6 - Waiting for retry:** the job is waiting for resources before retrying.
 
 #### Database space issues
 For issues related to either the executor or job controller database running out of space, update the `*.dbStorage.size` settings in your`value_overrides.yaml` file. Refer to [Configure temporary storage](#configure-temporary-storage).

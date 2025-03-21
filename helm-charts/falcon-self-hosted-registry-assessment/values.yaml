@@ -12,7 +12,7 @@ executor:
     # Overrides the image tag. In general, tags should not be used (including semver tags or `latest`).
     # This variable is provided for those who have yet to move off of using tags. The sha256 digest
     # should be used in place of tags for increased security and image immutability.
-    tag: "1.4.0"
+    tag: "1.4.1"
     # Setting a digest will override any tag and should be used instead of tags.
     #
     # Example digest variable configuration:
@@ -100,7 +100,7 @@ jobController:
     repository: "jobcontroller"
     # Overrides the image tag. In general, tags should not be used (including semver tags or `latest`). This variable is provided for those
     # who have yet to move off of using tags. The sha256 digest should be used in place of tags for increased security and image immutability.
-    tag: "1.4.0"
+    tag: "1.4.1"
     # Setting a digest will override any tag and should be used instead of tags.
     #
     # Example digest variable configuration:

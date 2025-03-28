@@ -1,4 +1,6 @@
-# Kubernetes Protection Agent
+# Kubernetes Protection Agent :warning:
+> [!CAUTION]
+>[Falcon Kubernetes Admission Controller (KAC)](https://github.com/CrowdStrike/falcon-helm/blob/main/helm-charts/falcon-kac/README.md) ver. 7.20 now offers Kubernetes cluster visibility. Falcon Kubernetes Protection Agent (KPA) feature will be removed and the End-of-Support (EOS) date is March 31, 2025.
 
 ## Overview
 

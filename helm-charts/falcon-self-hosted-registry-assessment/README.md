@@ -758,6 +758,7 @@ Copy this registry configuration to your `values_override.yaml` file and provide
 
 Notes:
 * Configure `host` with both your Jfrog Artifactory domain name and your Docker registry name, in this format: `https://<artifactory_host>/artifactory/api/docker/<docker_registry_name>`
+* Set `isMultiRegistry` if the instance is a multi docker registry type. 
 
 ```yaml
   - type: artifactory
@@ -765,6 +766,7 @@ Notes:
       username: ""
       password: ""
     allowedRepositories: ""
+    isMultiRegistry: false
     port: ""
     host: ""
     cronSchedule: "0 0 * * *"
@@ -899,15 +901,16 @@ If you're not able to authenticate to the registry and pull images with these cr
 
 Now that you've gathered the necessary information for your private registries, verify and adjust the following parameters in your `values_override.yaml` file.
 
-| Parameter                                                 |                                                      | Description                                                                                                             | Default |
-|:----------------------------------------------------------|:-----------------------------------------------------|:------------------------------------------------------------------------------------------------------------------------|:--------|
-| `registryConfigs.*.type`                                  | required                                             | The registry type being assessed. See [Supported registries](#supported-registries) for options.                        | ""      |
-| `registryConfigs.*.credentials.username`                  | required without `kubernetesSecretName`              | The username used to authenticate to the registry.                                                                      | ""      |
-| `registryConfigs.*.credentials.password`                  | required without `kubernetesSecretName`              | The password used to authenticate to the registry.                                                                      | ""      |
-| `registryConfigs.*.credentials.kubernetesSecretName`      | required with `kubernetesSecretNamespace`            | The Kubernetes secret name that contains registry credentials. The [secret type](https://kubernetes.io/docs/concepts/configuration/secret/#secret-types) must be a [kubernetes.io/dockercfg](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_create/kubectl_create_secret_docker-registry/) or a kubernetes.io/dockerconfigjson type secret.                                                         | ""      |
-| `registryConfigs.*.credentials.kubernetesSecretNamespace` | required with `kubernetesSecretName`                 | The namespace containing the Kubernetes secret with credentials.                                                        | ""      |
-| `registryConfigs.*.port`                                  |                                                      | The port for connecting to the registry. Unless you specify a value here, SHRA uses port 80 for http and 443 for https. | ""      |
-| `registryConfigs.*.host`                                  | required                                             | The host for connecting to the registry.                                                                                | ""      |
+| Parameter                                                 |                                           | Description                                                                                                                                                                                                                                                                                                                                                 | Default |
+|:----------------------------------------------------------|:------------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------|
+| `registryConfigs.*.type`                                  | required                                  | The registry type being assessed. See [Supported registries](#supported-registries) for options.                                                                                                                                                                                                                                                            | ""      |
+| `registryConfigs.*.credentials.username`                  | required without `kubernetesSecretName`   | The username used to authenticate to the registry.                                                                                                                                                                                                                                                                                                          | ""      |
+| `registryConfigs.*.credentials.password`                  | required without `kubernetesSecretName`   | The password used to authenticate to the registry.                                                                                                                                                                                                                                                                                                          | ""      |
+| `registryConfigs.*.credentials.kubernetesSecretName`      | required with `kubernetesSecretNamespace` | The Kubernetes secret name that contains registry credentials. The [secret type](https://kubernetes.io/docs/concepts/configuration/secret/#secret-types) must be a [kubernetes.io/dockercfg](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_create/kubectl_create_secret_docker-registry/) or a kubernetes.io/dockerconfigjson type secret. | ""      |
+| `registryConfigs.*.credentials.kubernetesSecretNamespace` | required with `kubernetesSecretName`      | The namespace containing the Kubernetes secret with credentials.                                                                                                                                                                                                                                                                                            | ""      |
+| `registryConfigs.*.port`                                  |                                           | The port for connecting to the registry. Unless you specify a value here, SHRA uses port 80 for http and 443 for https.                                                                                                                                                                                                                                     | ""      |
+| `registryConfigs.*.host`                                  | required                                  | The host for connecting to the registry.                                                                                                                                                                                                                                                                                                                    | ""      |
+| `registryConfigs.*.isMultiRegistry`                       |                                           | Specifies if this registry instance contains multiple docker registries                                                                                                                                                                                                                                                                                     | false   |
 
 
 ### Configure your scanning schedules
@@ -976,14 +979,20 @@ Here are some common examples:
 
 ### Optional. Configure which repositories to scan
 
-By default, SHRA scans all repositories in your configured registries. 
+By default, SHRA scans all repositories in your configured registries.
 However, you can tailor SHRA with a repository allowlist to limit scanning to specific repositories within a registry.
 This reduces the overall scan load and limits the results to the repositories that are important to you.
 
-To create a list of allowed repositories within a registry, add a comma-separated list of repository names to the `registryConfigs.*.allowedRepositories` parameter. 
-This restricts SHRA to scan only the repositories you specify, rather than scanning all repositories in the registry.
+To create a list of allowed repositories within a registry, add a comma-separated list of repository names to the `registryConfigs.*.allowedRepositories` parameter.
+This restricts SHRA to scan only the repositories you specify, rather than scanning all repositories in the registry. Each entry in the comma separated list should be exact
+repository paths or a glob pattern.
 
-For example, your configuration might look like this:
+Repositories can also be ignored by using the `registryConfigs.*.ignoredRepositories` parameter. This parameter is a comma-separated list of repository names that you want to exclude from the assessment.
+Similar to the allowedRepositories field, you can supply either exact repository paths or glob patterns.
+
+#### Configuration
+
+The filters are added to the registryConfigs for each type with the following structure:
 
 ```yaml
 registryConfigs:
@@ -991,26 +1000,104 @@ registryConfigs:
     credentials:
       username: "myuser"
       password: "xxxyyyzzz"
-    allowedRepositories: "myapp,my/other/app,mytestrepo"
+    allowedRepositories: "pattern1,pattern2,...",
+    ignoredRepositories: "pattern1,pattern2,..."
     port: "5000"
     host: "https://registry-1.docker.io"
     cronSchedule: "0 0 * * *"
 ```
 
-In this example, SHRA onlys scans the myapp, my/other/app, and mytestrepo repositories in the specified dockerhub registry.
-All other repositories in this registry are excluded from the scans.
+| Parameter                               |       | Description                                                                                                   | Default |
+|:----------------------------------------|:------|:--------------------------------------------------------------------------------------------------------------|:--------|
+| `registryConfigs.*.allowedRepositories` |       | A comma separated list of repositories to assess. Exact repository paths and glob patterns are supported.     | ""      |
+| `registryConfigs.*.ignoredRepositories` |       | A comma separated list of repositories to NOT assess. Exact repository paths and glob patterns are supported. | ""      |
 
-> [!NOTE]  
-> The `allowedRepositories` parameter doesn't support wildcard characters or regex matches.
-> You must provide a comma-separated list of the specific repository names you want to include.
+#### How Filtering Works
+
+The filtering logic follows these rules:
+
+1. If a repository matches any pattern in the ignored list, it's excluded.
+2. If the allowed list is empty, all repositories (except ignored ones) are allowed.
+3. If the allowed list is not empty, a repository must match at least one pattern in the allowed list to be included.
+
+#### Pattern Syntax
+
+The filter uses glob pattern matching with the following special characters:
+
+- `?`: Matches exactly one non-directory-separator character
+- `*`: Matches zero or more non-directory-separator characters
+- `**`: Matches any number of path segments when used at path boundaries (`/**/`, at start, or at end)
+- `[...]`: Character class matches one of the contained characters
+- `{a,b}`: Alternation matches either "a" or "b"
+
+##### Important: Exact vs Partial Matching
+
+**Important:** Unless you're including wildcards, patterns must match the entire string. If your allowedList includes "registry.io" it will only match with "registry.io", it will not match "http://registry.io" or other variations.
+
+To match URLs or paths that contain a substring, use wildcards:
+
+```yaml
+# Wrong - won't match "http://registry.io"
+allowedRepositories: "registry.io"
+```
+```yaml
+# Correct - will match "http://registry.io" and similar
+allowedRepositories: "*registry.io*"
+```
+
+#### Examples
+
+#### Basic Patterns
+
+```yaml
+allowedRepositories: "docker.io/library/*",
+ignoredRepositories: "docker.io/library/*-vulnerable"
+```
+
+This configuration:
+- Allows any repository under `docker.io/library/`
+- But ignores any repository matching `docker.io/library/*-vulnerable`
+
+##### Multiple Patterns
+
+```yaml
+allowedRepositories: "docker.io/*/nginx, *.io/library/*",
+ignoredRepositories: "docker.io/library/nginx:*-alpine, */vulnerable/*"
+```
+
+This configuration:
+- Allows repositories matching `docker.io/*/nginx` or any repository under any `.io` domain's library path
+- Ignores nginx alpine images and any repository with "vulnerable" in its path
+
+##### Pattern Examples
+
+| Pattern                     | Matches                   | Doesn't Match              |
+|-----------------------------|---------------------------|----------------------------|
+| `docker.io/library/*`       | `docker.io/library/nginx` | `docker.io/official/nginx` |
+| `*/library/nginx`           | `docker.io/library/nginx` | `docker.io/library/redis`  |
+| `docker.io/[a-m]*/nginx`    | `docker.io/library/nginx` | `docker.io/official/nginx` |
+| `docker.io/{nginx,redis}/*` | `docker.io/nginx/latest`  | `docker.io/mongo/latest`   |
+| `some/prodimage-*`          | `some/prodimage-app123`   | `some-other/prodimage`     |
+
+#### Best Practices
+
+1. **Be specific with patterns**: Use patterns that are as specific as possible to avoid unintended matches.
+2. **Test your patterns**: Verify that your patterns match what you expect.
+3. **Use wildcards appropriately**: Remember to use wildcards when trying to match URLs or paths with varying formats.
+4. **Consider ignored patterns first**: The ignored list takes precedence over the allowed list.
+5. **Use full paths**: When possible, specify complete paths to avoid ambiguity.
+
+#### Troubleshooting
+
+If your filter isn't working as expected:
+
+1. Check that your pattern matches the entire string, not just part of it.
+2. Remember that the ignored list takes precedence over the allowed list.
+3. Ensure proper use of wildcards when matching URLs with protocols or paths.
 
 > [!TIP]
 > If SHRA is already deployed when you change your `allowedRepositories` list, or make any other change to your `values_override.yaml` file, redeploy the Helm Chart. 
 > For more info, see [Update SHRA](#update-shra).
-
-| Parameter                                                 |       | Description                                                                                                                                                  | Default |
-|:----------------------------------------------------------|:------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------|
-| `registryConfigs.*.allowedRepositories`                   |       | A comma separated list of repositories to assess. No regex or wildcard support. If this value is not set, all repositories within the registry are assessed. | ""      |
 
 ### Configure persistent data storage
 
@@ -1707,7 +1794,7 @@ The Chart's `values.yaml` file includes more comments and descriptions in-line f
 | `crowdstrikeConfig.jobTypeConfigs.tagScrape.runtimeMax`                        |                                           | The maximum amount of seconds an executor is allowed for scraping the list of tags from a repository                                                                                                                                                                                                                                                                                                                                                      | 480                                 |
 | `crowdstrikeConfig.jobTypeConfigs.tagScrape.retriesMax`                        |                                           | The maximum number of attempts at scraping the list of tags from a repository                                                                                                                                                                                                                                                                                                                                                                             | 0                                   |
 | `crowdstrikeConfig.jobTypeConfigs.tagScrape.jobRetentionMax`                   |                                           | Time in seconds to retain a repository scan / tag scrape job before deleting. Keeping these job records longer may facilitate debugging potential registry assessment issues.                                                                                                                                                                                                                                                                             | 604800                              |
-| `crowdstrikeConfig.jobTypeConfigs.tagAssessment.threadsPerPod`                 |                                           | The number of threads working on tag assessment jobs. This job is responsible downloading an image, unpacking it, and creating the inventory for what is in the image. This job type is IO and disk bound so increasing this allows concurrent image donwloading and unpacking. Increasing this number puts additional load on your registry with concurrent Docker API calls. See the `executor.assessmentStorage` settings to address disk bottlenecks. | 2                                   |
+| `crowdstrikeConfig.jobTypeConfigs.tagAssessment.threadsPerPod`                 |                                           | The number of threads working on tag assessment jobs. This job is responsible downloading an image, unpacking it, and creating the inventory for what is in the image. This job type is IO and disk bound so increasing this allows concurrent image donwloading and unpacking. Increasing this number puts additional load on your registry with concurrent Docker API calls. See the `executor.assessmentStorage` settings to address disk bottlenecks. | 8                                   |
 | `crowdstrikeConfig.jobTypeConfigs.tagAssessment.allowConcurrentIdentical`      |                                           | We strongly recommend you leave this set to the default `false`. Set to `true`  to allow the same image tag to be downloaded, unpacked and inventoried by multiple worker threads simultaneously.                                                                                                                                                                                                                                                         | false                               |
 | `crowdstrikeConfig.jobTypeConfigs.tagAssessment.runtimeMax`                    |                                           | The maximum amount of seconds an executor is allowed for downloading, unpacking, creating an inventory and sending it to the cloud.                                                                                                                                                                                                                                                                                                                       | 480                                 |
 | `crowdstrikeConfig.jobTypeConfigs.tagAssessment.retriesMax`                    |                                           | The maximum number of attempts at assessing a tag image.                                                                                                                                                                                                                                                                                                                                                                                                  | 0                                   |

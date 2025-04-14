@@ -1,0 +1,48 @@
+image:
+    address: ghcr.io/bionicstork/bionicstork/relay:latest
+    pullPolicy: Always
+    pullSecrets: []
+
+relay:
+    # Sensitive value, should not be committed to version control
+    accessToken: ""
+
+    clusterName: ""
+    falconRegion: ""
+
+env:
+
+jobs:
+    imageAddress: ghcr.io/bionicstork/bionicstork/kubernetes-collector:latest
+    imagePullSecrets: []
+    podLabels: {}
+
+serviceAccount:
+    name: aspm-sa
+    annotations: {}
+
+role:
+    name: aspm-collector
+    ruleSet: [jobs, exec]
+
+roleBinding:
+    name: aspm-collector
+
+podLabels: {}
+
+limits:
+    memory: 2048Mi
+    cpu: "2"
+
+requests:
+    memory: "0"
+    cpu: "0"
+
+podSecurityContext:
+    runAsNonRoot: true
+    fsGroup: 1001
+
+containerSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    runAsGroup: 1001

@@ -1,0 +1,178 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "image": {
+      "type": "object",
+      "required": [
+        "address",
+        "pullPolicy"
+      ],
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "pullPolicy": {
+          "type": "string",
+          "default": "Always",
+          "pattern": "^(Always|Never|IfNotPresent)$"
+        },
+        "pullSecrets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "relay": {
+      "type": "object",
+      "properties": {
+          "accessToken": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "falconRegion": {
+          "type": "string",
+          "examples": [
+            "us-1",
+            "us-2",
+            "eu-1",
+            "gov-1",
+            "gov-2"
+          ]
+        }
+      }
+    },
+    "jobs": {
+      "type": "object",
+      "properties": {
+        "imageAddress": {
+          "type": "string",
+          "default": "ghcr.io/bionicstork/bionicstork/relay:latest",
+          "examples": [
+            "ghcr.io/bionicstork/bionicstork/relay:latest"
+          ]
+        },
+        "imagePullSecrets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "podLabels": {
+          "type": ["object", "null"],
+          "default": {}
+        }
+      }
+    },
+    "serviceAccount": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "default": "aspm-sa"
+        },
+        "annotations": {
+          "type": "object",
+          "default": {},
+          "examples": [
+            {
+              "iam.gke.io/gcp-service-account": "my-service-account@my-project.iam.gserviceaccount.com"
+            }
+          ]
+        }
+      }
+    },
+    "role": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "default": "aspm-sa"
+        },
+        "ruleSet": {
+          "type": "array",
+          "default": ["jobs", "exec"],
+          "examples": [
+            ["jobs", "exec"],
+            ["jobs"],
+            ["exec"]
+          ]
+        }
+      }
+    },
+    "roleBinding": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "default": "aspm-sa"
+        }
+      }
+    },
+    "podLabels": {
+      "type": "object",
+      "default": {
+      }
+    },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "memory": {
+          "type": "string",
+          "default": "2048Mi"
+        },
+        "cpu": {
+          "type": "string",
+          "default": "2"
+        }
+      }
+    },
+    "requests": {
+      "type": "object",
+      "properties": {
+        "memory": {
+          "type": "string",
+          "default": "0"
+        },
+        "cpu": {
+          "type": "string",
+          "default": "0"
+        }
+      }
+    },
+    "podSecurityContext": {
+      "type": "object",
+      "properties": {
+        "runAsNonRoot": {
+          "type": "boolean",
+          "default": true
+        },
+        "fsGroup": {
+          "type": "integer",
+          "default": 1001
+        }
+      }
+    },
+    "containerSecurityContext": {
+      "type": "object",
+      "properties": {
+        "runAsNonRoot": {
+          "type": "boolean",
+          "default": true
+        },
+        "runAsUser": {
+          "type": "integer",
+          "default": 1001
+        },
+        "runAsGroup": {
+          "type": "integer",
+          "default": 1001
+        }
+      }
+    }
+  }
+}

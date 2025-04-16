@@ -117,7 +117,7 @@ The following tables lists the more common configurable parameters of the chart 
 | Parameter                         | Description                                                            | Default                                                                 |
 | :-------------------------------- | :--------------------------------------------------------------------- | :---------------------------------------------------------------------- |
 | `node.enabled`                    | Enable installation on the Kubernetes node                             | `true`                                                                  |
-| `node.backend`                    | Choose sensor backend (`kernel`,`bpf`). Sensor 6.49+ only              | kernel                                                                  |
+| `node.backend`                    | Choose sensor backend (`kernel`,`bpf`). Sensor 6.49+ only              | bpf                                                                     |
 | `node.gke.autopilot`              | Enable if running on GKE Autopilot clusters                            | `false`                                                                 |
 | `node.image.repository`           | Falcon Sensor Node registry/image name                                 | `falcon-node-sensor`                                                    |
 | `node.image.tag`                  | The version of the official image to use                               | `latest`   (Use node.image.digest instead for security and production)  |

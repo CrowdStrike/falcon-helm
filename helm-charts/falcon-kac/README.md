@@ -11,7 +11,7 @@ To install and deploy the Falcon Kubernetes Admission Controller, your cluster e
 
 - Helm 3.x is installed and available in PATH
 - Helm 3.x is supported by your Kubernetes distribution
-- Your cluster is running on a supported x86_64 Kubernetes environment
+- Your cluster is running on a supported x86_64, ARM64, or mixed Kubernetes environment
 
 The Falcon Kubernetes Admission Controller has been deployed and tested on these Kubernetes distributions:
 
@@ -22,10 +22,11 @@ The Falcon Kubernetes Admission Controller has been deployed and tested on these
 
 ## Helm Chart Support for Falcon Admission Controller Versions
 
-| Helm chart Version      | Falcon Admission Controller Version            |
-|:------------------------|:-----------------------------------------------|
-| `< 1.2.x`              | `< 7.20.x`                                     |
-| `>= 1.2.x`              | `>= 7.20.x`                                    |
+| Helm chart Version | Falcon Admission Controller Version |
+|:-------------------|:------------------------------------|
+| `< 1.2.x`          | `< 7.20.x`                          |
+| `< 1.2.x`          | `< 7.25.x`                          |
+| `>= 2.0.x`         | `>= 7.25.x`                         |
 
 Depending on your network environment, you might need to allow TLS traffic on port 443 between your network and our cloud's network addresses:
 

@@ -4,9 +4,6 @@
     "properties": {
         "falcon": {
             "type": "object",
-            "required": [
-                "cid"
-            ],
             "properties": {
                 "cid": {
                     "type": "string",
@@ -494,5 +491,57 @@
         "fullnameOverride": {
             "type": "string"
         }
-    }
+    },
+    "falconSecrets": {
+        "type": "object",
+        "properties": {
+            "enabled": {
+                "type": "boolean",
+                "default": "false"
+            },
+            "existingSecretName": {
+                "type": "string",
+                "description": "The name of an existing secret in which Falcon specific secrets are stored."
+            }
+        }
+    },
+    "oneOf": [
+        {
+            "properties": {
+                "falcon": {
+                    "properties": {
+                        "cid": {
+                            "type": "string",
+                            "minLength": 1
+                        }
+                    },
+                    "required": ["cid"]
+                }
+            },
+            "required": ["falcon"]
+        },
+        {
+            "properties": {
+                "falconSecrets": {
+                    "properties": {
+                        "enabled": { "enum": [true] },
+                        "existingSecretName": {
+                            "type": "string",
+                            "minLength": 1
+                        }
+                    },
+                    "required": ["enabled", "existingSecretName"]
+                },
+                "falcon": {
+                    "properties": {
+                        "cid": {
+                            "type": ["null", "string"],
+                            "maxLength": 0
+                        }
+                    }
+                }
+            },
+            "required": ["falconSecrets", "falcon"]
+        }
+    ]
 }

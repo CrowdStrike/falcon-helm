@@ -31,3 +31,12 @@ rules:
   - leases
   verbs:
   - '*'
+
+{{- if .Values.falconSecret.enabled }}
+- apiGroups:
+    - ""
+  resources:
+    - secrets
+  verbs:
+    - get
+{{- end }}

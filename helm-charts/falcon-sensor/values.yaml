@@ -261,6 +261,7 @@ serviceAccount:
 testing:
   enabled: false
 
+# falcon.cid is required unless falconSecret.enabled is true and FALCONCTL_OPT_CID is already defined in an existing secret.
 falcon:
   cid:
   apd:
@@ -272,6 +273,11 @@ falcon:
   billing:
   tags:
   provisioning_token:
+
+# If falcon.cid is not defined, falconSecret.enabled must be true, and FALCONCTL_OPT_CID must be defined in an existing secret.
+falconSecret:
+  enabled: false
+  secretName: ""
 
 # Override various naming aspects of this chart
 # Only edit these if you know what you're doing

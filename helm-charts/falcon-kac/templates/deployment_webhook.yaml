@@ -107,7 +107,8 @@ spec:
     {{- end }}
     {{- end }}
       containers:
-      - args:
+      - name: falcon-client
+        args:
         - client
         - "-port={{ .Values.webhookPort }}"
         env:
@@ -129,6 +130,10 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "falcon-kac.fullname" . }}-config
+        {{- if .Values.falconSecret.enabled }}
+        - secretRef:
+            name: {{ .Values.falconSecret.secretName }}
+        {{- end }}
         image: {{ include "falcon-kac.image" . }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         livenessProbe:
@@ -140,7 +145,6 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
-        name: falcon-client
         ports:
         - containerPort: {{ .Values.webhookPort }}
           name: webhook-port
@@ -174,7 +178,8 @@ spec:
           name: crowdstrike-falcon-vol0
         - mountPath: /var/private
           name: crowdstrike-falcon-vol1
-      - args:
+      - name: falcon-watcher
+        args:
         - "client"
         - "-app=watcher"
         - "-http-port={{ .Values.watcherPort }}"
@@ -197,6 +202,10 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "falcon-kac.fullname" . }}-config
+        {{- if .Values.falconSecret.enabled }}
+        - secretRef:
+            name: {{ .Values.falconSecret.secretName }}
+        {{- end }}
         image: {{ include "falcon-kac.image" . }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         livenessProbe:
@@ -208,7 +217,6 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
-        name: falcon-watcher
         ports:
         - containerPort: {{ .Values.watcherPort }}
           name: healthcheck
@@ -237,9 +245,14 @@ spec:
           name: crowdstrike-falcon-vol1
         - mountPath: /var/falcon-watcher
           name: crowdstrike-falcon-vol2
-      - envFrom:
+      - name: falcon-ac
+        envFrom:
         - configMapRef:
             name: {{ include "falcon-kac.fullname" . }}-config
+        {{- if .Values.falconSecret.enabled }}
+        - secretRef:
+            name: {{ .Values.falconSecret.secretName }}
+        {{- end }}
         image: {{ include "falcon-kac.image" . }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         livenessProbe:
@@ -251,7 +264,6 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
-        name: falcon-ac
         resources:
           {{- toYaml .Values.falconAcResources | nindent 10 }}
         securityContext:

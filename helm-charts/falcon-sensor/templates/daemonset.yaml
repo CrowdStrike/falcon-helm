@@ -169,6 +169,10 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "falcon-sensor.configMapName" . }}
+        {{- if .Values.falconSecret.enabled }}
+        - secretRef:
+            name: {{ .Values.falconSecret.secretName }}
+        {{- end }}
         volumeMounts:
           - name: falconstore
             mountPath: /opt/CrowdStrike/falconstore

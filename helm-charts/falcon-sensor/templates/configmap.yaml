@@ -1,3 +1,5 @@
+{{- $falconSecretKeys := list "cid" "provisioning_token" }}
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -15,16 +17,25 @@ metadata:
     {{ end -}}
     crowdstrike.com/provider: crowdstrike
     helm.sh/chart: {{ include "falcon-sensor.chart" . }}
+
 data:
+  {{- if not .Values.falconSecret.enabled }}
   FALCONCTL_OPT_CID: {{ .Values.falcon.cid }}
+  {{- if .Values.falcon.provisioning_token }}
+  FALCONCTL_OPT_PROVISIONING_TOKEN: {{ .Values.falcon.provisioning_token }}
+  {{- end }}
+  {{- end }}
+
   {{- range $key, $value := .Values.falcon }}
-  {{- if and (or $value (eq ($value | toString) "false")) (ne $key "cid") }}
+  {{- if and (or $value (eq ($value | toString) "false")) (not (has $key $falconSecretKeys)) }}
   FALCONCTL_OPT_{{ $key | upper }}: {{ $value | quote }}
   {{- end }}
   {{- end }}
+
   {{- if and .Values.node.enabled .Values.node.backend }}
   FALCONCTL_OPT_BACKEND: "{{ .Values.node.backend }}"
   {{- end }}
+
   {{- if .Values.container.enabled }}
   CP_NAMESPACE: {{ .Release.Namespace }}
   FALCON_IMAGE_PULL_POLICY: "{{ .Values.container.image.pullPolicy }}"

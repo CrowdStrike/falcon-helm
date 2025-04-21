@@ -147,6 +147,10 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "falcon-sensor.configMapName" . }}
+        {{- if .Values.falconSecret.enabled }}
+        - secretRef:
+            name: {{ .Values.falconSecret.secretName }}
+        {{- end }}
         ports:
         - name: https
           containerPort: {{ .Values.container.injectorPort }}

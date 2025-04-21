@@ -48,6 +48,7 @@ serviceAccount:
   name: falcon-kac-sa
   annotations: {}
 
+# falcon.cid is required unless falconSecret.enabled is true and FALCONCTL_OPT_CID is already defined in an existing secret.
 falcon:
   cid:
   apd:
@@ -63,6 +64,11 @@ falcon:
 # Available for KAC since version 7.26.
 admissionControl:
   enabled: true
+
+# If falcon.cid is not defined, falconSecret.enabled must be true, and FALCONCTL_OPT_CID must be defined in an existing secret.
+falconSecret:
+  enabled: false
+  secretName: ""
 
 # These variables can be used to customize the way KAC provides visibility into
 # resources on your Kubernetes cluster. The variables are initially set to the

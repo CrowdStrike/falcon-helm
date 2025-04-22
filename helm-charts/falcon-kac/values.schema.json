@@ -95,9 +95,6 @@
         },
         "falcon": {
             "type": "object",
-            "required": [
-                "cid"
-            ],
             "properties": {
                 "cid": {
                     "type": "string",
@@ -413,5 +410,44 @@
                 }
             }
         }
-    }
+    },
+    "oneOf": [
+        {
+            "properties": {
+                "falcon": {
+                    "properties": {
+                        "cid": {
+                            "type": "string",
+                            "minLength": 1
+                        }
+                    },
+                    "required": ["cid"]
+                }
+            },
+            "required": ["falcon"]
+        },
+        {
+            "properties": {
+                "falconSecrets": {
+                    "properties": {
+                        "enabled": { "enum": [true] },
+                        "existingSecretName": {
+                            "type": "string",
+                            "minLength": 1
+                        }
+                    },
+                    "required": ["enabled", "existingSecretName"]
+                },
+                "falcon": {
+                    "properties": {
+                        "cid": {
+                            "type": ["null", "string"],
+                            "maxLength": 0
+                        }
+                    }
+                }
+            },
+            "required": ["falconSecrets", "falcon"]
+        }
+    ]
 }

@@ -1,3 +1,5 @@
+{{- $falconSecretKeys := list "cid" "provisioning_token" }}
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -6,12 +8,19 @@ metadata:
   labels:
     {{- include "falcon-kac.labels" . | nindent 4 }}
 data:
+  {{- if not .Values.falconSecrets.enabled }}
   FALCONCTL_OPT_CID: {{ .Values.falcon.cid }}
+  {{- if .Values.falcon.provisioning_token }}
+  FALCONCTL_OPT_PROVISIONING_TOKEN: {{ .Values.falcon.provisioning_token }}
+  {{- end }}
+  {{- end }}
+
   {{- range $key, $value := .Values.falcon }}
-  {{- if and (or $value (eq ($value | toString) "false")) (ne $key "cid") }}
+  {{- if and (or $value (eq ($value | toString) "false")) (not (has $key $falconSecretKeys)) }}
   FALCONCTL_OPT_{{ $key | upper }}: {{ $value | quote }}
   {{- end }}
   {{- end }}
+
 {{- if .Values.clusterName }}
 ---
 apiVersion: v1

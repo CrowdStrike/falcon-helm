@@ -170,17 +170,19 @@ When a new container image is available, you can update your Falcon KAC by passi
 
 The following tables lists the Falcon KAC  configurable parameters and their default values.
 
-| Parameter                                      | Description                                           | Default               |
-|:-----------------------------------------------|:------------------------------------------------------|:----------------------|
-| `falcon.cid`                                   | CrowdStrike Customer ID (CID)                         | None       (Required) |
-| `falcon.apd`                                   | App Proxy Disable (APD)                               | None                  |
-| `falcon.aph`                                   | App Proxy Hostname (APH)                              | None                  |
-| `falcon.app`                                   | App Proxy Port (APP)                                  | None                  |
-| `falcon.trace`                                 | Set trace level. (`none`,`err`,`warn`,`info`,`debug`) | `none`                |
-| `falcon.feature`                               | Sensor Feature options                                | None                  |
-| `falcon.billing`                               | Utilize default or metered billing                    | None                  |
-| `falcon.tags`                                  | Comma separated list of tags for sensor grouping      | None                  |
-| `falcon.provisioning_token`                    | Provisioning token value                              | None                  |
-| `clusterVisibility.resourceSnapshots.enabled`  | Enable cluster snapshots                              | `true`                |
-| `clusterVisibility.resourceSnapshots.interval` | Interval between cluster snapshots                    | `22h`                 |
-| `clusterVisibility.resourceWatcher.enabled`    | Enable Cluster Visbility                              | `true`                |
+| Parameter                                      | Description                                                  | Default                                                              |
+|:-----------------------------------------------|:-------------------------------------------------------------|:---------------------------------------------------------------------|
+| `falcon.cid`                                   | CrowdStrike Customer ID (CID)                                | None       (Required if falconSecrets.existingSecretName is not set) |
+| `falcon.apd`                                   | App Proxy Disable (APD)                                      | None                                                                 |
+| `falcon.aph`                                   | App Proxy Hostname (APH)                                     | None                                                                 |
+| `falcon.app`                                   | App Proxy Port (APP)                                         | None                                                                 |
+| `falcon.trace`                                 | Set trace level. (`none`,`err`,`warn`,`info`,`debug`)        | `none`                                                               |
+| `falcon.feature`                               | Sensor Feature options                                       | None                                                                 |
+| `falcon.billing`                               | Utilize default or metered billing                           | None                                                                 |
+| `falcon.tags`                                  | Comma separated list of tags for sensor grouping             | None                                                                 |
+| `falcon.provisioning_token`                    | Provisioning token value                                     | None                                                                 |
+| `clusterVisibility.resourceSnapshots.enabled`  | Enable cluster snapshots                                     | `true`                                                               |
+| `clusterVisibility.resourceSnapshots.interval` | Interval between cluster snapshots                           | `22h`                                                                |
+| `clusterVisibility.resourceWatcher.enabled`    | Enable Cluster Visbility                                     | `true`                                                               |
+| `falconSecrets.enabled`                        | Enable k8s secrets to store/inject sensitive Falcon values   | false      (Must be true if falcon.cid is not set)                   |
+| `falconSecrets.existingSecretName`             | Use an existing k8s secret to inject sensitive Falcon values | None       (Existing secret must include `FALCONCTL_OPT_CID`)        |

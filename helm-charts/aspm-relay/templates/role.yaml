@@ -24,7 +24,7 @@ rules:
     resources: [ "jobs" ]
     verbs: [ "get", "list", "watch", "create" ]
   {{- end -}}
-  {{- if has "exec" .Values.ruleSet }}
+  {{- if has "exec" .Values.role.ruleSet }}
   - apiGroups: [""]
     resources: ["pods/exec"]
     verbs: ["get", "create"]

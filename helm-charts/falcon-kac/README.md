@@ -183,4 +183,5 @@ The following tables lists the Falcon KAC  configurable parameters and their def
 | `falcon.provisioning_token`                    | Provisioning token value                              | None                  |
 | `clusterVisibility.resourceSnapshots.enabled`  | Enable cluster snapshots                              | `true`                |
 | `clusterVisibility.resourceSnapshots.interval` | Interval between cluster snapshots                    | `22h`                 |
-| `clusterVisibility.resourceWatcher.enabled`    | Enable Cluster Visbility                              | `true`                |
+| `clusterVisibility.resourceWatcher.enabled`    | Enable Cluster Visibility                             | `true`                |
+| `admissionControl.enabled`                     | Enable Admission Control                              | `true`                |

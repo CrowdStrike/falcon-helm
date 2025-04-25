@@ -125,7 +125,7 @@ spec:
         imagePullPolicy: "{{ .Values.node.image.pullPolicy }}"
         args:
         - -c
-        - sleep 10
+        - sleep infinity
         command:
         - /bin/bash
         {{- if or .Values.node.gke.autopilot .Values.node.daemonset.resources }}

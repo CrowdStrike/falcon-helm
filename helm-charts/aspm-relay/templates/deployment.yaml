@@ -43,9 +43,9 @@ spec:
             - name: ASPM_KUBERNETES_JOBS_IMAGE_ADDRESS
               value: {{ .Values.jobs.imageAddress }}
             - name: ASPM_KUBERNETES_JOBS_POD_LABELS
-              value: {{ .Values.jobs.podLabels }}
+              value: {{ .Values.jobs.podLabels | mustToJson | quote }}
             - name: ASPM_KUBERNETES_JOBS_PULL_SECRETS
-              value: "{{ toJson .Values.jobs.imagePullSecrets }}"
+              value: {{ .Values.jobs.imagePullSecrets | mustToJson | quote }}
           {{- range $key, $val := .Values.env }}
             - name: {{ $key }}
               value: {{ $val | quote }}

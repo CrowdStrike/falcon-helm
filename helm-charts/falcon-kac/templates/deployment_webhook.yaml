@@ -194,7 +194,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
-        {{- include "falcon-kac.generateWatcherEnvVars" . | nindent 8 }}
         envFrom:
         - configMapRef:
             name: {{ include "falcon-kac.fullname" . }}-config

@@ -115,12 +115,9 @@ Create Watcher container environment variables
   {{- end -}}
 {{- end -}}
 {{- end -}}
-- name: __CS_SNAPSHOTS_ENABLED
-  value: {{ $snapshotsEnabled | toString | quote }}
-- name: __CS_SNAPSHOT_INTERVAL
-  value: {{ $snapshotInterval | toString | quote }}
-- name: __CS_WATCH_EVENTS_ENABLED
-  value: {{ $watcherEnabled | toString | quote }}
+__CS_SNAPSHOTS_ENABLED: {{ $snapshotsEnabled | toString | quote }}
+__CS_SNAPSHOT_INTERVAL: {{ $snapshotInterval | toString | quote }}
+__CS_WATCH_EVENTS_ENABLED: {{ $watcherEnabled | toString | quote }}
 {{- end -}}
 
 {{- define "validateValues" }}

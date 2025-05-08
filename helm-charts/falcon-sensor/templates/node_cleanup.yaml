@@ -53,6 +53,7 @@ spec:
         {{ $key }}: {{ $value | quote }}
         {{- end }}
         {{- end }}
+        {{ include "falcon-sensor.workloadCleanupAllowlistLabel" . }}
     spec:
     {{- if and (.Values.node.image.pullSecrets) (.Values.node.image.registryConfigJSON) }}
       {{- fail "node.image.pullSecrets and node.image.registryConfigJSON cannot be used together." }}

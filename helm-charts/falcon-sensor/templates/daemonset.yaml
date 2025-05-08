@@ -56,6 +56,7 @@ spec:
         {{ $key }}: {{ $value | quote }}
         {{- end }}
         {{- end }}
+        {{ include "falcon-sensor.workloadDeployAllowlistLabel" . }}
     spec:
     {{- if and (.Values.node.image.pullSecrets) (.Values.node.image.registryConfigJSON) }}
       {{- fail "node.image.pullSecrets and node.image.registryConfigJSON cannot be used together." }}
@@ -167,7 +168,7 @@ spec:
         {{- end }}
         envFrom:
         - configMapRef:
-            name: {{ include "falcon-sensor.fullname" . }}-config
+            name: {{ include "falcon-sensor.configMapName" . }}
         volumeMounts:
           - name: falconstore
             mountPath: /opt/CrowdStrike/falconstore

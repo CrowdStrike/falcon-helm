@@ -46,6 +46,14 @@
                         "autopilot": {
                             "type": "boolean",
                             "default": "false"
+                        },
+                        "deployAllowList": {
+                            "type": "string",
+                            "default": ""
+                        },
+                        "cleanupAllowList": {
+                            "type": "string",
+                            "default": ""
                         }
                     }
                 },

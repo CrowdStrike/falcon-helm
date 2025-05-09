@@ -146,7 +146,7 @@ spec:
         command: ["injector"]
         envFrom:
         - configMapRef:
-            name: {{ include "falcon-sensor.fullname" . }}-config
+            name: {{ include "falcon-sensor.configMapName" . }}
         ports:
         - name: https
           containerPort: {{ .Values.container.injectorPort }}

@@ -3,6 +3,16 @@ entries:
   aspmrelay:
   - apiVersion: v2
     appVersion: 0.40.0
+    created: "2025-05-12T16:53:06.984700019Z"
+    description: ASPM Relay Helm Chart
+    digest: 0700846f9bf0c98468f2a23eb294a66ee3c6118ab451bf3a94f576c377cc4af6
+    name: aspmrelay
+    type: application
+    urls:
+    - https://github.com/CrowdStrike/falcon-helm/releases/download/aspmrelay-1.1.0/aspmrelay-1.1.0.tgz
+    version: 1.1.0
+  - apiVersion: v2
+    appVersion: 0.40.0
     created: "2025-04-22T15:12:00.918067053Z"
     description: ASPM Relay Helm Chart
     digest: 0aaa4399c1538e89cb4b662f3e65e4929fcb98a342d250f4f2b8c347a224d583
@@ -3070,4 +3080,4 @@ entries:
     urls:
     - https://github.com/CrowdStrike/falcon-helm/releases/download/registry-scanner-0.1.0/registry-scanner-0.1.0.tgz
     version: 0.1.0
-generated: "2025-05-08T17:04:48.98072998Z"
+generated: "2025-05-12T16:53:06.985217947Z"

@@ -6,6 +6,8 @@ metadata:
   labels:
     {{- include "falcon-kac.labels" . | nindent 4 }}
 data:
+  __CS_ADMISSION_CONTROL_ENABLED: {{ .Values.admissionControl.enabled | quote }}
+  {{- include "falcon-kac.generateWatcherEnvVars" . | nindent 2 }}
   FALCONCTL_OPT_CID: {{ .Values.falcon.cid }}
   {{- range $key, $value := .Values.falcon }}
   {{- if and (or $value (eq ($value | toString) "false")) (ne $key "cid") }}

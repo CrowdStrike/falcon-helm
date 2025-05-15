@@ -1,3 +1,4 @@
+{{ include "validateValues" . }}
 {{- $name := (printf "%s" (include "falcon-kac.name" .)) -}}
 {{- $fullName := (printf "%s.%s.svc" $name .Release.Namespace) -}}
 {{- $webhookName := (printf "webhook") -}}
@@ -144,7 +145,11 @@ spec:
         - containerPort: {{ .Values.webhookPort }}
           name: webhook-port
         resources:
+          {{- if .Values.admissionControl.enabled }}
           {{- toYaml .Values.falconClientResources | nindent 10 }}
+          {{- else }}
+          {{- toYaml .Values.falconClientNoWebhookResources | nindent 10 }}
+          {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -189,7 +194,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
-        {{- include "falcon-kac.generateWatcherEnvVars" . | nindent 8 }}
         envFrom:
         - configMapRef:
             name: {{ include "falcon-kac.fullname" . }}-config
@@ -309,6 +313,7 @@ spec:
         emptyDir:
           sizeLimit: 64Mi
 ---
+{{- if .Values.admissionControl.enabled }}
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
@@ -438,4 +443,4 @@ webhooks:
     scope: '*'
   sideEffects: None
   timeoutSeconds: 10
-
+{{- end }}

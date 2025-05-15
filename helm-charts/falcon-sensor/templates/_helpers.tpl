@@ -134,11 +134,37 @@ args:
   - '-c'
   - >-
       echo "Running /opt/CrowdStrike/falcon-daemonset-init -i";
-{{- if .Values.node.gke.autopilot }}
-      /opt/CrowdStrike/falcon-daemonset-init -i
-{{- else -}}
       /opt/CrowdStrike/falcon-daemonset-init -i;
       echo "Running /opt/CrowdStrike/configure-cluster-id";
       test -f "/opt/CrowdStrike/configure-cluster-id" && /opt/CrowdStrike/configure-cluster-id || echo "/opt/CrowdStrike/configure-cluster-id not found. Skipping."
+{{- end -}}
+
+{{/*
+Create the name of the config map if GKE Autopilot is used.
+WorkloadAllowlists require an exact match for naming.
+*/}}
+{{- define "falcon-sensor.configMapName" -}}
+{{- if and .Values.node.gke.autopilot -}}
+{{- printf "falcon-node-sensor-config" -}}
+{{- else -}}
+{{- printf "%s-config" (include "falcon-sensor.fullname" .) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Add label for WorkloadAllowlist for the deploy daemonset
+*/}}
+{{- define "falcon-sensor.workloadDeployAllowlistLabel" -}}
+{{- if and .Values.node.gke.autopilot .Values.node.enabled .Values.node.gke.deployAllowListVersion -}}
+{{- printf "cloud.google.com/matching-allowlist: \"crowdstrike-falconsensor-deploy-allowlist-%s\"" .Values.node.gke.deployAllowListVersion -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Add label for WorkloadAllowlist for the cleanup daemonset
+*/}}
+{{- define "falcon-sensor.workloadCleanupAllowlistLabel" -}}
+{{- if and .Values.node.gke.autopilot .Values.node.enabled .Values.node.gke.cleanupAllowListVersion -}}
+{{- printf "cloud.google.com/matching-allowlist: \"crowdstrike-falconsensor-cleanup-allowlist-%s\"" .Values.node.gke.cleanupAllowListVersion -}}
 {{- end -}}
 {{- end -}}

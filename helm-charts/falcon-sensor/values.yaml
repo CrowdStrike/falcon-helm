@@ -10,8 +10,12 @@ node:
   backend: bpf
 
   # Enable for use on Google's GKE Autopilot clusters
+  # deployAllowListVersion - specify the version of the workload allowlist to use for the primary daemonset
+  # cleanupAllowListVersion - specify the version of the workload allowlist to use for the cleanup daemonset
   gke:
     autopilot: false
+    # deployAllowListVersion: ""
+    # cleanupAllowListVersion: ""
 
   daemonset:
     # Annotations to apply to the daemonset

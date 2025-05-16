@@ -136,6 +136,20 @@ For a complete listing of configurable parameters, run the following command:
 helm show values crowdstrike/falcon-sensor
 ```
 
+### GKE Autopilot Configuration
+Due to the Daemonset pods being run as a privileged, the following additional manifest is required to be applied to the cluster before deployment:
+```
+apiVersion: auto.gke.io/v1
+kind: AllowlistSynchronizer
+metadata:
+  name: crowdstrike-synchronizer
+spec:
+  allowlistPaths:
+  - CrowdStrike/falcon-sensor/*
+```
+> [!NOTE]
+> Additional information about AllowlistSynchronizer can be found here: [https://cloud.google.com/kubernetes-engine/docs/reference/crds/allowlistsynchronizer](https://cloud.google.com/kubernetes-engine/docs/reference/crds/allowlistsynchronizer)
+
 ## Installing in Kubernetes Cluster as a Sidecar
 
 ### Deployment Considerations

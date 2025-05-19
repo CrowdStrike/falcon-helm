@@ -118,6 +118,7 @@ affinity:
           operator: In
           values:
           - amd64
+          - arm64
 
 # Default limits for all KAC Pods. Review resource consumption for
 # each Pod in your environment and update accordingly

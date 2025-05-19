@@ -1,0 +1,20 @@
+{{- if .Values.falconSecrets.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "falcon-sensor.fullname" . }}-role
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "falcon-sensor.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+    {{- if not .Values.falconSecrets.existingSecretName }}
+      - create
+      - update
+    {{- end }}
+{{- end }}

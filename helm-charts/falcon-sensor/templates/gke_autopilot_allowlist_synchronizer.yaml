@@ -1,0 +1,14 @@
+{{- if eq (include "gke-autopilot-workloadallowlists-enabled" .) "true" }}
+apiVersion: auto.gke.io/v1
+kind: AllowlistSynchronizer
+metadata:
+  name: crowdstrike-synchronizer
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ include "falcon-sensor.chart" . }}
+  annotations:
+    "helm.sh/hook-weight": "-999"
+spec:
+  allowlistPaths:
+  - CrowdStrike/falcon-sensor/*
+{{- end }}

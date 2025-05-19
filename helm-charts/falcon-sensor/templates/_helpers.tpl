@@ -168,3 +168,15 @@ Add label for WorkloadAllowlist for the cleanup daemonset
 {{- printf "cloud.google.com/matching-allowlist: \"crowdstrike-falconsensor-cleanup-allowlist-%s\"" .Values.node.gke.cleanupAllowListVersion -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Check if target cluster supports GKE Autopilot WorkloadAllowlists.
+Documentation: https://cloud.google.com/kubernetes-engine/docs/reference/crds/allowlistsynchronizer
+*/}}
+{{- define "gke-autopilot-workloadallowlists-enabled" -}}
+{{- if and .Values.node.gke.autopilot (.Capabilities.APIVersions.Has "auto.gke.io/v1/AllowlistSynchronizer") (.Capabilities.APIVersions.Has "auto.gke.io/v1/WorkloadAllowlist") (semverCompare ">=v1.32.0-gke.1000000" .Capabilities.KubeVersion.Version) -}}
+true
+{{- else -}}
+false
+{{- end -}}
+{{- end -}}

@@ -13,11 +13,11 @@ If release name contains chart name it will be used as a full name.
 {{- define "ra-self-hosted.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 40 | trimSuffix "-" }}
-{{- else }}
+{{- else -}}
 {{- $name := default "shra" .Values.nameOverride }}
 {{- if contains $name .Release.Name }}
 {{- .Release.Name | trunc 40 | trimSuffix "-" }}
-{{- else }}
+{{- else -}}
 {{- printf "%s-%s" .Release.Name $name | trunc 50 | trimSuffix "-" }}
 {{- end }}
 {{- end }}

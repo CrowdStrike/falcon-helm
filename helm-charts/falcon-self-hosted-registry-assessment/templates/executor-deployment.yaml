@@ -23,7 +23,11 @@ spec:
     spec:
       serviceAccountName: {{ include "ra-self-hosted-executor.fullname" . }}
       securityContext:
-        fsGroup: 2001
+{{ if .Values.executor.podSecurityContext -}}
+{{ .Values.executor.podSecurityContext | toYaml | indent 8 }}
+{{- else -}}
+{{ .Values.podSecurityContext | toYaml | indent 8 }}
+{{- end }}
      {{- if or (.Values.executor.image.pullSecret) (.Values.executor.image.registryConfigJSON) }}
       imagePullSecrets:
        {{ if .Values.executor.image.registryConfigJSON }}
@@ -45,12 +49,14 @@ spec:
             - name: "REGION"
               value: {{ .Values.crowdstrikeConfig.region }}
             {{- if .Values.crowdstrikeConfig.clientID }}
+            {{ if not .Values.crowdstrikeConfig.clientSecretRef }}
             - name: "CLIENT_ID"
               value: {{ .Values.crowdstrikeConfig.clientID }}
             {{- end }}
             {{- if .Values.crowdstrikeConfig.clientSecret }}
             - name: "CLIENT_SECRET"
               value: {{ .Values.crowdstrikeConfig.clientSecret }}
+            {{- end }}
             {{- end }}
             - name: "STORAGE_ENGINE"
               value: "sqlite"
@@ -64,15 +70,20 @@ spec:
               value: {{ .value }}
             {{- end }}
             {{- end }}
-          {{ if (or .Values.registryConfigs .Values.executor.additionalCMEnvFrom .Values.executor.additionalSecretEnvFrom) -}} 
+          {{ if (or .Values.registryConfigs .Values.executor.additionalCMEnvFrom .Values.executor.additionalSecretEnvFrom .Values.crowdstrikeConfig.clientSecretRef) -}} 
           envFrom:
             {{- if .Values.registryConfigs }}
             - configMapRef:
                 name: {{ include "ra-self-hosted-executor.fullname" . }}
             {{- end }}
-            {{- range .Values.executor.additionalSecretEnvFrom }}
+            {{ if (or .Values.executor.additionalSecretEnvFrom .Values.crowdstrikeConfig.clientSecretRef) -}}
             - secretRef:
+            {{- range .Values.executor.additionalSecretEnvFrom }}
 {{ . | toYaml | indent 16 }}
+            {{- end }}
+            {{- if .Values.crowdstrikeConfig.clientSecretRef }}
+                name: {{ .Values.crowdstrikeConfig.clientSecretRef }}
+            {{- end }}
             {{- end }}
             {{- range .Values.executor.additionalCMEnvFrom }}
             - configMapRef:
@@ -89,11 +100,11 @@ spec:
 {{ .Values.executor.resources | toYaml | indent 12 }}
           {{- end }}
           securityContext:
-            runAsUser: 1001
-            runAsGroup: 2001
-            runAsNonRoot: true
-            readOnlyRootFilesystem: true
-            allowPrivilegeEscalation: false
+{{ if .Values.executor.securityContext }}
+{{ .Values.executor.securityContext | toYaml | indent 12 }}
+{{- else -}}
+{{ .Values.securityContext | toYaml | indent 12 }}
+{{- end }}
       containers:
         - name: executor
           image: {{ include "ra-self-hosted-executor.image" . }}
@@ -110,6 +121,7 @@ spec:
             - name: "REGION"
               value: {{ .Values.crowdstrikeConfig.region }}
             {{- if .Values.crowdstrikeConfig.clientID }}
+            {{ if not .Values.crowdstrikeConfig.clientSecretRef -}}
             - name: "CLIENT_ID"
               value: {{ .Values.crowdstrikeConfig.clientID }}
             {{- end }}
@@ -117,21 +129,27 @@ spec:
             - name: "CLIENT_SECRET"
               value: {{ .Values.crowdstrikeConfig.clientSecret }}
             {{- end }}
+            {{- end }} 
             - name: "STORAGE_ENGINE"
               value: "sqlite"
             - name: "LOG_LEVEL"
               value: {{ .Values.executor.logLevel | quote }}
             - name: "CATALOG_PER_PAGE_RATE"
               value: {{ .Values.executor.catalogPerPageRate | quote }}
-          {{ if (or .Values.registryConfigs .Values.executor.additionalCMEnvFrom .Values.executor.additionalSecretEnvFrom) -}}
+          {{ if (or .Values.registryConfigs .Values.executor.additionalCMEnvFrom .Values.executor.additionalSecretEnvFrom .Values.crowdstrikeConfig.clientSecretRef) -}}
           envFrom:
             {{- if .Values.registryConfigs }}
             - configMapRef:
                 name: {{ include "ra-self-hosted-executor.fullname" . }}
             {{- end }}
-            {{- range .Values.executor.additionalSecretEnvFrom }}
+            {{ if (or .Values.executor.additionalSecretEnvFrom .Values.crowdstrikeConfig.clientSecretRef) -}}
             - secretRef:
+            {{- range .Values.executor.additionalSecretEnvFrom }}
 {{ . | toYaml | indent 16 }}
+            {{- end }}
+            {{- if .Values.crowdstrikeConfig.clientSecretRef }}
+                name: {{ .Values.crowdstrikeConfig.clientSecretRef }}
+            {{- end }}
             {{- end }}
             {{- range .Values.executor.additionalCMEnvFrom }}
             - configMapRef:
@@ -152,11 +170,11 @@ spec:
 {{ .Values.executor.resources | toYaml | indent 12 }}
           {{- end }}
           securityContext:
-            runAsUser: 1001
-            runAsGroup: 2001
-            runAsNonRoot: true
-            readOnlyRootFilesystem: true
-            allowPrivilegeEscalation: false
+{{ if .Values.executor.securityContext }}
+{{ .Values.executor.securityContext | toYaml | indent 19 }}
+{{- else -}}
+{{ .Values.securityContext | toYaml | indent 12 }}
+{{- end }}
       {{- if .Values.executor.nodeSelector }}
       nodeSelector:
         {{- .Values.executor.nodeSelector | toYaml | nindent 8 }}

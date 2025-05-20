@@ -58,8 +58,8 @@ spec:
               value: "init"
             - name: "LOG_LEVEL"
               value: {{ .Values.executor.logLevel | quote }}
-            {{- if .Values.additionalEnv }}
-            {{- range .Values.additionalEnv }}
+            {{- if .Values.executor.additionalEnv }}
+            {{- range .Values.executor.additionalEnv }}
             - name: {{ .name }}
               value: {{ .value }}
             {{- end }}
@@ -123,6 +123,12 @@ spec:
               value: {{ .Values.executor.logLevel | quote }}
             - name: "CATALOG_PER_PAGE_RATE"
               value: {{ .Values.executor.catalogPerPageRate | quote }}
+            {{- if .Values.executor.additionalEnv }}
+            {{- range .Values.executor.additionalEnv }}
+            - name: {{ .name }}
+              value: {{ .value }}
+            {{- end }}
+            {{- end }}
           {{ if (or .Values.registryConfigs .Values.executor.additionalCMEnvFrom .Values.executor.additionalSecretEnvFrom) -}}
           envFrom:
             {{- if .Values.registryConfigs }}

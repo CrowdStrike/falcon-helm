@@ -50,6 +50,12 @@ spec:
             - name: GRPC_KEY_FILE
               value: /etc/tls/tls.key
             {{- end }}
+            {{- if .Values.jobController.additionalEnv }}
+            {{- range .Values.jobController.additionalEnv }}
+            - name: {{ .name }}
+              value: {{ .value }}
+            {{- end }}
+            {{- end }}
           {{ if (or .Values.registryConfigs .Values.crowdstrikeConfig.jobTypeConfigs .Values.jobController.additionalCMEnvFrom .Values.jobController.additionalSecretEnvFrom) -}}
           envFrom:
             {{- if .Values.registryConfigs }}
@@ -99,8 +105,8 @@ spec:
             - name: GRPC_KEY_FILE
               value: /etc/tls/tls.key
             {{- end }}
-            {{- if .Values.additionalEnv }}
-            {{- range .Values.additionalEnv }}
+            {{- if .Values.jobController.additionalEnv }}
+            {{- range .Values.jobController.additionalEnv }}
             - name: {{ .name }}
               value: {{ .value }}
             {{- end }}

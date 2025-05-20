@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "relay.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "relay.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "relay.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "relay.selectorLabels" . | nindent 8 }}
+        {{- if .Values.podLabels }}
+        {{ toYaml .Values.podLabels | nindent 8 }}
+        {{end}}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      dnsPolicy: ClusterFirstWithHostNet
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: relay
+          image: {{ .Values.image.address }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          envFrom:
+            - secretRef:
+                name: {{ include "relay.fullname" . }}
+          env:
+            - name: RELAY
+              value: "true"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: ASPM_RELAY_CLUSTER_NAME
+              value: {{ .Values.relay.clusterName }}
+            - name: ASPM_REGION
+              value: {{ .Values.relay.falconRegion }}
+            - name: ASPM_KUBERNETES_JOBS_IMAGE_ADDRESS
+              value: {{ .Values.jobs.imageAddress }}
+            - name: ASPM_KUBERNETES_JOBS_POD_LABELS
+              value: {{ .Values.jobs.podLabels | mustToJson | quote }}
+            - name: ASPM_KUBERNETES_JOBS_PULL_SECRETS
+              value: {{ .Values.jobs.imagePullSecrets | mustToJson | quote }}
+          {{- range $key, $val := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $val | quote }}
+          {{- end }}
+          resources:
+            limits:
+              {{- if .Values.limits.memory  }}
+              memory: {{ .Values.limits.memory }}
+              {{end}}
+              {{- if .Values.limits.cpu }}
+              cpu: {{ .Values.limits.cpu }}
+              {{end}}
+            requests:
+              memory: {{ .Values.requests.memory}}Mi
+              cpu: {{ .Values.requests.cpu }}
+
+      imagePullSecrets:
+      {{- range $val := .Values.image.pullSecrets }}
+        - name: $val
+      {{end}}

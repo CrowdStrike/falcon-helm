@@ -59,6 +59,11 @@ falcon:
   tags:
   provisioning_token:
 
+# If set to false, KAC doesn't act as an admission control webhook.
+# Available for KAC since version 7.26.
+admissionControl:
+  enabled: true
+
 # These variables can be used to customize the way KAC provides visibility into
 # resources on your Kubernetes cluster. The variables are initially set to the
 # default values which will be used if they are commented out.
@@ -113,6 +118,7 @@ affinity:
           operator: In
           values:
           - amd64
+          - arm64
 
 # Default limits for all KAC Pods. Review resource consumption for
 # each Pod in your environment and update accordingly
@@ -122,6 +128,13 @@ falconClientResources:
   requests:
     cpu: 250m
     memory: 384Mi
+
+falconClientNoWebhookResources:
+  limits:
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
 
 falconWatcherResources:
   limits:

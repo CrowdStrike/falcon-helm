@@ -15,9 +15,10 @@ This repository is a collection of CrowdStrike Helm Charts. The Helm Charts deve
 | :-                                                                   | :-                                                                                                                                           |
 | [Falcon Sensor](helm-charts/falcon-sensor)                           | Deploys the Falcon Sensor to Kubernetes Nodes or as a Sidecar to a pod. See [the README](helm-charts/falcon-sensor/README.md) for more info. |
 | [Falcon Integration Gateway](helm-charts/falcon-integration-gateway) | Deploys the Falcon Integration Gateway. See [the README](helm-charts/falcon-integration-gateway/README.md) for more info.                    |
-| [Falcon Kubernetes Admission Controller](helm-charts/falcon-kac)     | Deploy the Falcon Kubernetes Admission Controller. See [the README](helm-charts/falcon-kac/README.md) for more info. |
+| [Falcon Kubernetes Admission Controller](helm-charts/falcon-kac)     | Deploy the Falcon Kubernetes Admission Controller. See [the README](helm-charts/falcon-kac/README.md) for more info.                         |
 | [Falcon Image Analyzer](helm-charts/falcon-image-analyzer)           | Deploy the Falcon Image Analyzer. See [the README](helm-charts/falcon-image-analyzer/README.md) for more info.       |
 | [Falcon Self Hosted Registry Assessment](helm-charts/falcon-self-hosted-registry-assessment)           | Deploy the Falcon Self Hosted Registry Assessment. See [the README](helm-charts/falcon-self-hosted-registry-assessment/README.md) for more info.       |
+| [ASPM Relay](helm-charts/aspm-relay)                                 | Deploy the ASPM Relay. See [the README](helm-charts/aspm-relay/README.md) for more info.                                                     |
 
 ## Developer Guide
 If you are a developer, please read our [Developer's Guide](docs/developer_guide.md).

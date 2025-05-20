@@ -85,17 +85,9 @@ spec:
     spec:
       affinity:
         nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/os
-                operator: In
-                values:
-                - linux
-              - key: kubernetes.io/arch
-                operator: In
-                values:
-                - amd64
+        {{- with .Values.container.nodeAffinity }}
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 1
             preference:
@@ -154,7 +146,7 @@ spec:
         command: ["injector"]
         envFrom:
         - configMapRef:
-            name: {{ include "falcon-sensor.fullname" . }}-config
+            name: {{ include "falcon-sensor.configMapName" . }}
         ports:
         - name: https
           containerPort: {{ .Values.container.injectorPort }}

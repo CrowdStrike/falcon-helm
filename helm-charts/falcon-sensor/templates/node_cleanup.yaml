@@ -53,6 +53,7 @@ spec:
         {{ $key }}: {{ $value | quote }}
         {{- end }}
         {{- end }}
+        {{ include "falcon-sensor.workloadCleanupAllowlistLabel" . }}
     spec:
     {{- if and (.Values.node.image.pullSecrets) (.Values.node.image.registryConfigJSON) }}
       {{- fail "node.image.pullSecrets and node.image.registryConfigJSON cannot be used together." }}
@@ -125,7 +126,7 @@ spec:
         imagePullPolicy: "{{ .Values.node.image.pullPolicy }}"
         args:
         - -c
-        - sleep 10
+        - sleep infinity
         command:
         - /bin/bash
         {{- if or .Values.node.gke.autopilot .Values.node.daemonset.resources }}

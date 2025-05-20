@@ -219,7 +219,8 @@
                                         "key": "kubernetes.io/arch",
                                         "operator": "In",
                                         "values": [
-                                            "amd64"
+                                            "amd64",
+                                            "arm64"
                                         ]
                                     }
                                 ]
@@ -257,6 +258,33 @@
             }
         },
         "falconClientResources": {
+            "type": "object",
+            "properties": {
+                "requests": {
+                    "type": "object",
+                    "properties": {
+                        "cpu": {
+                            "type": "string"
+                        },
+                        "memory": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "limits": {
+                    "type": "object",
+                    "properties": {
+                        "cpu": {
+                            "type": "string"
+                        },
+                        "memory": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "falconClientNoWebhookResources": {
             "type": "object",
             "properties": {
                 "requests": {

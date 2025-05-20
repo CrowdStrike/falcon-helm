@@ -10,8 +10,12 @@ node:
   backend: bpf
 
   # Enable for use on Google's GKE Autopilot clusters
+  # deployAllowListVersion - specify the version of the workload allowlist to use for the primary daemonset
+  # cleanupAllowListVersion - specify the version of the workload allowlist to use for the cleanup daemonset
   gke:
     autopilot: false
+    # deployAllowListVersion: ""
+    # cleanupAllowListVersion: ""
 
   daemonset:
     # Annotations to apply to the daemonset
@@ -156,6 +160,21 @@ container:
   # Configure the Injector Port
   injectorPort: 4433
 
+  # https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
+  # Allow setting additional node selections e.g. processor type
+  # amd64 is the only supported architecture at this time.
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/os
+          operator: In
+          values:
+          - linux
+        - key: kubernetes.io/arch
+          operator: In
+          values:
+          - amd64
   # Configure the requests and limits of the sensor
   sensorResources:
   # limits:

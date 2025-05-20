@@ -1,17 +1,24 @@
 # CrowdStrike Falcon Kubernetes Admission Controller Helm Chart
-The Falcon Kubernetes Admission Controller (KAC) is a custom plugin that you can deploy to your Kubernetes cluster to monitor and review Kubernetes objects when they are created. It’s deployed to a worker node in a cluster, and when enabled, it listens to post-authenticated API requests from the control plane.
 
-Admission control policies tell the Falcon KAC what to do when it observes an Indicator of Misconfiguration (IOM) on a Kubernetes object. You can customize policies to apply to different areas of the cluster by namespace or object label. You can configure the action that the Falcon KAC takes when it encounters a misconfiguration. It can take no action, generate an alert, or prevent the object from being deployed.
+The Falcon Kubernetes Admission Controller (KAC) is a custom plugin that you can deploy to your Kubernetes cluster to
+monitor and review Kubernetes objects when they are created. It’s deployed to a worker node in a cluster, and when
+enabled, it listens to post-authenticated API requests from the control plane.
 
-Together, the Falcon KAC and the admission control policies provide continuous visibility and protection across your Kubernetes cluster.
+Admission control policies tell the Falcon KAC what to do when it observes an Indicator of Misconfiguration (IOM) on a
+Kubernetes object. You can customize policies to apply to different areas of the cluster by namespace or object label.
+You can configure the action that the Falcon KAC takes when it encounters a misconfiguration. It can take no action,
+generate an alert, or prevent the object from being deployed.
 
+Together, the Falcon KAC and the admission control policies provide continuous visibility and protection across your
+Kubernetes cluster.
 
 # Getting Started
+
 To install and deploy the Falcon Kubernetes Admission Controller, your cluster environment must meet these requirements:
 
 - Helm 3.x is installed and available in PATH
 - Helm 3.x is supported by your Kubernetes distribution
-- Your cluster is running on a supported x86_64 Kubernetes environment
+- Your cluster is running on a supported x86_64, ARM64, or mixed Kubernetes environment
 
 The Falcon Kubernetes Admission Controller has been deployed and tested on these Kubernetes distributions:
 
@@ -22,12 +29,17 @@ The Falcon Kubernetes Admission Controller has been deployed and tested on these
 
 ## Helm Chart Support for Falcon Admission Controller Versions
 
-| Helm chart Version      | Falcon Admission Controller Version            |
-|:------------------------|:-----------------------------------------------|
-| `< 1.2.x`              | `< 7.20.x`                                     |
-| `>= 1.2.x`              | `>= 7.20.x`                                    |
+| Helm chart Version | Falcon Admission Controller Version |
+|:-------------------|:------------------------------------|
+| `< 1.2.x`          | `< 7.20.x`                          |
+| `>= 1.2.x`         | `>= 7.20.x`                         |
 
-Depending on your network environment, you might need to allow TLS traffic on port 443 between your network and our cloud's network addresses:
+> [!IMPORTANT]
+> Falcon KAC will have multi-arch images starting with version `7.26.x`. Falcon KAC helm chart versions 1.4.x+ adds
+> `arm64` to the list of allowed architectures in node affinity to support KAC deployment to ARM64 clusters.
+
+Depending on your network environment, you might need to allow TLS traffic on port 443 between your network and our
+cloud's network addresses:
 
 | CrowdStrike cloud | Network address                                                          |
 |-------------------|--------------------------------------------------------------------------|
@@ -36,16 +48,23 @@ Depending on your network environment, you might need to allow TLS traffic on po
 | EU-1              | ts01-lanner-lion.cloudsink.net<br/>lfodown01-lanner-lion.cloudsink.net   |
 | US-GOV-1          | ts01-laggar-gcw.cloudsink.net<br/>lfodown01-laggar-gcw.cloudsink.net     |
 
-# Falcon Kubernetes Admission Controller Architecture Overview 
-The Falcon KAC runs as a pair of containers in a pod on the worker node. It listens to the Kubernetes API to monitor Kubernetes objects. When a new object is created, the Falcon KAC evaluates the new object against the admission control policy to identify IOMs. The admission control policy tells the Falcon KAC how to respond to new objects: do nothing, create an alert in the Falcon console, or prevent the object from being deployed.
+# Falcon Kubernetes Admission Controller Architecture Overview
+
+The Falcon KAC runs as a pair of containers in a pod on the worker node. It listens to the Kubernetes API to monitor
+Kubernetes objects. When a new object is created, the Falcon KAC evaluates the new object against the admission control
+policy to identify IOMs. The admission control policy tells the Falcon KAC how to respond to new objects: do nothing,
+create an alert in the Falcon console, or prevent the object from being deployed.
 The Falcon KAC comprises two containers:
 
 - **Kubernetes Client (falcon-client)**  
-This is the validating webhook that is responsible for listening to events from the Kubernetes API and forwarding them to the admission control process.
+  This is the validating webhook that is responsible for listening to events from the Kubernetes API and forwarding them
+  to the admission control process.
 - **Admission controller (falcon-ac)**  
-This is the controller process that is responsible for admission control policy management, cloud communication, and event handling.
+  This is the controller process that is responsible for admission control policy management, cloud communication, and
+  event handling.
 
 The Falcon KAC does not monitor these namespaces:
+
 - falcon-kac
 - falcon-system
 - kube-system
@@ -53,8 +72,7 @@ The Falcon KAC does not monitor these namespaces:
 
 # Install Falcon Kubernetes Admission Controller
 
-
-- Add the Crowdstrike Falcon Helm Repository:  
+- Add the Crowdstrike Falcon Helm Repository:
   ```
   helm repo add crowdstrike https://crowdstrike.github.io/falcon-helm
   ```
@@ -62,25 +80,27 @@ The Falcon KAC does not monitor these namespaces:
    ```
    helm repo update
    ```
-- Set a variable for the Falcon KAC image repository:  
+- Set a variable for the Falcon KAC image repository:
    ```
    export KAC_IMAGE_REPO=<registry_name>/falcon-kac
    ``` 
-- Set a variable for the Falcon KAC image tag:    
+- Set a variable for the Falcon KAC image tag:
    ```
    export KAC_IMAGE_TAG=<KAC_version>.container.x86_64.Release.<cloud_region>
    ```
-   Example: The Falcon KAC image tag has this format `7.01.0-103.container.x86_64.Release.US-1`
-   
-- Set a Falcon CID variable:  
+  Example: The Falcon KAC image tag has this format `7.01.0-103.container.x86_64.Release.US-1`
+
+- Set a Falcon CID variable:
    ```
    export FALCON_CID=<your_CID_with_checksum>
    ```
-**Tip**: To find your CID with checksum, go to the CrowdStrike Sensor download page. At the top of the page, locate your CID checksum, and then click **Copy your Customer ID checksum to the clipboard**.
+
+**Tip**: To find your CID with checksum, go to the CrowdStrike Sensor download page. At the top of the page, locate your
+CID checksum, and then click **Copy your Customer ID checksum to the clipboard**.
 
 ## Install Falcon KAC Helm chart
 
-- Install the Falcon KAC Helm chart to a new namespace:  
+- Install the Falcon KAC Helm chart to a new namespace:
   ```
    helm install falcon-kac crowdstrike/falcon-kac \
     -n falcon-kac --create-namespace \
@@ -88,20 +108,22 @@ The Falcon KAC does not monitor these namespaces:
     --set image.repository=$KAC_IMAGE_REPO \
     --set image.tag=$KAC_IMAGE_TAG
   ```  
-  **Tip**: Use the --set flag to pass individual values to the values file when running helm install. For a complete list and description of configurable parameters, run  
+  **Tip**: Use the --set flag to pass individual values to the values file when running helm install. For a complete
+  list and description of configurable parameters, run
   ```
   helm show values crowdstrike/falcon-kac
   ```
-- Optional: Install the Falcon KAC Helm from a private registry that requires authentication:If your registry requires authentication, you must create a Kubernetes secret that can fetch the image from the registry.
-  - Log into your Docker registry.
-  - Fetch the base64 encoded pull secret:
-    ```
-     cat ~/.docker/config.json | base64 -w 0
-    ```
-  - Save the base64 string as a variable for the pull secret:
-    ```
-     export IMAGE_PULL_TOKEN=<base64_encoded_string>
-    ```
+- Optional: Install the Falcon KAC Helm from a private registry that requires authentication:If your registry requires
+  authentication, you must create a Kubernetes secret that can fetch the image from the registry.
+    - Log into your Docker registry.
+    - Fetch the base64 encoded pull secret:
+      ```
+       cat ~/.docker/config.json | base64 -w 0
+      ```
+    - Save the base64 string as a variable for the pull secret:
+      ```
+       export IMAGE_PULL_TOKEN=<base64_encoded_string>
+      ```
 
   ```
    helm install falcon-kac crowdstrike/falcon-kac \
@@ -122,14 +144,20 @@ The Falcon KAC does not monitor these namespaces:
    NAME                          READY   STATUS    RESTARTS         AGE
    falcon-kac-7cc7dd57fc-pvzzf   2/2     Running   0                7d2h
   ```
-- Verify that the Falcon KAC has an AID: 
+- Verify that the Falcon KAC has an AID:
   ```
    kubectl exec deployment/falcon-kac -n falcon-kac -c falcon-ac -- falconctl -g --aid
   ```
-  **Tip**: An AID is assigned to the Falcon KAC when it communicates with the Falcon cloud. If the Falcon KAC has an AID that is not all zeros, it is installed and running properly.
+  **Tip**: An AID is assigned to the Falcon KAC when it communicates with the Falcon cloud. If the Falcon KAC has an AID
+  that is not all zeros, it is installed and running properly.
 
 ## Update Falcon KAC
-When a new container image is available, you can update your Falcon KAC by passing the new container image to the Helm chart and then running a `helm upgrade` command. In general, Helm charts do not support auto-updating running resources. Falcon KAC does not support auto-update. You must manually update the Falcon KAC on your cluster or update through a GitOps or CI/CD pipeline per Kubernetes Best Operational and Security practices.
+
+When a new container image is available, you can update your Falcon KAC by passing the new container image to the Helm
+chart and then running a `helm upgrade` command. In general, Helm charts do not support auto-updating running resources.
+Falcon KAC does not support auto-update. You must manually update the Falcon KAC on your cluster or update through a
+GitOps or CI/CD pipeline per Kubernetes Best Operational and Security practices.
+
 - Set a new variable for the Falcon KAC container image tag:
   ```
   export KAC_IMAGE_TAG=<KAC_version>.container.x86_64.Release.<cloud_region>
@@ -143,20 +171,22 @@ When a new container image is available, you can update your Falcon KAC by passi
        --set image.repository=$KAC_IMAGE_REPO \
        --set image.tag=$KAC_IMAGE_TAG
   ```
-  **Note**: Your deployment will update only when you change the inputs for helm upgrade, for example by changing the image reference. 
+  **Note**: Your deployment will update only when you change the inputs for helm upgrade, for example by changing the
+  image reference.
 
-- Verify that the new version of the Falcon KAC is running on the falcon-kac pods:  
+- Verify that the new version of the Falcon KAC is running on the falcon-kac pods:
   ```
   kubectl get pods -n falcon-kac -o jsonpath='{range .items[*]}{"\n"}{.metadata.name}{":\t"}{range .spec.containers[*]}{.image}{", "}{end}{end}'
   ```
 
-   The output looks similar to the example below and shows that version  
-   falcon-kac:7.01.0-103.container.x86_64.Release.US-1 is running on both Falcon KAC pods.
+  The output looks similar to the example below and shows that version  
+  falcon-kac:7.01.0-103.container.x86_64.Release.US-1 is running on both Falcon KAC pods.
    ```
    falcon-kac-5bd6986f6f-x86vw: falcon-kac:7.01.0-103.container.x86_64.Release.US-1, falcon-kac:7.01.0-103.container.x86_64.Release.US-1,
    ```
 
 ## Uninstall Falcon KAC
+
 - Uninstall the admission controller from the falcon-kac namespace:
   ```
   helm uninstall falcon-kac -n falcon-kac
@@ -166,9 +196,10 @@ When a new container image is available, you can update your Falcon KAC by passi
   ```
   kubectl delete ns falcon-kac
   ```
+
 # Falcon Configuration Options
 
-The following tables lists the Falcon KAC  configurable parameters and their default values.
+The following tables lists the Falcon KAC configurable parameters and their default values.
 
 | Parameter                                      | Description                                           | Default               |
 |:-----------------------------------------------|:------------------------------------------------------|:----------------------|
@@ -183,4 +214,5 @@ The following tables lists the Falcon KAC  configurable parameters and their def
 | `falcon.provisioning_token`                    | Provisioning token value                              | None                  |
 | `clusterVisibility.resourceSnapshots.enabled`  | Enable cluster snapshots                              | `true`                |
 | `clusterVisibility.resourceSnapshots.interval` | Interval between cluster snapshots                    | `22h`                 |
-| `clusterVisibility.resourceWatcher.enabled`    | Enable Cluster Visbility                              | `true`                |
+| `clusterVisibility.resourceWatcher.enabled`    | Enable Cluster Visibility                             | `true`                |
+| `admissionControl.enabled`                     | Enable Admission Control                              | `true`                |

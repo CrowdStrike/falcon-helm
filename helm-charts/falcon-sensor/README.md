@@ -136,6 +136,71 @@ For a complete listing of configurable parameters, run the following command:
 helm show values crowdstrike/falcon-sensor
 ```
 
+### GKE Autopilot Configuration
+#### Configuring the AllowlistSynchronizer
+Running Daemonset Pods with privileged access on GKE Autopilot requires special configurations due to default security restrictions. To enable these privileged Pods, you need to implement an AllowlistSynchronizer. This resource applies WorkloadAllowlists to your cluster, which the GKE Autopilot validating webhook uses to approve Pod deployments based on their manifest spec and image digests. Follow these steps to properly configure the AllowlistSynchronizer:
+
+1. Create a file named `allowlist-synchronizer.yaml` with the following contents:
+```
+apiVersion: auto.gke.io/v1
+kind: AllowlistSynchronizer
+metadata:
+  name: crowdstrike-synchronizer
+spec:
+  allowlistPaths:
+  - CrowdStrike/falcon-sensor/*
+```
+2. Apply the AllowlistSynchronizer to your cluster:
+```
+kubectl apply -f allowlist-synchronizer.yaml
+```
+
+3. Ensure the AllowlistSynchronizer is running:
+```
+kubectl get allowlistsynchronizers
+```
+
+4. Ensure the AllowlistSynchronizer has fetched the WorkloadAllowlist:
+```
+kubectl get workloadallowlists
+```
+An example output of the above command is:
+```
+NAME                                                  AGE
+crowdstrike-falconsensor-cleanup-allowlist-v1.0.0     7d
+crowdstrike-falconsensor-cleanup-allowlist-v1.0.1     7d
+crowdstrike-falconsensor-cleanup-allowlist-v1.0.2     7d
+crowdstrike-falconsensor-deploy-allowlist-v1.0.0      7d
+crowdstrike-falconsensor-deploy-allowlist-v1.0.1      7d
+crowdstrike-falconsensor-deploy-allowlist-v1.0.2      7d
+crowdstrike-falconsensor-deploy-allowlist-v1.0.3      6h40m
+crowdstrike-falconsensor-falconctl-allowlist-v1.0.0   7d
+crowdstrike-falconsensor-falconctl-allowlist-v1.0.1   7d
+```
+##### WorkloadAllowlist Definitions
+The WorkloadAllowlists serve the following purposes:
+- crowdstrike-falconsensor-cleanup-allowlist-vX.X.X: Authorizes the Falcon Sensor Cleanup DaemonSet to operate within the cluster.
+- crowdstrike-falconsensor-deploy-allowlist-vX.X.X: Permits the deployment and execution of the Falcon Sensor Deploy DaemonSet in the cluster environment.
+- crowdstrike-falconsensor-falconctl-allowlist-vX.X.X: Enables the Falconctl job to run, facilitating sensor configuration and management tasks.
+
+> [!NOTE]
+> Additional information about AllowlistSynchronizer can be found here: [https://cloud.google.com/kubernetes-engine/docs/reference/crds/allowlistsynchronizer](https://cloud.google.com/kubernetes-engine/docs/reference/crds/allowlistsynchronizer)
+
+#### Obtaining an Authorized Image
+WorkloadAllowlists ensure that only authorized container images are deployed to pods by verifying their image digests. To view the list of approved image digests, execute the following command:
+```
+kubectl get workloadallowlists <crowdstrike-falconsensor-XXXXXXX-allowlist-vX.X.X>  -o=jsonpath='{range .containerImageDigests[*].imageDigests[*]}{@}{"\n"}{end}'
+```
+To obtain the Falcon Container sensor image, you have two options:
+
+1. Pull directly from the CrowdStrike registry
+2. Copy the image from the CrowdStrike registry to your private registry
+
+For option 2, we provide an automation script to simplify the process:
+[https://github.com/CrowdStrike/falcon-scripts/tree/main/bash/containers/falcon-container-sensor-pull](https://github.com/CrowdStrike/falcon-scripts/tree/main/bash/containers/falcon-container-sensor-pull)
+
+When copying images to a private registry, it's crucial to preserve the image digest. We recommend using tools like Skopeo for this purpose, as they ensure the integrity of the image during transfer.
+
 ## Installing in Kubernetes Cluster as a Sidecar
 
 ### Deployment Considerations

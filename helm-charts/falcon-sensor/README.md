@@ -193,7 +193,7 @@ WorkloadAllowlists ensure that only authorized container images are deployed to 
 ```
 kubectl get workloadallowlists <crowdstrike-falconsensor-XXXXXXX-allowlist-vX.X.X>  -o=jsonpath='{range .containerImageDigests[*].imageDigests[*]}{@}{"\n"}{end}'
 ```
-To obtain the Falcon Container sensor image, you have two options:
+To obtain the Falcon Node sensor image, you have two options:
 
 1. Pull directly from the CrowdStrike registry
 2. Copy the image from the CrowdStrike registry to your private registry

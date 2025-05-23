@@ -138,7 +138,9 @@ helm show values crowdstrike/falcon-sensor
 
 ### GKE Autopilot Configuration
 #### Configuring the AllowlistSynchronizer
-Running Daemonset Pods with privileged access on GKE Autopilot requires special configurations due to default security restrictions. To enable these privileged Pods, you need to implement an AllowlistSynchronizer. This resource applies WorkloadAllowlists to your cluster, which the GKE Autopilot validating webhook uses to approve Pod deployments based on their manifest spec and image digests. Follow these steps to properly configure the AllowlistSynchronizer:
+Running Daemonset Pods with privileged access on GKE Autopilot requires special configurations due to default security restrictions. To enable these privileged Pods, you need to configure an AllowlistSynchronizer. This resource applies CrowdStrike specific WorkloadAllowlists to your cluster, which the GKE Autopilot validating webhook uses to approve Pod deployments based on their manifest spec and image digests. Follow these steps to properly configure the AllowlistSynchronizer:
+Comment
+
 
 1. Create a file named `allowlist-synchronizer.yaml` with the following contents:
 ```

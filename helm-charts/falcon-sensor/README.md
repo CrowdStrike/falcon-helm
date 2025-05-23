@@ -201,7 +201,7 @@ To obtain the Falcon Node sensor image, you have two options:
 For option 2, we provide an automation script to simplify the process:
 [https://github.com/CrowdStrike/falcon-scripts/tree/main/bash/containers/falcon-container-sensor-pull](https://github.com/CrowdStrike/falcon-scripts/tree/main/bash/containers/falcon-container-sensor-pull)
 
-When copying images to a private registry, it's crucial to preserve the image digest. We recommend using tools like Skopeo for this purpose, as they ensure the integrity of the image during transfer.
+When copying images to a private registry, it's crucial to preserve the image digest. We recommend using tools like Skopeo for this purpose, as they ensure the digest of the image remains the same after the transfer.
 
 ## Installing in Kubernetes Cluster as a Sidecar
 

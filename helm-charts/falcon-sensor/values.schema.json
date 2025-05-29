@@ -378,6 +378,10 @@
                     "type": "boolean",
                     "default": "false"
                 },
+                "alternateMountPath": {
+                    "type": "boolean",
+                    "default": "false"
+                },
                 "enabled": {
                     "type": "boolean",
                     "default": "true"

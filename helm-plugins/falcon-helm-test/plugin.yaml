@@ -1,0 +1,9 @@
+name: "falcon-helm-test"
+version: "0.1.0"
+usage: "Run tests against Helm charts in falcon-helm"
+description: |-
+  This plugin runs Terratest against the specified Helm chart in the repository or all charts.
+command: "$HELM_PLUGIN_DIR/run_tests.sh"
+hooks:
+  install: "cd -P $HELM_PLUGIN_DIR/../../tests/template-tests && go mod download"
+  update: "cd -P $HELM_PLUGIN_DIR/../../tests/template-tests && go mod download"

@@ -17,9 +17,11 @@ metadata:
     {{- end }}
     {{- end }}
   annotations:
+    {{- if not .Values.node.cleanupOnly }}
     "helm.sh/hook": post-delete
     "helm.sh/hook-weight": "1"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    {{- end }}
   {{- if .Values.node.daemonset.annotations }}
     {{- range $key, $value := .Values.node.daemonset.annotations }}
     {{ $key }}: {{ $value | quote }}
@@ -144,7 +146,7 @@ spec:
           privileged: false
           readOnlyRootFilesystem: true
           allowPrivilegeEscalation: true
-      serviceAccountName: {{ .Values.serviceAccount.name }}-node-cleanup
+      serviceAccountName: {{ include "falcon-sensor.cleanupServiceAccountName" . }}
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
       hostPID: true
 {{- end }}

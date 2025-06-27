@@ -126,6 +126,7 @@ The following tables lists the more common configurable parameters of the chart 
 | `node.image.pullSecrets`        | Pull secrets for private registry                                                                                                     | None       (Conflicts with node.image.registryConfigJSON)                                                                                                                                                                                                                                                                                                    |
 | `node.image.registryConfigJSON` | base64 encoded docker config json for the pull secret                                                                                 | None       (Conflicts with node.image.pullSecrets)                                                                                                                                                                                                                                                                                                           |
 | `node.daemonset.resources`      | Configure Node sensor resource requests and limits (eBPF mode only)                                                                   | None       (Minimum setting of 250m CPU and 500Mi memory allowed). Default for GKE Autopilot is 750m CPU and 1.5Gi memory.<br><br><div class="warning">:warning: **Warning**:<br>If you configure resources, you must configure the CPU and Memory Resource requests and limits correctly for your node instances for the node sensor to run properly!</div> |
+| `node.cleanupOnly`              | Run the cleanup Daemonset only.                                                                                                       | `false`    Requires `node.hooks.postDelete.enabled: true`                                                                                                                                                                                                                                                                                                    |
 | `falcon.cid`                    | CrowdStrike Customer ID (CID)                                                                                                         | None       (Required if falconSecret.enabled is false)                                                                                                                                                                                                                                                                                                       |
 | `falconSecret.enabled`          | Enable k8s secrets to inject sensitive Falcon values                                                                                  | false       (Must be true if falcon.cid is not set)                                                                                                                                                                                                                                                                                                          |
 | `falconSecret.secretName`       | Existing k8s secret name to inject sensitive Falcon values.<br> The secret must be under the same namespace as the sensor deployment. | None       (Existing secret must include `FALCONCTL_OPT_CID`)                                                                                                                                                                                                                                                                                                |
@@ -364,4 +365,32 @@ helm uninstall falcon-helm -n falcon-system
 You may need/want to delete the falcon-system as well since helm will not do it for you:
 ```
 kubectl delete ns falcon-system
+```
+
+### Troubleshooting
+#### Falcon Sensor Cleanup Daemonset Fails
+After sensor deletion, it's important to run the cleanup DaemonSet to remove the `/opt/CrowdStrike` directory from all nodes. This cleanup process is automatically executed during a `helm uninstall` by default. However, in large clusters, the cleanup may occasionally encounter issues due to the extended time required for full deployment.
+
+Failing to remove the `/opt/CrowdStrike` directory may lead to these potential problems:
+
+1. Unnecessary disk space consumption by the `/opt/CrowdStrike` directory.
+2. Reuse of the previous Agent ID (AID) found in `/opt/CrowdStrike/falconstore` during subsequent sensor reinstallations.
+
+If the automatic cleanup fails, you can manually run the cleanup DaemonSet by running the following:
+```bash
+helm install falcon-helm crowdstrike/falcon-sensor -n <NAMESPACE>\
+  --set node.image.repository="<Your_Registry>/falcon-node-sensor>" \
+  --set node.enabled=true \
+  --set node.cleanupOnly=true
+```
+Validate removal of the `/opt/Crowdstrike` directory with the following command:
+```bash
+for node in $(kubectl get nodes -o name); do
+  echo -n "$node: "
+  kubectl debug $node -it --image=busybox -- /bin/sh -c 'if test -d /opt/CrowdStrike; then echo "CrowdStrike directory still exists"; else echo "CrowdStrike directory successfully deleted"; fi'
+done
+```
+After validating the removal of the `/opt/Crowdstrike` directory, the cleanup Daemonset should be deleted:
+```bash
+helm uninstall falcon-helm -n <NAMESPACE>\
 ```

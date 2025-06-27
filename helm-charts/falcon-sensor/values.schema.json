@@ -5,13 +5,6 @@
         "falcon": {
             "type": "object",
             "properties": {
-                "cid": {
-                    "type": "string",
-                    "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$",
-                    "example": [
-                        "1234567890ABCDEF1234567890ABCDEF-12"
-                    ]
-                },
                 "trace": {
                     "type": [
                         "null",
@@ -521,41 +514,64 @@
     },
     "oneOf": [
         {
-            "properties": {
-                "falcon": {
-                    "properties": {
-                        "cid": {
-                            "type": "string",
-                            "minLength": 1
-                        }
-                    },
-                    "required": ["cid"]
-                }
-            },
-            "required": ["falcon"]
-        },
-        {
-            "properties": {
-                "falconSecret": {
-                    "properties": {
-                        "enabled": { "enum": [true] },
-                        "secretName": {
-                            "type": "string",
-                            "minLength": 1
-                        }
-                    },
-                    "required": ["enabled", "secretName"]
-                }
-            },
-            "required": ["falconSecret"],
-            "not": {
+            "if": {
                 "properties": {
-                    "falcon": {
-                        "required": ["cid"]
+                    "node": {
+                        "properties": {
+                            "cleanupOnly": {
+                                "type": ["null", "boolean"],
+                                "enum": [null, false]
+                            }
+                        }
                     }
-                },
-                "required": ["falcon"]
-            }
+                }
+            },
+            "then": {
+                "oneOf": [
+                    {
+                        "properties": {
+                            "falcon": {
+                                "properties": {
+                                    "cid": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$",
+                                        "example": [
+                                            "1234567890ABCDEF1234567890ABCDEF-12"
+                                        ]
+                                    }
+                                },
+                                "required": ["cid"]
+                            }
+                        },
+                        "required": ["falcon"]
+                    },
+                    {
+                        "properties": {
+                            "falconSecret": {
+                                "properties": {
+                                    "enabled": { "enum": [true] },
+                                    "secretName": {
+                                        "type": "string",
+                                        "minLength": 1
+                                    }
+                                },
+                                "required": ["enabled", "secretName"]
+                            }
+                        },
+                        "required": ["falconSecret"],
+                        "not": {
+                            "properties": {
+                                "falcon": {
+                                    "required": ["cid"]
+                                }
+                            },
+                            "required": ["falcon"]
+                        }
+                    }
+                ]
+            },
+            "else": {}
         }
     ]
 }

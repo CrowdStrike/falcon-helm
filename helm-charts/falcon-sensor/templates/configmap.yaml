@@ -1,3 +1,4 @@
+{{- if not .Values.node.cleanupOnly }}
 {{- $falconSecretKeys := list "cid" "provisioning_token" }}
 
 apiVersion: v1
@@ -54,3 +55,4 @@ data:
   FALCON_RESOURCES: '{{ toJson .Values.container.sensorResources | b64enc }}'
   {{- end }}
   {{- end }}
+{{- end }}

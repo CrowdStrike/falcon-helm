@@ -168,3 +168,14 @@ Add label for WorkloadAllowlist for the cleanup daemonset
 {{- printf "cloud.google.com/matching-allowlist: \"crowdstrike-falconsensor-cleanup-allowlist-%s\"" .Values.node.gke.cleanupAllowListVersion -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Create service account name for the cleanup daemonset
+*/}}
+{{- define "falcon-sensor.cleanupServiceAccountName" -}}
+{{- if not .Values.node.cleanupOnly -}}
+{{- printf "%s-node-cleanup" .Values.serviceAccount.name -}}
+{{- else -}}
+{{- printf "%s-node-cleanup-standalone" .Values.serviceAccount.name -}}
+{{- end -}}
+{{- end -}}

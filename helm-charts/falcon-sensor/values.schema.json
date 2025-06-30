@@ -260,7 +260,7 @@
                 },
                 "terminationGracePeriod": {
                     "type": "integer",
-                    "default": "30",
+                    "default": "60",
                     "pattern": "^[0-9]+$"
                 },
                 "hooks": {

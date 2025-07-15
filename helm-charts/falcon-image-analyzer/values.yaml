@@ -153,10 +153,10 @@ log:
 
 # Set this flag to true to send scan error stats to cs cloud.
 # These events can be searched in investigate>events / advanced events search
-# note that if true,  agent will send an error for image for first time only.
+# note that if true, agent will send an error for image for first time only.
 # Repeated errors for same images will not be sent to preserve network footprint
 scanStats:
-  enabled: false
+  enabled: true
 
 crowdstrikeConfig:
   clusterName: ""

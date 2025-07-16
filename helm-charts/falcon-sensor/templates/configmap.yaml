@@ -15,7 +15,7 @@ metadata:
     app.kubernetes.io/component: "container_sensor"
     {{ else if .Values.node.enabled }}
     app.kubernetes.io/component: "kernel_sensor"
-    {{ end -}}
+    {{- end }}
     crowdstrike.com/provider: crowdstrike
     helm.sh/chart: {{ include "falcon-sensor.chart" . }}
 

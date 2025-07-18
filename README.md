@@ -7,7 +7,7 @@ platform purpose-built to stop breaches via a unified set of cloud-delivered
 technologies that prevent all types of attacks — including malware and much
 more.
 
-This repository is a collection of CrowdStrike Helm Charts. The Helm Charts developed here are an open source project, not a CrowdStrike product. As such, the project itself carries no formal support, expressed or implied.
+This repository is a collection of CrowdStrike Helm Charts designed to streamline the deployment and use of CrowdStrike products on Kubernetes clusters.
 
 ## Helm Charts
 
@@ -24,4 +24,6 @@ This repository is a collection of CrowdStrike Helm Charts. The Helm Charts deve
 If you are a developer, please read our [Developer's Guide](docs/developer_guide.md).
 
 ## Support
-CrowdStrike Falcon Helm is a community-driven, open source project designed to streamline the deployment and use of the CrowdStrike products on Kubernetes clusters. While not a formal CrowdStrike product, CrowdStrike Falcon Helm is maintained by CrowdStrike and supported in partnership with the open source developer community.
+CrowdStrike Falcon Helm is an open source project maintained by CrowdStrike. CrowdStrike will support use of `falcon-helm` in connection with the use of CrowdStrike’s products pursuant to applicable terms in the license for such product.
+
+Learn how to get help, where to submit requests, and more [here](SUPPORT.md)

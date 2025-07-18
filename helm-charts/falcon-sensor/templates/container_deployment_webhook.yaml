@@ -92,7 +92,7 @@ spec:
           - weight: 1
             preference:
               matchExpressions:
-              - key: node-role.kubernetes.io/master
+              - key: {{ if semverCompare "<1.24-0" .Capabilities.KubeVersion.Version }}node-role.kubernetes.io/master{{ else }}node-role.kubernetes.io/control-plane{{ end }}
                 operator: DoesNotExist
       {{- if .Values.container.topologySpreadConstraints }}
       topologySpreadConstraints:

@@ -88,12 +88,6 @@ spec:
         {{- with .Values.container.nodeAffinity }}
           {{- toYaml . | nindent 10 }}
         {{- end }}
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 1
-            preference:
-              matchExpressions:
-              - key: node-role.kubernetes.io/master
-                operator: DoesNotExist
       {{- if .Values.container.topologySpreadConstraints }}
       topologySpreadConstraints:
         {{- toYaml .Values.container.topologySpreadConstraints | nindent 6 }}

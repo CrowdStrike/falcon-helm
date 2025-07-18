@@ -128,12 +128,12 @@ spec:
               - DAC_READ_SEARCH
         {{- else }}
           readOnlyRootFilesystem: false
-        {{- end }}
         env:
           - name: POD_NODE_NAME
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
+        {{- end }}
       containers:
       - name: falcon-node-sensor
         image: "{{ include "falcon-sensor.image" . }}"

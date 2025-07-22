@@ -168,19 +168,20 @@ container:
 
   # https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
   # Allow setting additional node selections e.g. processor type
-  # amd64 is the only supported architecture at this time.
-  nodeAffinity:
-    requiredDuringSchedulingIgnoredDuringExecution:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/os
-          operator: In
-          values:
-          - linux
-        - key: kubernetes.io/arch
-          operator: In
-          values:
-          - amd64
+  # nodeAffinity:
+  #   requiredDuringSchedulingIgnoredDuringExecution:
+  #     nodeSelectorTerms:
+  #     - matchExpressions:
+  #       - key: kubernetes.io/os
+  #         operator: In
+  #         values:
+  #         - linux
+  #       - key: kubernetes.io/arch
+  #         operator: In
+  #         values:
+  #         - amd64
+  nodeAffinity: {}
+
   # Configure the requests and limits of the sensor
   sensorResources:
   # limits:

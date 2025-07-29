@@ -82,6 +82,7 @@ spec:
         {{- end }}
       annotations:
         sensor.falcon-system.crowdstrike.com/injection: disabled
+        checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum | quote }}
       {{- if or (.Values.autoDeploymentUpdate) (.Values.podAnnotations) }}
         {{- if .Values.autoDeploymentUpdate }}
         rollme: {{ randAlphaNum 5 | quote }}

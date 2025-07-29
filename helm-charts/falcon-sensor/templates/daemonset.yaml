@@ -43,6 +43,7 @@ spec:
         {{- range $key, $value := .Values.node.podAnnotations }}
         {{ $key }}: {{ $value | quote }}
         {{- end }}
+        checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum | quote }}
       labels:
         app: "{{ include "falcon-sensor.name" . }}"
         app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}

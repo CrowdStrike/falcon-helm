@@ -70,6 +70,8 @@ helm.sh/chart: {{ include "falcon-image-analyzer.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+crowdstrike.com/provider: crowdstrike
+crowdstrike.com/name: falcon-image-analyzer
 {{- end }}
 
 {{/*

@@ -271,6 +271,7 @@ testing:
 # falcon.cid is required unless falconSecret.enabled is true and FALCONCTL_OPT_CID is already defined in an existing secret.
 falcon:
   cid:
+  cloud:
   apd:
   aph:
   app:

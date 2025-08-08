@@ -5,6 +5,13 @@
         "falcon": {
             "type": "object",
             "properties": {
+                "cloud": {
+                    "type": [
+                        "null",
+                        "string"
+                    ],
+                    "enum": [null, "", "us-1", "us-2", "eu-1", "us-gov-1", "us-gov-2"]
+                },
                 "trace": {
                     "type": [
                         "null",

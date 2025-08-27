@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "title": "CrowdStrike Falcon Platform Umbrella Chart Values Schema",
+  "description": "Schema for the falcon-platform umbrella chart configuration",
+  "required": ["global"],
+  "properties": {
+    "createComponentNamespaces": {
+      "type": "boolean",
+      "description": "Enable automatic namespace creation - pre-install only",
+      "default": false
+    },
+    "global": {
+      "type": "object",
+      "description": "Global configuration shared across all Falcon components",
+      "properties": {
+        "falcon": {
+          "type": "object",
+          "description": "Global Falcon configuration",
+          "properties": {
+            "cid": {
+              "type": [
+                "null",
+                "string"
+              ],
+              "description": "Falcon Customer ID (CID) - required for all components",
+              "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$",
+              "example": [
+                "1234567890ABCDEF1234567890ABCDEF-12"
+              ]
+            }
+          }
+        },
+        "falconSecret": {
+          "type": "object",
+          "description": "Global Falcon Secret configuration for existing Kubernetes secret",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable a Kubernetes secret to inject sensitive Falcon values",
+              "default": false
+            },
+            "secretName": {
+              "type": "string",
+              "description": "Name of existing Kubernetes secret containing sensitive Falcon values"
+            }
+          }
+        },
+        "containerRegistry": {
+          "type": "object",
+          "description": "Global container registry configuration for pulling Falcon component images",
+          "properties": {
+            "pullSecret": {
+              "type": "string",
+              "description": "Existing Kubernetes docker registry secret for accessing private registries"
+            },
+            "configJSON": {
+              "type": "string",
+              "description": "Base64 encoded docker config json for accessing private registries"
+            }
+          }
+        }
+      }
+    },
+    "falcon-sensor": {
+      "type": "object",
+      "description": "Falcon Sensor configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable Falcon Sensor deployment",
+          "default": true
+        }
+      }
+    },
+    "falcon-kac": {
+      "type": "object", 
+      "description": "Falcon Kubernetes Admission Controller configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable Falcon KAC deployment", 
+          "default": true
+        }
+      }
+    },
+    "falcon-image-analyzer": {
+      "type": "object",
+      "description": "Falcon Image Analyzer configuration", 
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable Falcon Image Analyzer deployment",
+          "default": true
+        }
+      }
+    }
+  }
+}

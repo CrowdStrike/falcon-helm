@@ -1,0 +1,18 @@
+{{- if .Values.createComponentNamespaces }}
+{{- $componentNamespaces := splitList "," (include "falcon-platform.componentNamespaces" .) | default "" }}
+{{- range $namespaceName := $componentNamespaces }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ $namespaceName }}
+  labels:
+    {{- include "falcon-platform.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: namespaces-hook
+  annotations:
+    "helm.sh/resource-policy": keep
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-10"
+    "helm.sh/hook-delete-policy": ""
+{{- end }}
+{{- end }}

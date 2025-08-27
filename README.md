@@ -11,14 +11,15 @@ This repository is a collection of CrowdStrike Helm Charts designed to streamlin
 
 ## Helm Charts
 
-| Helm Chart                                                           | Description                                                                                                                                  |
-| :-                                                                   | :-                                                                                                                                           |
-| [Falcon Sensor](helm-charts/falcon-sensor)                           | Deploys the Falcon Sensor to Kubernetes Nodes or as a Sidecar to a pod. See [the README](helm-charts/falcon-sensor/README.md) for more info. |
-| [Falcon Integration Gateway](helm-charts/falcon-integration-gateway) | Deploys the Falcon Integration Gateway. See [the README](helm-charts/falcon-integration-gateway/README.md) for more info.                    |
+| Helm Chart                                                                                   | Description                                                                                                                                      |
+|:---------------------------------------------------------------------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------|
+| [Falcon Platform](helm-charts/falcon-platform)                                               | Unified Helm chart for Falcon Sensor, Falcon Kubernetes Admission Controller, and Falcon Image Analyzer. See [the README](helm-charts/falcon-platform/README.md) for more info.                                        |
+| [Falcon Sensor](helm-charts/falcon-sensor)                                                   | Deploys the Falcon Sensor to Kubernetes Nodes or as a Sidecar to a pod. See [the README](helm-charts/falcon-sensor/README.md) for more info.     |
+| [Falcon Integration Gateway](helm-charts/falcon-integration-gateway)                         | Deploys the Falcon Integration Gateway. See [the README](helm-charts/falcon-integration-gateway/README.md) for more info.                        |
 | [Falcon Kubernetes Admission Controller](helm-charts/falcon-kac)     | Deploy the Falcon Kubernetes Admission Controller. If you're looking for Kubernetes Protection Agent (KPA), it has been deprecated; use this chart instead. See [the README](helm-charts/falcon-kac/README.md) for more info. |
-| [Falcon Image Analyzer](helm-charts/falcon-image-analyzer)           | Deploy the Falcon Image Analyzer. See [the README](helm-charts/falcon-image-analyzer/README.md) for more info.       |
-| [Falcon Self Hosted Registry Assessment](helm-charts/falcon-self-hosted-registry-assessment)           | Deploy the Falcon Self Hosted Registry Assessment. See [the README](helm-charts/falcon-self-hosted-registry-assessment/README.md) for more info.       |
-| [ASPM Relay](helm-charts/aspm-relay)                                 | Deploy the ASPM Relay. See [the README](helm-charts/aspm-relay/README.md) for more info.                                                     |
+| [Falcon Image Analyzer](helm-charts/falcon-image-analyzer)                                   | Deploy the Falcon Image Analyzer. See [the README](helm-charts/falcon-image-analyzer/README.md) for more info.                                   |
+| [Falcon Self Hosted Registry Assessment](helm-charts/falcon-self-hosted-registry-assessment) | Deploy the Falcon Self Hosted Registry Assessment. See [the README](helm-charts/falcon-self-hosted-registry-assessment/README.md) for more info. |
+| [ASPM Relay](helm-charts/aspm-relay)                                                         | Deploy the ASPM Relay. See [the README](helm-charts/aspm-relay/README.md) for more info.                                                         |
 
 ## Developer Guide
 If you are a developer, please read our [Developer's Guide](docs/developer_guide.md).

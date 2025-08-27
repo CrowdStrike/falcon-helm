@@ -1,0 +1,76 @@
+Thank you for installing the CrowdStrike Falcon Platform Helm Chart!
+
+Access to the Falcon component image downloads at registry.crowdstrike.com is required
+to complete installation of this Helm chart. If using an internal registry instead of
+registry.crowdstrike.com, ensure that all Falcon component images are present in a
+container registry accessible to your Kubernetes deployment.
+
+## Enabled Components
+
+{{- $anyEnabled := false }}
+{{- if (index .Values "falcon-sensor").enabled }}
+{{- $anyEnabled = true }}
+{{- $sensorType := "" }}
+{{- $sensorDeploymentType := "" }}
+{{- if (index .Values "falcon-sensor").node.enabled }}
+{{- $sensorType = "Node" }}
+{{- $sensorDeploymentType = "daemonset" }}
+{{- else if (index .Values "falcon-sensor").container.enabled }}
+{{- $sensorType = "Container" }}
+{{- $sensorDeploymentType = "sidecar" }}
+{{- end }}
+
+✓ Falcon Sensor - Runtime {{ $sensorType }} Protection
+  - Deployment: {{ $sensorDeploymentType }}
+  - Backend: {{ (index .Values "falcon-sensor").node.backend | default "bpf" }}
+  - Namespace: {{ (index .Values "falcon-sensor").namespaceOverride }}
+
+{{- if (index .Values "falcon-sensor").node.enabled }}
+
+CrowdStrike Falcon sensors will deploy across all nodes in your Kubernetes cluster after
+installing this Helm chart. The default image name to deploy a kernel sensor to a node is `falcon-node-sensor`.
+{{- end }}
+
+{{- if (index .Values "falcon-sensor").container.enabled }}
+
+CrowdStrike Falcon sensors will deploy across all pods as sidecars in your Kubernetes cluster after
+installing this Helm chart and starting a new pod deployment for all your applications.
+The default image name to deploy the pod sensor is `falcon-sensor`.
+{{- end }}
+{{- end }}
+
+{{- if (index .Values "falcon-kac").enabled }}
+{{- $anyEnabled = true }}
+
+✓ Falcon Kubernetes Admission Controller - Policy Enforcement
+  - Admission Control Webhook: {{ if (index .Values "falcon-kac").admissionControl.enabled }}enabled{{ else }}disabled{{ end }}
+  - Namespace: {{ (index .Values "falcon-kac").namespaceOverride }}
+{{- end }}
+
+{{- if (index .Values "falcon-image-analyzer").enabled }}
+{{- $anyEnabled = true }}
+
+✓ Falcon Image Analyzer - Container Image Vulnerability Scanning and Assessment
+  - Mode: {{ if (index .Values "falcon-image-analyzer").deployment.enabled }}watcher{{ else if (index .Values "falcon-image-analyzer").daemonset.enabled }}socket{{ end }}
+  - Namespace: {{ (index .Values "falcon-image-analyzer").namespaceOverride }}
+{{- end }}
+
+{{- if not $anyEnabled }}
+⚠️  No components are currently enabled.
+   Set individual component 'enabled: true' in values.yaml to deploy them.
+{{- end }}
+
+## Component Status
+
+Check deployment status with:
+  kubectl get pods -l app.kubernetes.io/instance=falcon-platform -A
+
+Monitor components:
+  kubectl logs -l app.kubernetes.io/instance=falcon-platform -n <component-namespace>
+
+## Troubleshooting
+
+When utilizing your own registry, a common error on installation is forgetting
+to add your containerized sensor to your local image registry prior to
+executing `helm install`. Please read the Helm Chart's readme for more
+deployment considerations.

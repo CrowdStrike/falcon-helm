@@ -136,12 +136,6 @@
                         "string"
                     ]
                 },
-                "message_log": {
-                    "type": [
-                        "null",
-                        "string"
-                    ]
-                },
                 "billing": {
                     "type": [
                         "null",

@@ -179,3 +179,15 @@ Create service account name for the cleanup daemonset
 {{- printf "%s-node-cleanup-standalone" .Values.serviceAccount.name -}}
 {{- end -}}
 {{- end -}}
+
+
+{{/*
+Return namespace based on .Values.namespaceOverride or Release.Namespace
+*/}}
+{{- define "falcon-sensor.namespace" -}}
+{{- if .Values.namespaceOverride -}}
+{{- .Values.namespaceOverride -}}
+{{- else -}}
+{{- .Release.Namespace -}}
+{{- end -}}
+{{- end -}}

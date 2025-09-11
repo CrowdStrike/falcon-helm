@@ -277,7 +277,6 @@ falcon:
   app:
   trace: none
   feature:
-  message_log:
   billing:
   tags:
   provisioning_token:

@@ -268,14 +268,6 @@ questions:
     label: Enable or disable certain sensor features
     group: "Falcon Sensor Settings"
 
-  - variable: falcon.message_log
-    description: "Enable message log (true/false)"
-    required: false
-    type: boolean
-    default: false
-    label: Enable logging
-    group: "Falcon Sensor Settings"
-
   - variable: falcon.billing
     description: "Utilize default or metered billing. Should only be configured when needing to switch between the two."
     required: false

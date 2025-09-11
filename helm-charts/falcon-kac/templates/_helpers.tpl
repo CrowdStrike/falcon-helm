@@ -141,3 +141,15 @@ __CS_WATCH_EVENTS_ENABLED: {{ $watcherEnabled | toString | quote }}
     false
   {{- end -}}
 {{- end }}
+
+{{/*
+Return namespace based on .Values.namespaceOverride or Release.Namespace
+namespaceOverride should only be used when installing falcon-kac as a subchart of falcon-platform
+*/}}
+{{- define "falcon-kac.namespace" -}}
+{{- if .Values.namespaceOverride -}}
+{{- .Values.namespaceOverride -}}
+{{- else -}}
+{{- .Release.Namespace -}}
+{{- end -}}
+{{- end -}}

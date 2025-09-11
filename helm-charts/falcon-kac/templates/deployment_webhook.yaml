@@ -1,26 +1,26 @@
 {{ include "validateValues" . }}
 {{- $name := (printf "%s" (include "falcon-kac.name" .)) -}}
-{{- $fullName := (printf "%s.%s.svc" $name .Release.Namespace) -}}
+{{- $fullName := (printf "%s.%s.svc" $name (include "falcon-kac.namespace" .)) -}}
 {{- $webhookName := (printf "webhook") -}}
-{{- $webhookFullName := (printf "%s.%s.svc" $webhookName .Release.Namespace) -}}
+{{- $webhookFullName := (printf "%s.%s.svc" $webhookName (include "falcon-kac.namespace" .)) -}}
 {{- if .Values.domainName }}
-{{- $fullName = (printf "%s.%s.svc.%s" $name .Release.Namespace .Values.domainName) -}}
-{{- $webhookFullName = (printf "%s.%s.svc.%s" $webhookName .Release.Namespace .Values.domainName) -}}
+{{- $fullName = (printf "%s.%s.svc.%s" $name (include "falcon-kac.namespace" .) .Values.domainName) -}}
+{{- $webhookFullName = (printf "%s.%s.svc.%s" $webhookName (include "falcon-kac.namespace" .) .Values.domainName) -}}
 {{- end }}
 {{- $myns := list }}
 {{- if .Values.webhook.disableNamespaces }}
 {{- $myns = split "," .Values.webhook.disableNamespaces }}
 {{- end }}
 {{- $certValid := (.Values.certExpiration | int) -}}
-{{- $altNames := list ( printf "%s" $webhookFullName ) ( printf "%s.cluster.local" $webhookFullName ) ( printf "%s.%s" $webhookName .Release.Namespace ) ( printf "%s" $webhookName ) -}}
-{{- $ca := genCA ( printf "%s ca" .Release.Namespace ) $certValid -}}
+{{- $altNames := list ( printf "%s" $webhookFullName ) ( printf "%s.cluster.local" $webhookFullName ) ( printf "%s.%s" $webhookName (include "falcon-kac.namespace" .)) ( printf "%s" $webhookName ) -}}
+{{- $ca := genCA ( printf "%s ca" (include "falcon-kac.namespace" .) ) $certValid -}}
 {{- $cert := genSignedCert $webhookFullName nil $altNames $certValid $ca -}}
 {{- if not .Values.autoCertificateUpdate }}
-{{- $tlscrt := (lookup "v1" "Secret" .Release.Namespace (printf "%s-tls" (include "falcon-kac.name" .))).data -}}
+{{- $tlscrt := (lookup "v1" "Secret" (include "falcon-kac.namespace" .) (printf "%s-tls" (include "falcon-kac.name" .))).data -}}
 {{- if kindIs "map" $tlscrt }}
 {{- $cert = dict "Cert" (index $tlscrt "tls.crt" | b64dec ) "Key" (index $tlscrt "tls.key" | b64dec ) -}}
 {{- end }}
-{{- $tlsca := (lookup "admissionregistration.k8s.io/v1" "ValidatingWebhookConfiguration" .Release.Namespace $name).webhooks -}}
+{{- $tlsca := (lookup "admissionregistration.k8s.io/v1" "ValidatingWebhookConfiguration" (include "falcon-kac.namespace" .) $name).webhooks -}}
 {{- if kindIs "slice" $tlsca }}
 {{- range $index, $wca := $tlsca -}}
 {{- $ca = dict "Cert" ($wca.clientConfig.caBundle | b64dec) }}
@@ -34,7 +34,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: {{ include "falcon-kac.name" . }}-tls
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "falcon-kac.namespace" . }}
   labels:
     {{- include "falcon-kac.labels" . | nindent 4 }}
 type: kubernetes.io/tls
@@ -47,7 +47,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "falcon-kac.name" . }}
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "falcon-kac.namespace" . }}
   labels:
     {{- include "falcon-kac.labels" . | nindent 4 }}
     {{- if .Values.labels }}
@@ -343,7 +343,7 @@ webhooks:
     {{- else }}
     service:
       name: webhook
-      namespace: {{ .Release.Namespace }}
+      namespace: {{ include "falcon-kac.namespace" . }}
       path: /validate
     {{- end }}
   failurePolicy: {{ .Values.webhook.failurePolicy }}
@@ -354,7 +354,7 @@ webhooks:
     - key: kubernetes.io/metadata.name
       operator: NotIn
       values:
-      - {{ .Release.Namespace }}
+      - {{ include "falcon-kac.namespace" . }}
       - kube-system
       - kube-public
       - falcon-system
@@ -392,7 +392,7 @@ webhooks:
     {{- else }}
     service:
       name: webhook
-      namespace: {{ .Release.Namespace }}
+      namespace: {{ include "falcon-kac.namespace" . }}
       path: /validate
     {{- end }}
   failurePolicy: Ignore
@@ -403,7 +403,7 @@ webhooks:
     - key: kubernetes.io/metadata.name
       operator: NotIn
       values:
-      - {{ .Release.Namespace }}
+      - {{ include "falcon-kac.namespace" . }}
       - kube-system
       - kube-public
       - falcon-system

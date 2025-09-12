@@ -141,3 +141,60 @@ __CS_WATCH_EVENTS_ENABLED: {{ $watcherEnabled | toString | quote }}
     false
   {{- end -}}
 {{- end }}
+
+{{/* ### GLOBAL HELPERS ### */}}
+
+{{/*
+Get Falcon CID from global value if it exists
+*/}}
+{{- define "falconCid" -}}
+  {{- if and .Values.global (hasKey .Values.global "falcon") .Values.global.falcon (hasKey .Values.global.falcon "cid") .Values.global.falcon.cid -}}
+    {{- .Values.global.falcon.cid -}}
+  {{- else -}}
+    {{- .Values.falcon.cid -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+Check if Falcon secret is enabled from global value if it exists
+*/}}
+{{- define "falconSecretEnabled" -}}
+  {{- if and .Values.global (hasKey .Values.global "falconSecretName") .Values.global.falconSecretName -}}
+    {{- true -}}
+  {{- else -}}
+    {{- .Values.falconSecret.enabled -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+Get Falcon secret name from global value if it exists
+*/}}
+{{- define "falconSecretName" -}}
+  {{- if and .Values.global (hasKey .Values.global "falconSecretName") .Values.global.falconSecretName -}}
+    {{- .Values.global.falconSecretName -}}
+  {{- else -}}
+    {{- .Values.falconSecret.secretName -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+Get docker pull secret from global value if it exists
+*/}}
+{{- define "imagePullSecret" -}}
+  {{- if and .Values.global (hasKey .Values.global "docker") .Values.global.docker (hasKey .Values.global.docker "pullSecret") .Values.global.docker.pullSecret -}}
+    {{- .Values.global.docker.pullSecret -}}
+  {{- else -}}
+    {{- .Values.image.pullSecrets -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+Get docker registry config json from global value if it exists
+*/}}
+{{- define "registryConfigJson" -}}
+  {{- if and .Values.global (hasKey .Values.global "docker") .Values.global.docker (hasKey .Values.global.docker "registryConfigJson") .Values.global.docker.registryConfigJson -}}
+    {{- .Values.global.docker.registryConfigJson -}}
+  {{- else -}}
+    {{- .Values.image.registryConfigJSON -}}
+  {{- end -}}
+{{- end -}}

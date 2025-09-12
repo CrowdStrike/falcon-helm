@@ -99,7 +99,7 @@ spec:
         runAsNonRoot: true
       {{- if .Values.container.image.pullSecrets.enable }}
       imagePullSecrets:
-        - name: {{ .Values.container.image.pullSecrets.name | default (printf "%s-pull-secret" (include "falcon-sensor.fullname" .)) }}
+        - name: {{ include "imagePullSecretName" . | default (printf "%s-pull-secret" (include "falcon-sensor.fullname" .)) }}
       {{- end }}
       {{- if .Values.container.azure.enabled }}
       initContainers:
@@ -141,9 +141,9 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "falcon-sensor.configMapName" . }}
-        {{- if .Values.falconSecret.enabled }}
+        {{- if (include "falconSecretEnabled" .) }}
         - secretRef:
-            name: {{ .Values.falconSecret.secretName }}
+            name: {{ include "falconSecretName" . }}
         {{- end }}
         ports:
         - name: https

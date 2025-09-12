@@ -10,8 +10,8 @@ metadata:
 data:
   __CS_ADMISSION_CONTROL_ENABLED: {{ .Values.admissionControl.enabled | quote }}
   {{- include "falcon-kac.generateWatcherEnvVars" . | nindent 2 }}
-  {{- if not .Values.falconSecret.enabled }}
-  FALCONCTL_OPT_CID: {{ .Values.falcon.cid }}
+  {{- if not (include "falcon-kac.falconSecretEnabled" . | eq "true") }}
+  FALCONCTL_OPT_CID: {{ include "falcon-kac.falconCid" . }}
   {{- if .Values.falcon.provisioning_token }}
   FALCONCTL_OPT_PROVISIONING_TOKEN: {{ .Values.falcon.provisioning_token }}
   {{- end }}

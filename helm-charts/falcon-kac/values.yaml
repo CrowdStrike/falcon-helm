@@ -183,7 +183,9 @@ resourceQuota:
 global:
   falcon:
     cid: ""
-  falconSecretName: ""
+  falconSecret:
+    enabled: false
+    secretName: ""
   docker:
     pullSecret: ""
     registryConfigJSON: ""

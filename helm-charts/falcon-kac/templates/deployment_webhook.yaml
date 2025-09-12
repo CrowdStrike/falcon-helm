@@ -30,7 +30,7 @@
 {{- $tlsCert := $cert.Cert | b64enc }}
 {{- $tlsKey := $cert.Key | b64enc }}
 {{- $caCert := $ca.Cert | b64enc -}}
-{{- $falconSecretEnabled := include "falconSecretEnabled" . }}
+{{- $falconSecretEnabled := include "falconSecretEnabled" . | eq "true" }}
 {{- $falconSecretName := include "falconSecretName" . }}
 {{- $imagePullSecret := include "imagePullSecret" . }}
 {{- $registryConfigJson := include "registryConfigJson" . }}

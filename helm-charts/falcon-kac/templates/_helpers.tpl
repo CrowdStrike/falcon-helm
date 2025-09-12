@@ -159,8 +159,8 @@ Get Falcon CID from global value if it exists
 Check if Falcon secret is enabled from global value if it exists
 */}}
 {{- define "falconSecretEnabled" -}}
-{{- if .Values.global.falconSecretName -}}
-{{- true -}}
+{{- if .Values.global.falconSecret.enabled -}}
+{{- .Values.global.falconSecret.enabled -}}
 {{- else -}}
 {{- .Values.falconSecret.enabled -}}
 {{- end -}}
@@ -170,8 +170,8 @@ Check if Falcon secret is enabled from global value if it exists
 Get Falcon secret name from global value if it exists
 */}}
 {{- define "falconSecretName" -}}
-{{- if .Values.global.falconSecretName -}}
-{{- .Values.global.falconSecretName -}}
+{{- if .Values.global.falconSecret.secretName -}}
+{{- .Values.global.falconSecret.secretName -}}
 {{- else -}}
 {{- .Values.falconSecret.secretName -}}
 {{- end -}}

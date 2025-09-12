@@ -133,8 +133,7 @@
         "crowdstrikeConfig": {
             "type": "object",
             "required": [
-                "clusterName",
-                "cid"
+                "clusterName"
             ],
             "properties": {
                 "agentMaxConsumerThreads": {
@@ -181,7 +180,10 @@
                     ]
                 },
                 "cid": {
-                    "type": "string",
+                    "type": [
+                        "null",
+                        "string"
+                    ],
                     "description": "CrowdStrike CID",
                     "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$",
                     "example": [
@@ -201,28 +203,7 @@
                 "clientID": [
                     "clientSecret"
                 ]
-            },
-            "allOf": [
-                {
-                    "if": {
-                        "properties": {
-                            "existingSecret": {
-                                "const": ""
-                            }
-                        }
-                    },
-                    "then": {
-                        "properties": {
-                            "clientID": {
-                                "pattern": "^[a-zA-Z0-9]{32}$"
-                            },
-                            "clientSecret": {
-                                "pattern": "^[a-zA-Z0-9]{40}$"
-                            }
-                        }
-                    }
-                }
-            ]
+            }
         },
         "proxyConfig": {
             "default": {},
@@ -247,6 +228,23 @@
                     ]
                 }
             }
+        },
+        "global": {
+            "type": "object",
+            "properties": {
+                "falcon": {
+                    "type": "object",
+                    "properties": {
+                        "cid": {
+                            "type": [
+                                "null",
+                                "string"
+                            ],
+                            "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$"
+                        }
+                    }
+                }
+            }
         }
     },
     "oneOf": [
@@ -262,13 +260,13 @@
             },
             "additionalProperties": {
                 "daemonset": {
-                  "properties": {
-                     "enabled": {
-                     "const": false
+                    "properties": {
+                         "enabled": {
+                            "const": false
+                        }
+                    }
                 }
-              }
-          }
-        }
+            }
         },
         {
             "properties": {
@@ -312,6 +310,80 @@
                                 "pattern": "^(docker|containerd|crio|podman)$"
                             }
                         }
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "global": {
+                        "properties": {
+                            "falcon": {
+                                "properties": {
+                                    "cid": {
+                                        "const": null
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "crowdstrikeConfig": {
+                        "type": "object",
+                        "required": ["cid"],
+                        "properties": {
+                            "cid": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "global": {
+                        "properties": {
+                            "falconSecret": {
+                                "properties": {
+                                    "secretName": {
+                                        "const": ""
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "crowdstrikeConfig": {
+                        "allOf": [
+                            {
+                                "if": {
+                                    "properties": {
+                                        "existingSecret": {
+                                            "const": ""
+                                        }
+                                    }
+                                },
+                                "then": {
+                                    "properties": {
+                                        "clientID": {
+                                            "pattern": "^[a-zA-Z0-9]{32}$"
+                                        },
+                                        "clientSecret": {
+                                            "pattern": "^[a-zA-Z0-9]{40}$"
+                                        }
+                                    }
+                                }
+                            }
+                        ]
                     }
                 }
             }

@@ -186,7 +186,7 @@ Create service account name for the cleanup daemonset
 Get Falcon CID from global value if it exists
 */}}
 {{- define "falconCid" -}}
-{{- if and .Values.global .Values.global.falcon .Values.global.falcon.cid -}}
+{{- if .Values.global.falcon.cid -}}
 {{- .Values.global.falcon.cid -}}
 {{- else -}}
 {{- .Values.falcon.cid -}}
@@ -197,7 +197,7 @@ Get Falcon CID from global value if it exists
 Check if Falcon secret is enabled from global value if it exists
 */}}
 {{- define "falconSecretEnabled" -}}
-{{- if and .Values.global .Values.global.falconSecretName -}}
+{{- if .Values.global.falconSecretName -}}
 {{- true -}}
 {{- else -}}
 {{- .Values.falconSecret.enabled -}}
@@ -208,7 +208,7 @@ Check if Falcon secret is enabled from global value if it exists
 Get Falcon secret name from global value if it exists
 */}}
 {{- define "falconSecretName" -}}
-{{- if and .Values.global .Values.global.falconSecretName -}}
+{{- if .Values.global.falconSecretName -}}
 {{- .Values.global.falconSecretName -}}
 {{- else -}}
 {{- .Values.falconSecret.secretName -}}
@@ -219,8 +219,8 @@ Get Falcon secret name from global value if it exists
 Get docker pull secret from global value if it exists
 */}}
 {{- define "imagePullSecretName" -}}
-{{- if and .Values.global .Values.global.docker .Values.global.docker.pullSecret -}}
-{{- .Values.global.docker.pullSecret | default "" -}}
+{{- if .Values.global.docker.pullSecret -}}
+{{- .Values.global.docker.pullSecret -}}
 {{- else -}}
 {{- if .Values.node.enabled -}}
 {{- .Values.node.image.pullSecrets | default "" -}}
@@ -236,8 +236,8 @@ Get docker pull secret from global value if it exists
 Get docker registry config json from global value if it exists
 */}}
 {{- define "registryConfigJson" -}}
-{{- if and .Values.global .Values.global.docker .Values.global.docker.registryConfigJson -}}
-{{- .Values.global.docker.registryConfigJson | default "" -}}
+{{- if .Values.global.docker.registryConfigJSON -}}
+{{- .Values.global.docker.registryConfigJSON -}}
 {{- else -}}
 {{- if .Values.node.enabled -}}
 {{- .Values.node.image.registryConfigJSON | default "" -}}

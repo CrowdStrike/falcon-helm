@@ -1,6 +1,6 @@
 {{- if and .Values.node.enabled (not .Values.node.cleanupOnly) }}
-{{- $imagePullSecretName := (include "imagePullSecretName" . | trim) }}
-{{- $registryConfigJson := (include "registryConfigJson" . | trim) }}
+{{- $imagePullSecretName := include "imagePullSecretName" . }}
+{{- $registryConfigJson := include "registryConfigJson" . }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:

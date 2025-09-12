@@ -290,3 +290,12 @@ falconSecret:
 # Only edit these if you know what you're doing
 nameOverride: ""
 fullnameOverride: ""
+
+# GLOBAL VALUES - for unified helm chart use only
+global:
+  falcon:
+    cid: ""
+  falconSecretName: ""
+  docker:
+    pullSecret: ""
+    registryConfigJSON: ""

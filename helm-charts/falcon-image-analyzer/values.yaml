@@ -189,3 +189,12 @@ proxyConfig:
   HTTP_PROXY: ""
   HTTPS_PROXY: ""
   NO_PROXY: ""
+
+# GLOBAL VALUES - for unified helm chart use only
+global:
+  falcon:
+    cid: ""
+  falconSecretName: ""
+  docker:
+    pullSecret: ""
+    registryConfigJSON: ""

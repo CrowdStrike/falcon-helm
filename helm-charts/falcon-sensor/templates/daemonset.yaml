@@ -177,7 +177,7 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "falcon-sensor.configMapName" . }}
-        {{- if (include "falconSecretEnabled" .) }}
+        {{- if (include "falconSecretEnabled" . | eq "true") }}
         - secretRef:
             name: {{ include "falconSecretName" . }}
         {{- end }}

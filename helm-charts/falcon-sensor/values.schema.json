@@ -506,19 +506,6 @@
             "type": "string"
         }
     },
-    "falconSecret": {
-        "type": "object",
-        "properties": {
-            "enabled": {
-                "type": "boolean",
-                "default": "false"
-            },
-            "secretName": {
-                "type": "string",
-                "description": "The name of an existing secret in which Falcon specific secrets are stored."
-            }
-        }
-    },
     "oneOf": [
         {
             "if": {
@@ -537,43 +524,33 @@
                 "oneOf": [
                     {
                         "properties": {
+                            "falconSecret": {
+                                "required": ["enabled", "secretName"],
+                                "properties": {
+                                    "enabled": { "enum": [true] },
+                                    "secretName": {
+                                        "description": "The name of an existing secret in which Falcon specific secrets are stored.",
+                                        "type": "string",
+                                        "minLength": 1
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "properties": {
                             "falcon": {
+                                "required": ["cid"],
                                 "properties": {
                                     "cid": {
                                         "type": "string",
-                                        "minLength": 1,
                                         "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$",
                                         "example": [
                                             "1234567890ABCDEF1234567890ABCDEF-12"
                                         ]
                                     }
-                                },
-                                "required": ["cid"]
-                            }
-                        },
-                        "required": ["falcon"]
-                    },
-                    {
-                        "properties": {
-                            "falconSecret": {
-                                "properties": {
-                                    "enabled": { "enum": [true] },
-                                    "secretName": {
-                                        "type": "string",
-                                        "minLength": 1
-                                    }
-                                },
-                                "required": ["enabled", "secretName"]
-                            }
-                        },
-                        "required": ["falconSecret"],
-                        "not": {
-                            "properties": {
-                                "falcon": {
-                                    "required": ["cid"]
                                 }
-                            },
-                            "required": ["falcon"]
+                            }
                         }
                     }
                 ]

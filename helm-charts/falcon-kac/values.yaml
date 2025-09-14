@@ -182,7 +182,7 @@ resourceQuota:
 # GLOBAL VALUES - for unified helm chart use only
 global:
   falcon:
-    cid: ""
+    cid:
   falconSecret:
     enabled: false
     secretName: ""

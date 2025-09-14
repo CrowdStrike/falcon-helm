@@ -97,7 +97,10 @@
             "type": "object",
             "properties": {
                 "cid": {
-                    "type": "string",
+                    "type": [
+                        "null",
+                        "string"
+                    ],
                     "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$",
                     "example": [
                         "1234567890ABCDEF1234567890ABCDEF-12"
@@ -404,6 +407,23 @@
                     ]
                 }
             }
+        },
+        "global": {
+            "type": "object",
+            "properties": {
+                "falcon": {
+                    "type": "object",
+                    "properties": {
+                        "cid": {
+                            "type": [
+                                "null",
+                                "string"
+                            ],
+                            "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$"
+                        }
+                    }
+                }
+            }
         }
     },
     "oneOf": [
@@ -426,11 +446,49 @@
         },
         {
             "properties": {
+                "global": {
+                    "type": "object",
+                    "properties": {
+                        "falconSecret": {
+                            "type": "object",
+                            "required": ["enabled", "secretName"],
+                            "properties": {
+                                "enabled": { "enum": [true] },
+                                "secretName": {
+                                    "type": "string",
+                                    "minLength": 1
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "properties": {
                 "falcon": {
                     "required": ["cid"],
                     "properties": {
                         "cid": {
                             "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "properties": {
+                "global": {
+                    "type": "object",
+                    "properties": {
+                        "falcon": {
+                            "type": "object",
+                            "required": ["cid"],
+                            "properties": {
+                                "cid": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     }
                 }

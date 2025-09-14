@@ -213,8 +213,8 @@ Get Falcon CID from global value if it exists
 Get Falcon secret name from global value if it exists
 */}}
 {{- define "falconSecretName" -}}
-{{- if .Values.global.falconSecretName -}}
-{{- .Values.global.falconSecretName -}}
+{{- if .Values.global.falconSecret.secretName -}}
+{{- .Values.global.falconSecret.secretName -}}
 {{- else -}}
 {{- .Values.crowdstrikeConfig.existingSecret -}}
 {{- end -}}

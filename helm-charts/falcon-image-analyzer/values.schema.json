@@ -133,8 +133,7 @@
         "crowdstrikeConfig": {
             "type": "object",
             "required": [
-                "clusterName",
-                "cid"
+                "clusterName"
             ],
             "properties": {
                 "agentMaxConsumerThreads": {

@@ -169,7 +169,7 @@ crowdstrikeConfig:
   enableDebug: "false"
   clientID: ""
   clientSecret: ""
-  cid: ""
+  cid:
 
   # Use the value for the crowdstrike Artifactory
   # Token retrieved by calling container-security
@@ -189,3 +189,13 @@ proxyConfig:
   HTTP_PROXY: ""
   HTTPS_PROXY: ""
   NO_PROXY: ""
+
+# GLOBAL VALUES - for unified helm chart use only
+global:
+  falcon:
+    cid:
+  falconSecret:
+    secretName: ""
+  docker:
+    pullSecret: ""
+    registryConfigJSON: ""

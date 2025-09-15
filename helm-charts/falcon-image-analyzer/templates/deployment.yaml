@@ -1,6 +1,6 @@
 {{- if .Values.deployment.enabled }}
-{{- $imagePullSecret := include "imagePullSecret" . }}
-{{- $registryConfigJson := include "registryConfigJson" . }}
+{{- $imagePullSecret := include "falcon-image-analyzer.imagePullSecret" . }}
+{{- $registryConfigJson := include "falcon-image-analyzer.registryConfigJson" . }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -104,8 +104,8 @@ spec:
             - configMapRef:
                 name: {{ include "falcon-image-analyzer.fullname" . }}
             - secretRef:
-                {{- if (include "falconSecretName" .) }}
-                name: {{ include "falconSecretName" . }}
+                {{- if (include "falcon-image-analyzer.falconSecretName" .) }}
+                name: {{ include "falcon-image-analyzer.falconSecretName" . }}
                 {{- else }}
                 name: {{ include "falcon-image-analyzer.fullname" . }}
                 {{- end }}

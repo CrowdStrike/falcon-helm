@@ -201,7 +201,7 @@ runAsGroup: {{ .Values.securityContext.runAsGroup | default 0 }}
 {{/*
 Get Falcon CID from global value if it exists
 */}}
-{{- define "falconCid" -}}
+{{- define "falcon-image-analyzer.falconCid" -}}
 {{- if .Values.global.falcon.cid -}}
 {{- .Values.global.falcon.cid -}}
 {{- else -}}
@@ -212,7 +212,7 @@ Get Falcon CID from global value if it exists
 {{/*
 Get Falcon secret name from global value if it exists
 */}}
-{{- define "falconSecretName" -}}
+{{- define "falcon-image-analyzer.falconSecretName" -}}
 {{- if .Values.global.falconSecret.secretName -}}
 {{- .Values.global.falconSecret.secretName -}}
 {{- else -}}
@@ -223,7 +223,7 @@ Get Falcon secret name from global value if it exists
 {{/*
 Get docker pull secret from global value if it exists
 */}}
-{{- define "imagePullSecret" -}}
+{{- define "falcon-image-analyzer.imagePullSecret" -}}
 {{- if .Values.global.docker.pullSecret -}}
 {{- .Values.global.docker.pullSecret -}}
 {{- else -}}
@@ -234,7 +234,7 @@ Get docker pull secret from global value if it exists
 {{/*
 Get docker registry config json from global value if it exists
 */}}
-{{- define "registryConfigJson" -}}
+{{- define "falcon-image-analyzer.registryConfigJson" -}}
 {{- if .Values.global.docker.registryConfigJSON -}}
 {{- .Values.global.docker.registryConfigJSON -}}
 {{- else -}}

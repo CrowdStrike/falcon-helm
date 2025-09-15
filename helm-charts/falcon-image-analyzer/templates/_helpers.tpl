@@ -172,7 +172,7 @@ runAsGroup: {{ .Values.securityContext.runAsGroup | default 0 }}
 {{- end }}
 {{- end }}
 
-{{- define "falcon-image-analyzer.imagePullSecret" }}
+{{- define "falcon-image-analyzer.pullSecretFromAPIToken" }}
 {{- with .Values.crowdstrikeConfig }}
 {{- if or (eq .agentRegion "us-gov-1") (eq .agentRegion "usgov1") (eq .agentRegion "us-gov1") (eq .agentRegion "gov1") (eq .agentRegion "gov-1") }}
 {{- printf "{\"auths\":{\"registry.laggar.gcw.crowdstrike.com\":{\"username\":\"fc-%s\",\"password\":\"%s\",\"email\":\"image-assessment@crowdstrike.com\",\"auth\":\"%s\"}}}" (first (regexSplit "-" (lower .cid) -1)) .dockerAPIToken (printf "fc-%s:%s" (first (regexSplit "-" (lower .cid) -1)) .dockerAPIToken | b64enc) | b64enc }}

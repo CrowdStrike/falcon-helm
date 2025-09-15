@@ -5,6 +5,16 @@
         "falcon": {
             "type": "object",
             "properties": {
+                "cid": {
+                    "type": [
+                        "null",
+                        "string"
+                    ],
+                    "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$",
+                    "example": [
+                        "1234567890ABCDEF1234567890ABCDEF-12"
+                    ]
+                },
                 "cloud": {
                     "type": [
                         "null",
@@ -504,18 +514,22 @@
         },
         "fullnameOverride": {
             "type": "string"
-        }
-    },
-    "falconSecret": {
-        "type": "object",
-        "properties": {
-            "enabled": {
-                "type": "boolean",
-                "default": "false"
-            },
-            "secretName": {
-                "type": "string",
-                "description": "The name of an existing secret in which Falcon specific secrets are stored."
+        },
+        "global": {
+            "type": "object",
+            "properties": {
+                "falcon": {
+                    "type": "object",
+                    "properties": {
+                        "cid": {
+                            "type": [
+                                "null",
+                                "string"
+                            ],
+                            "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$"
+                        }
+                    }
+                }
             }
         }
     },
@@ -537,43 +551,68 @@
                 "oneOf": [
                     {
                         "properties": {
-                            "falcon": {
+                            "global": {
+                                "type": "object",
                                 "properties": {
-                                    "cid": {
-                                        "type": "string",
-                                        "minLength": 1,
-                                        "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$",
-                                        "example": [
-                                            "1234567890ABCDEF1234567890ABCDEF-12"
-                                        ]
+                                    "falconSecret": {
+                                        "type": "object",
+                                        "required": ["enabled", "secretName"],
+                                        "properties": {
+                                            "enabled": { "enum": [true] },
+                                            "secretName": {
+                                                "type": "string",
+                                                "minLength": 1
+                                            }
+                                        }
                                     }
-                                },
-                                "required": ["cid"]
+                                }
                             }
-                        },
-                        "required": ["falcon"]
+                        }
                     },
                     {
                         "properties": {
                             "falconSecret": {
+                                "type": "object",
+                                "required": ["enabled", "secretName"],
                                 "properties": {
                                     "enabled": { "enum": [true] },
                                     "secretName": {
+                                        "description": "The name of an existing secret in which Falcon specific secrets are stored.",
                                         "type": "string",
                                         "minLength": 1
                                     }
-                                },
-                                "required": ["enabled", "secretName"]
-                            }
-                        },
-                        "required": ["falconSecret"],
-                        "not": {
-                            "properties": {
-                                "falcon": {
-                                    "required": ["cid"]
                                 }
-                            },
-                            "required": ["falcon"]
+                            }
+                        }
+                    },
+                    {
+                        "properties": {
+                            "global": {
+                                "type": "object",
+                                "properties": {
+                                    "falcon": {
+                                        "type": "object",
+                                        "required": ["cid"],
+                                        "properties": {
+                                            "cid": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "properties": {
+                            "falcon": {
+                                "required": ["cid"],
+                                "properties": {
+                                    "cid": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
                         }
                     }
                 ]

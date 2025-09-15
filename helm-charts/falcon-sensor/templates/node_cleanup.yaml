@@ -1,4 +1,6 @@
 {{- if and .Values.node.enabled .Values.node.hooks.postDelete.enabled }}
+{{- $imagePullSecretName := include "falcon-sensor.imagePullSecretName" . }}
+{{- $registryConfigJson := include "falcon-sensor.registryConfigJson" . }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -57,15 +59,15 @@ spec:
         {{- end }}
         {{ include "falcon-sensor.workloadCleanupAllowlistLabel" . }}
     spec:
-    {{- if and (.Values.node.image.pullSecrets) (.Values.node.image.registryConfigJSON) }}
+    {{- if and (len $imagePullSecretName) (len $registryConfigJson) }}
       {{- fail "node.image.pullSecrets and node.image.registryConfigJSON cannot be used together." }}
     {{- else }}
-    {{- if or (.Values.node.image.pullSecrets) (.Values.node.image.registryConfigJSON) }}
+    {{- if or (len $imagePullSecretName) (len $registryConfigJson) }}
       imagePullSecrets:
-      {{- if .Values.node.image.pullSecrets }}
-        - name: {{ .Values.node.image.pullSecrets }}
+      {{- if (len $imagePullSecretName) }}
+        - name: {{ $imagePullSecretName }}
       {{- end }}
-      {{- if .Values.node.image.registryConfigJSON }}
+      {{- if (len $registryConfigJson) }}
         - name: {{ include "falcon-sensor.fullname" . }}-pull-secret-cleanup
       {{- end }}
     {{- end }}

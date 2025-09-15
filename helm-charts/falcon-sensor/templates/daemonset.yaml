@@ -1,6 +1,6 @@
 {{- if and .Values.node.enabled (not .Values.node.cleanupOnly) }}
-{{- $imagePullSecretName := include "imagePullSecretName" . }}
-{{- $registryConfigJson := include "registryConfigJson" . }}
+{{- $imagePullSecretName := include "falcon-sensor.imagePullSecretName" . }}
+{{- $registryConfigJson := include "falcon-sensor.registryConfigJson" . }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -177,9 +177,9 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "falcon-sensor.configMapName" . }}
-        {{- if (include "falconSecretEnabled" . | eq "true") }}
+        {{- if (include "falcon-sensor.falconSecretEnabled" . | eq "true") }}
         - secretRef:
-            name: {{ include "falconSecretName" . }}
+            name: {{ include "falcon-sensor.falconSecretName" . }}
         {{- end }}
         volumeMounts:
           - name: falconstore

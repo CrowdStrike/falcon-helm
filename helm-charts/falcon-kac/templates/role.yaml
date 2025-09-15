@@ -32,7 +32,7 @@ rules:
   verbs:
   - '*'
 
-{{- if (include "falconSecretEnabled" . | eq "true") }}
+{{- if (include "falcon-kac.falconSecretEnabled" . | eq "true") }}
 - apiGroups:
     - ""
   resources:

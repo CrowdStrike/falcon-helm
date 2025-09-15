@@ -30,6 +30,10 @@
 {{- $tlsCert := $cert.Cert | b64enc }}
 {{- $tlsKey := $cert.Key | b64enc }}
 {{- $caCert := $ca.Cert | b64enc -}}
+{{- $falconSecretEnabled := include "falcon-kac.falconSecretEnabled" . | eq "true" }}
+{{- $falconSecretName := include "falcon-kac.falconSecretName" . }}
+{{- $imagePullSecret := include "falcon-kac.imagePullSecret" . }}
+{{- $registryConfigJson := include "falcon-kac.registryConfigJson" . }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -94,15 +98,15 @@ spec:
         {{- end }}
       {{- end }}
     spec:
-    {{- if and (.Values.image.pullSecrets) (.Values.image.registryConfigJSON) }}
+    {{- if and $imagePullSecret $registryConfigJson }}
       {{- fail "image.pullSecrets and image.registryConfigJSON cannot be used together." }}
     {{- else -}}
-    {{- if or (.Values.image.pullSecrets) (.Values.image.registryConfigJSON) }}
+    {{- if or $imagePullSecret $registryConfigJson }}
       imagePullSecrets:
-      {{- if .Values.image.pullSecrets }}
-        - name: {{ .Values.image.pullSecrets }}
+      {{- if $imagePullSecret }}
+        - name: {{ $imagePullSecret }}
       {{- end }}
-      {{- if .Values.image.registryConfigJSON }}
+      {{- if $registryConfigJson }}
         - name: {{ include "falcon-kac.fullname" . }}-pull-secret
       {{- end }}
     {{- end }}
@@ -131,9 +135,9 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "falcon-kac.fullname" . }}-config
-        {{- if .Values.falconSecret.enabled }}
+        {{- if $falconSecretEnabled }}
         - secretRef:
-            name: {{ .Values.falconSecret.secretName }}
+            name: {{ $falconSecretName }}
         {{- end }}
         image: {{ include "falcon-kac.image" . }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -203,9 +207,9 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "falcon-kac.fullname" . }}-config
-        {{- if .Values.falconSecret.enabled }}
+        {{- if $falconSecretEnabled }}
         - secretRef:
-            name: {{ .Values.falconSecret.secretName }}
+            name: {{ $falconSecretName }}
         {{- end }}
         image: {{ include "falcon-kac.image" . }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -250,9 +254,9 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "falcon-kac.fullname" . }}-config
-        {{- if .Values.falconSecret.enabled }}
+        {{- if $falconSecretEnabled }}
         - secretRef:
-            name: {{ .Values.falconSecret.secretName }}
+            name: {{ $falconSecretName }}
         {{- end }}
         image: {{ include "falcon-kac.image" . }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}

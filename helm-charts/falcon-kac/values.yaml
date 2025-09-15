@@ -178,3 +178,14 @@ dnsPolicy:
 # Number of pods for resourceQuota object
 resourceQuota:
   pods: 2
+
+# GLOBAL VALUES - for unified helm chart use only
+global:
+  falcon:
+    cid:
+  falconSecret:
+    enabled: false
+    secretName: ""
+  docker:
+    pullSecret: ""
+    registryConfigJSON: ""

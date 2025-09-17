@@ -8,17 +8,16 @@ The Falcon Platform Helm chart allows you to deploy and manage the entire CrowdS
 
 ## Components Included
 
-| Component                 | Purpose                                | Default Status | Requirements                           |
-|---------------------------|----------------------------------------|----------------|----------------------------------------|
-| **Falcon Sensor**         | Runtime node protection and monitoring | Enabled        | CID                                    |
-| **Falcon KAC**            | Kubernetes admission controller        | Enabled        | CID                                    |
-| **Falcon Image Analyzer** | Container image vulnerability scanning | Disabled       | CID + OAuth credentials + cluster name |
+| Component                                                                 | Purpose                                |
+|---------------------------------------------------------------------------|----------------------------------------|
+| [**Falcon Sensor**](/helm-charts/falcon-sensor/README.md)                 | Runtime node protection and monitoring |
+| [**Falcon KAC**](/helm-charts/falcon-kac/README.md)                       | Kubernetes admission controller        |
+| [**Falcon Image Analyzer**](/helm-charts/falcon-image-analyzer/README.md) | Container image vulnerability scanning |
 
 ## Prerequisites
 ### Minimum Requirements
-- Kubernetes 1.22+
 - Helm 3.x
-- CrowdStrike Customer ID (CID)
+- Falcon Customer ID (CID)
 - Appropriate cluster permissions (cluster-admin for installation)
 - Falcon registry access to pull Falcon component docker images
 
@@ -36,14 +35,14 @@ helm repo update
 Deploy core security components (Sensor + Admission Controller):
 
 ```bash
-helm install falcon-platform ./helm-charts/falcon-platform/ -n falcon-platform \
---create-namespace \
+helm install falcon-platform ./helm-charts/falcon-platform/ \
 --set global.falcon.cid=$FALCON_CID \
 --set global.docker.registryConfigJSON=$DOCKER_CONFIG_ENCODED \
 --set falcon-sensor.node.image.repository=$SENSOR_DOCKER_REGISTRY \
 --set falcon-sensor.node.image.tag=7.28.0-18108-1.falcon-linux.Release.US-2 \
 --set falcon-kac.image.repository=$KAC_DOCKER_REGISTRY \
---set falcon-kac.image.tag=7.27.0-2502.Release.US-2
+--set falcon-kac.image.tag=7.27.0-2502.Release.US-2 \
+--set falcon-image-analyzer.enabled=false
 ```
 
 ### 3. Comprehensive Installation
@@ -51,15 +50,13 @@ helm install falcon-platform ./helm-charts/falcon-platform/ -n falcon-platform \
 Deploy all components (requires additional configuration):
 
 ```bash
-helm install falcon-platform ./helm-charts/falcon-platform/ -n falcon-platform \
---create-namespace \
+helm install falcon-platform ./helm-charts/falcon-platform/ \
 --set global.falcon.cid=$FALCON_CID \
 --set global.docker.registryConfigJSON=$DOCKER_CONFIG_ENCODED \
 --set falcon-sensor.node.image.repository=$SENSOR_DOCKER_REGISTRY \
 --set falcon-sensor.node.image.tag=7.28.0-18108-1.falcon-linux.Release.US-2 \
 --set falcon-kac.image.repository=$KAC_DOCKER_REGISTRY \
 --set falcon-kac.image.tag=7.27.0-2502.Release.US-2 \
---set falcon-image-analyzer.enabled=true \
 --set falcon-image-analyzer.image.repository=$IMAGE_ANALYZER_DOCKER_REGISTRY \
 --set falcon-image-analyzer.image.tag=1.0.20 \
 --set falcon-image-analyzer.crowdstrikeConfig.clusterName=$CLUSTER_NAME \
@@ -69,191 +66,200 @@ helm install falcon-platform ./helm-charts/falcon-platform/ -n falcon-platform \
 
 ## Configuration
 
-### Global Configuration
-Global settings apply to all components unless overridden:
+### Component-Specific Requirements
 
-```yaml
-global:
-  falcon:
-    cid: "YOUR_CID_HERE"                 # Required for all components unless using an existing secret with CID data
-    
-  # Global Falcon Secret configuration
-  # Alternative to falcon.cid for falcon-sensor and falcon-kac
-  # Alternative to crowdstrikeConfig.clientId and crowdstrikeConfig.clientSecret for falcon-image-analyzer
-  falconSecret:
-    enabled: true
-    secretName: "name-of-falcon-secret"  # Name of secret with sensitive data necessary for Falcon component installation
-  
-  # Global docker registry configuration for pulling Falcon component images
-  # Should only use one of pullSecret or registryConfigJSON, not both
-  # falcon-sensor container installation requires registryConfigJSON
-  docker:
-    pullSecret: "name-of-pull-secret"       # Name of existing docker registry secret
-    registryConfigJSON: "BASE64_ENCODED"    # Your docker config json in a base64 encoded format
-```
+**Falcon Sensor:**
+- Falcon CID
+- CrowdStrike Docker registry access
 
-### Component-Specific Configuration
-
-Each component can be individually configured. Component-specific values override global settings:
-
-```yaml
-# Enable/disable components
-falcon-sensor:
-  enabled: true
-  # All falcon-sensor chart values can be specified here
-  # Global falconSecret will be inherited if not specified
-  
-falcon-kac:
-  enabled: true
-  # All falcon-kac chart values can be specified here  
-  # Global falconSecret will be inherited if not specified
-
-# Components requiring additional configuration  
-falcon-image-analyzer:
-  enabled: false  # Disabled by default
-  crowdstrikeConfig:
-    clusterName: ""   # Required
-    clientID: ""      # Required if not using global.falconSecret
-    clientSecret: ""  # Required if not using global.falconSecret
-```
-
-### Using External Secrets (WIP)
-
-Instead of specifying sensitive values directly in Helm values, you can use Kubernetes secrets:
-
-```yaml
-global:
-  # Option 1: Use CID directly (less secure)
-  falcon:
-    cid: "YOUR_CID_HERE"
-    
-  # Option 2: Use external secret (more secure)
-  falconSecret:
-    enabled: true
-    secretName: falcon-secret
-```
-
-When using `falconSecret`, create the secret beforehand:
-
-```bash
-# Create secret with required Falcon credentials
-kubectl create secret generic falcon-secret -n falcon-platform \
-  --from-literal=FALCONCTL_OPT_CID=$FALCON_CID \
-  --from-literal=FALCONCTL_OPT_PROVISIONING_TOKEN=$FALCON_PROVISIONING_TOKEN \
-  --from-literal=AGENT_CLIENT_ID=$FALCON_CLIENT_ID \                            # Required for Image Analyzer only
-  --from-literal=AGENT_CLIENT_SECRET=$FALCON_CLIENT_SECRET                      # Required for Image Analyzer only
-```
-
-
-### Component-Specific Requirements (WIP)
+**Falcon KAC:**
+- Falcon CID
+- CrowdStrike Docker registry access
 
 **Falcon Image Analyzer:**
-- OAuth API credentials (Client ID + Secret)
+- Falcon CID
+- CrowdStrike Docker registry access
 - Kubernetes cluster name
-- Container registry access
+- OAuth API credentials (Client ID + Secret)
+
+### Global Configuration
+Global settings apply to all components unless overridden by component specific values.
+
+| Parameter                        | Default | Description                                                                                        |
+|----------------------------------|---------|----------------------------------------------------------------------------------------------------|
+| global.falcon.cid                | null    | Required for all components unless using an existing secret (`falconSecret`) with CID data         |
+| global.falconSecret.enabled      | false   | Enable existing secret injection as an alternative to setting plain text values for sensitive data |
+| global.falconSecret.secretName   | ""      | Name of existing Kubernetes secret with sensitive data necessary for Falcon component installation |
+| global.docker.registryConfigJSON | ""      | Your docker config json as a base64 encoded string                                                 |
+| global.docker.pullSecret         | ""      | Name of existing docker registry secret as an alternative to `registryConfigJSON`                  |
+
+**NOTES:**
+- Any existing secrets for `falconSecret` or `docker.pullSecret` must exist in the namespace dedicated to the respective Falcon component before installing the Helm chart. For example, you must already have an existing secret matching `global.falconSecret.secretName` in the `falcon-sensor` default namespace, or custom namespace you choose for your `falcon-sensor.namespaceOverride`.
+
+### Component-Specific Configuration
+Each Falcon component supports the existing configuration options for each subchart. 
+
+#### Falcon Sensor
+Falcon Sensor specific configurations must be prefixed with `falcon-sensor`. For comprehensive configuration options please see the linked documentation below.
+- [Falcon Sensor - Falcon Configuration Options](/helm-charts/falcon-sensor/README.md#falcon-configuration-options)
+- [Falcon Sensor - Daemonset Configuration Options](/helm-charts/falcon-sensor/README.md#node-configuration)
+- [Falcon Sensor - Container Configuration Options](/helm-charts/falcon-sensor/README.md#container-sensor-configuration)
+
+**Required Daemonset Values:**
+
+| Parameter                              | Description                       |
+|:---------------------------------------|:----------------------------------|
+| `falcon-sensor.node.image.respository` | Falcon Sensor docker registry URL |
+| `falcon-sensor.node.image.tag`         | Falcon Sensor docker image tag    |
+
+**Optional Daemonset Values:**
+
+| Parameter                         | Description                                              |
+|:----------------------------------|:---------------------------------------------------------|
+| `falcon-sensor.node.image.digest` | Falcon Sensor docker image digest (alternative to `tag`) |
+
+**Required Container Values:**
+
+| Parameter                                   | Description                                                      |
+|:--------------------------------------------|:-----------------------------------------------------------------|
+| `falcon-sensor.node.enabled`                | Enable daemonset installation (must be `false`)                  |
+| `falcon-sensor.container.enabled`           | Enable installation on the Kubernetes container (must be `true`) |
+| `falcon-sensor.container.image.respository` | Falcon Sensor docker registry URL                                |
+| `falcon-sensor.container.image.tag`         | Falcon Sensor docker image tag                                   |
+
+**Optional Container Values:**
+
+| Parameter                                   | Description                                                         |
+|:--------------------------------------------|:--------------------------------------------------------------------|
+| `falcon-sensor.container.image.digest`      | Falcon Sensor docker image digest (alternative to `tag`)            |
+
+#### Falcon KAC
+Falcon KAC specific configurations must be prefixed with `falcon-kac`. For comprehensive configuration options please see the linked documentation below.
+- [Falcon KAC - Falcon Configuration Options](/helm-charts/falcon-kac/README.md#falcon-configuration-options)
+
+**Required Values:**
+
+| Parameter                      | Description                       |
+|:-------------------------------|:----------------------------------|
+| `falcon-kac.image.respository` | Falcon Sensor docker registry URL |
+| `falcon-kac.image.tag`         | Falcon Sensor docker image tag    |
+
+**Optional Values:**
+
+| Parameter                 | Description                                              |
+|:--------------------------|:---------------------------------------------------------|
+| `falcon-kac.image.digest` | Falcon Sensor docker image digest (alternative to `tag`) |
+
+#### Falcon Image Analyzer
+- [Falcon Image Analyzer - Configuration Options](/helm-charts/falcon-image-analyzer/README.md#falcon-configuration-options)
+
+**Required Values:**
+
+| Parameter                      | Description                       |
+|:-------------------------------|:----------------------------------|
+| `falcon-kac.image.respository` | Falcon Sensor docker registry URL |
+| `falcon-kac.image.tag`         | Falcon Sensor docker image tag    |
+
+**Optional Values:**
+
+| Parameter                 | Description                                              |
+|:--------------------------|:---------------------------------------------------------|
+| `falcon-kac.image.digest` | Falcon Sensor docker image digest (alternative to `tag`) |
 
 
-## Deployment Scenarios (WIP)
+### Using Existing Kubernetes Secrets
 
-### Scenario 1: Basic Production Setup
+Instead of specifying sensitive values directly in Helm values, you can use existing Kubernetes secrets for the following env vars:
+- `FALCONCTL_OPT_CID`: Falcon CID - Required for falcon-sensor and falcon-kac
+- `FALCONCTL_OPT_PROVISIONING_TOKEN`: Falcon provisioning token - Optional for falcon-sensor and falcon-kac
+- `AGENT_CLIENT_ID`: Falcon OAuth client ID - Required for falcon-image-analyzer
+- `AGENT_CLIENT_SECRET`: Falcon OAuth client secret - Required for falcon-image-analyzer
 
-Core runtime protection and admission control:
-
-```yaml
-global:
-  falcon:
-    cid: "YOUR_CID"
-
-falcon-sensor:
-  enabled: true
-
-falcon-kac:
-  enabled: true
-
-# falcon-image-analyzer disabled by default
-```
-
-### Scenario 2: Comprehensive Security
-
-Full security coverage with scanning and monitoring:
-
-```yaml
-global:
-  falcon:
-    cid: "YOUR_CID"
-    cloud_region: "us-1"
-
-falcon-sensor:
-  enabled: true
-
-falcon-kac:
-  enabled: true
-
-falcon-image-analyzer:
-  enabled: true
-  crowdstrikeConfig:
-    clientID: "CLIENT_ID"
-    clientSecret: "CLIENT_SECRET"
-    agentRegion: "us-1"  
-    clusterName: "production-cluster"
-
-```
-
-
-## Verification (WIP)
-
-### Check Installation Status (WIP)
+When using `falconSecret`, create the secret in each respective namespace beforehand:
 
 ```bash
-# Check all pods in the falcon namespace
-kubectl get pods -n falcon-platform
-
-# Check individual component status
-helm status falcon-platform -n falcon-platform
-
-# View component logs
-kubectl logs -n falcon-platform -l app.kubernetes.io/managed-by=falcon-platform
+# Create secret with required values for falcon-sensor
+kubectl create secret generic $FALCON_SECRET_NAME -n falcon-sensor \
+  --from-literal=FALCONCTL_OPT_CID=$FALCON_CID
+  
+# Create secret with required values for falcon-kac
+kubectl create secret generic $FALCON_SECRET_NAME -n falcon-kac \
+  --from-literal=FALCONCTL_OPT_CID=$FALCON_CID
+  
+# Create secret with required values for falcon-image-analyzer
+kubectl create secret generic $FALCON_SECRET_NAME -n falcon-image-analyzer \
+  --from-literal=AGENT_CLIENT_ID=$FALCON_CLIENT_ID \
+  --from-literal=AGENT_CLIENT_SECRET=$FALCON_CLIENT_SECRET
 ```
 
-### Verify Component Health
+Once you have created your Kubernetes secrets, you can install the falcon-platform Helm chart with the following global options: 
+
+```bash
+helm install falcon-platform crowdstrike/falcon-platform --version $FALCON_PLATFORM_VERSION \
+--set global.falconSecret.enabled=true \
+--set global.falconSecret.secretName=$FALCON_SECRET_NAME \
+--set global.docker.registryConfigJSON=$DOCKER_CONFIG_ENCODED \
+--set falcon-sensor.node.image.repository=$SENSOR_DOCKER_REGISTRY \
+--set falcon-sensor.node.image.tag=7.28.0-18108-1.falcon-linux.Release.US-2 \
+--set falcon-kac.image.repository=$KAC_DOCKER_REGISTRY \
+--set falcon-kac.image.tag=7.27.0-2502.Release.US-2 \
+--set falcon-image-analyzer.image.repository=$IMAGE_ANALYZER_DOCKER_REGISTRY \
+--set falcon-image-analyzer.image.tag=1.0.20 \
+--set falcon-image-analyzer.crowdstrikeConfig.clusterName=$CLUSTER_NAME \
+--set falcon-image-analyzer.crowdstrikeConfig.cid=$FALCON_CID                   # IAR Falcon CID is not yet supported by existing secrets
+```
+
+
+## Verification
+
+### Check Installation Status
+
+```bash
+# Check overall falcon-platform release status
+helm status falcon-platform
+
+# Check all pods in the falcon namespace
+kubectl get pods -l app.kubernetes.io/instance=falcon-platform -A
+```
+
+### Verify Individual Component Health
 
 ```bash
 # Sensor status (should show DaemonSet pods on all nodes)
 # Falcon Sensor is deployed to falcon-sensor namespace by default
-kubectl get daemonset -n falcon-sensor
+kubectl get deployments,daemonsets,pods -n falcon-sensor
 
 # KAC webhook registration
 # Falcon KAC is deployed to falcon-kac namespace by default
-kubectl get validatingadmissionwebhook | grep falcon
+kubectl get deployments,pods -n falcon-kac
 
 # Image analyzer deployment
 # Falcon Image Analyzer is deployed to falcon-image-analyzer namespace by default
-kubectl get deployment -n falcon-image-analyzer | grep image-analyzer
+kubectl get deployments,daemonsets,pods -n falcon-image-analyzer
 ```
 
-## Troubleshooting (WIP)
+## Troubleshooting
 
 ### Common Issues
-
-1. **Missing CID**: Ensure `global.falcon.cid` is set
-2. **Image Pull Errors**: Configure `global.docker.registryConfigJSON` if using private registries
+- [Falcon Sensor - Troubleshooting](/helm-charts/falcon-sensor/README.md#troubleshooting)
+- [Falcon Image Analyzer - Pod Eviction](/helm-charts/falcon-image-analyzer/README.md#pod-eviction)
 
 ### Component Logs
 
 ```bash
 # Sensor logs
-kubectl logs -n falcon-platform -l app=falcon-sensor
+kubectl logs -n falcon-sensor -l app.kubernetes.io/instance=falcon-platform
 
 # KAC logs  
-kubectl logs -n falcon-platform -l app=falcon-kac
+kubectl logs -n falcon-kac -l app.kubernetes.io/instance=falcon-platform
 
 # Image analyzer logs
-kubectl logs -n falcon-platform -l app=falcon-image-analyzer
+kubectl logs -n falcon-image-analyzer -l app.kubernetes.io/instance=falcon-platform
 ```
 
 ## Upgrade Strategy
 
-### Upgrade the Umbrella Chart
+### Upgrade the Falcon Platform Helm Chart Version
 
 ```bash
 # Update repository
@@ -262,12 +268,19 @@ helm repo update
 helm dependency update falcon-platform crowdstrike/falcon-platform
 
 # Upgrade with existing values
-helm upgrade falcon-platform crowdstrike/falcon-platform \
-  -n falcon-platform \
-  -f your-values.yaml
+helm upgrade falcon-platform crowdstrike/falcon-platform --version $FALCON_PLATFORM_VERSION \
+  --reuse-values
 ```
 
 ### Individual Component Updates
+
+```bash
+helm upgrade falcon-platform jchoi_cs/falcon-platform --version $FALCON_PLATFORM_VERSION \
+  --reuse-values \
+  --set falcon-sensor.node.image.tag=$FALCON_SENSOR_IMAGE_TAG \
+  --set falcon-kac.image.tag=$FALCON_KAC_IMAGE_TAG \
+  --set falcon-image-analyzer.image.tag=$FALCON_IAR_IMAGE_TAG
+```
 
 **IMPORTANT NOTE:** You cannot control exactly which helm chart version is being used for each individual Falcon component subchart.
 
@@ -278,11 +291,10 @@ Update the umbrella chart to get the latest Falcon component helm chart versions
 
 ```bash
 # Remove Falcon Platform and all components
-helm uninstall falcon-platform -n falcon-platform
+helm uninstall falcon-platform
 
 # Optionally delete the release namespace, and the namespace for each Falcon component subchart
-kubectl delete namespace falcon-platform
-kubectl delete namespace falcon-sensor
-kubectl delete namespace falcon-kac
-kubectl delete namespace falcon-image-analyzer
+kubectl delete namespace $FALCON_SENSOR_NAMESPACE
+kubectl delete namespace $FALCON_KAC_NAMESPACE
+kubectl delete namespace $FALCON_IAR_NAMESPACE
 ```

@@ -1,3 +1,3 @@
-The Crowdstrike Image Analyzer Agent is now deployed to your cluster under the {{ .Release.Namespace }} namespace as {{ include "falcon-image-analyzer.fullname" . }}. You can now check if the agent is running by running the following command:
+The Crowdstrike Image Analyzer Agent is now deployed to your cluster under the {{ include "falcon-image-analyzer.namespace" . }} namespace as {{ include "falcon-image-analyzer.fullname" . }}. You can now check if the agent is running by running the following command:
 
-"kubectl -n {{ .Release.Namespace}} get pods"
+"kubectl -n {{ include "falcon-image-analyzer.namespace" . }} get pods"

@@ -11,7 +11,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: "{{ include "falcon-sensor.fullname" . }}-test-sidecar-sensor-running"
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "falcon-sensor.namespace" . }}
   labels:
     {{- include "falcon-sensor.labels" . | nindent 4 }}
   annotations:
@@ -26,7 +26,7 @@ spec:
       - |
         echo "Waiting 10 seconds to allow pod time to initialize before running test"
         sleep 10
-        KUBECMD=$(kubectl get pods -n "{{ .Release.Namespace }}" -l "app.kubernetes.io/component=container_sensor" --field-selector=status.phase!=Running --no-headers 2>&1)
+        KUBECMD=$(kubectl get pods -n "{{ include "falcon-sensor.namespace" . }}" -l "app.kubernetes.io/component=container_sensor" --field-selector=status.phase!=Running --no-headers 2>&1)
         if ! echo "${KUBECMD}" | grep -q "No resources found"; then
             echo "[\033[0;31mFAIL\033[0m]: Injector pod is NOT running"
             echo "${KUBECMD}"

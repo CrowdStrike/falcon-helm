@@ -1,9 +1,11 @@
 {{- if .Values.daemonset.enabled }}
+{{- $imagePullSecret := include "falcon-image-analyzer.imagePullSecret" . }}
+{{- $registryConfigJson := include "falcon-image-analyzer.registryConfigJson" . }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: {{ include "falcon-image-analyzer.fullname" . }}
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "falcon-image-analyzer.namespace" . }}
   labels:
     {{- include "falcon-image-analyzer.labels" . | nindent 4 }}
 spec:
@@ -22,17 +24,17 @@ spec:
       labels:
     {{- include "falcon-image-analyzer.labels" . | nindent 8 }}
     spec:
-      {{- if or (.Values.image.pullSecret) (.Values.image.registryConfigJSON) (.Values.crowdstrikeConfig.dockerAPIToken) }}
+      {{- if or $imagePullSecret $registryConfigJson (.Values.crowdstrikeConfig.dockerAPIToken) }}
       imagePullSecrets:
-        {{- if and (.Values.crowdstrikeConfig.dockerAPIToken) (.Values.image.registryConfigJSON) }}
+        {{- if and (.Values.crowdstrikeConfig.dockerAPIToken) $registryConfigJson }}
           {{- fail "crowdstrikeConfig.dockerAPIToken and image.registryConfigJSON cannot be used together." }}
         {{- else -}}
-        {{ if or (.Values.crowdstrikeConfig.dockerAPIToken) (.Values.image.registryConfigJSON) }}
+        {{ if or (.Values.crowdstrikeConfig.dockerAPIToken) $registryConfigJson }}
         - name: {{ include "falcon-image-analyzer.fullname" . }}-pull-secret
         {{- end }}
         {{- end }}
-        {{- if .Values.image.pullSecret }}
-        - name: {{ .Values.image.pullSecret }}
+        {{- if $imagePullSecret }}
+        - name: {{ $imagePullSecret }}
         {{- end }}
       {{- end }}
       serviceAccountName: {{ .Values.serviceAccount.name | default ( include "falcon-image-analyzer.fullname" . ) }}
@@ -91,8 +93,8 @@ spec:
             - configMapRef:
                 name: {{ include "falcon-image-analyzer.fullname" . }}
             - secretRef:
-                {{- if .Values.crowdstrikeConfig.existingSecret }}
-                name: {{ .Values.crowdstrikeConfig.existingSecret }}
+                {{- if (include "falcon-image-analyzer.falconSecretName" .) }}
+                name: {{ include "falcon-image-analyzer.falconSecretName" . }}
                 {{- else }}
                 name: {{ include "falcon-image-analyzer.fullname" . }}
                 {{- end }}

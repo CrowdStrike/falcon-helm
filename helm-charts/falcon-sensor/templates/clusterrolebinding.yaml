@@ -18,7 +18,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: {{ .Values.serviceAccount.name }}
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "falcon-sensor.namespace" . }}
 roleRef:
   kind: ClusterRole
   name: {{ include "falcon-sensor.fullname" . }}-access-role

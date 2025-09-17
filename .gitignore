@@ -13,3 +13,7 @@ bin
 *.swo
 *~
 *.vscode
+
+# Unified helm chart
+charts/
+*.tgz

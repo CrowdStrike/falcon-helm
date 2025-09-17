@@ -5,7 +5,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ include "falcon-sensor.configMapName" . }}
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "falcon-sensor.namespace" . }}
   labels:
     app: "{{ include "falcon-sensor.name" . }}"
     app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}
@@ -20,8 +20,8 @@ metadata:
     helm.sh/chart: {{ include "falcon-sensor.chart" . }}
 
 data:
-  {{- if not .Values.falconSecret.enabled }}
-  FALCONCTL_OPT_CID: {{ .Values.falcon.cid }}
+  {{- if not (include "falcon-sensor.falconSecretEnabled" . | eq "true") }}
+  FALCONCTL_OPT_CID: {{ include "falcon-sensor.falconCid" . }}
   {{- if .Values.falcon.provisioning_token }}
   FALCONCTL_OPT_PROVISIONING_TOKEN: {{ .Values.falcon.provisioning_token }}
   {{- end }}
@@ -38,12 +38,12 @@ data:
   {{- end }}
 
   {{- if .Values.container.enabled }}
-  CP_NAMESPACE: {{ .Release.Namespace }}
+  CP_NAMESPACE: {{ include "falcon-sensor.namespace" . }}
   FALCON_IMAGE_PULL_POLICY: "{{ .Values.container.image.pullPolicy }}"
   FALCON_IMAGE: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}"
   FALCON_INJECTOR_LISTEN_PORT: "{{ .Values.container.injectorPort }}"
   {{- if .Values.container.image.pullSecrets.enable }}
-  FALCON_IMAGE_PULL_SECRET: {{ .Values.container.image.pullSecrets.name | default (printf "%s-pull-secret" (include "falcon-sensor.fullname" .)) }}
+  FALCON_IMAGE_PULL_SECRET: {{ include "falcon-sensor.imagePullSecretName" . | default (printf "%s-pull-secret" (include "falcon-sensor.fullname" .)) }}
   {{- end }}
   {{- if .Values.container.disablePodInjection }}
   INJECTION_DEFAULT_DISABLED: T

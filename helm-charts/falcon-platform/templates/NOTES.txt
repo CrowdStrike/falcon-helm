@@ -1,0 +1,45 @@
+Thank you for installing the CrowdStrike Falcon Platform Helm Chart!
+
+## Enabled Components
+
+{{- $anyEnabled := false }}
+{{- if (index .Values "falcon-sensor").enabled }}
+{{- $anyEnabled = true }}
+✓ Falcon Sensor - Runtime node protection via DaemonSet
+  - Deployment: {{ if (index .Values "falcon-sensor").node.enabled }}Node agents{{ else }}Disabled{{ end }}
+  - Backend: {{ (index .Values "falcon-sensor").node.backend | default "bpf" }}
+{{- end }}
+
+{{- if (index .Values "falcon-kac").enabled }}
+{{- $anyEnabled = true }}
+✓ Falcon Kubernetes Admission Controller - Policy enforcement
+  - Webhook deployment for admission control
+{{- end }}
+
+{{- if (index .Values "falcon-image-analyzer").enabled }}
+{{- $anyEnabled = true }}
+✓ Falcon Image Analyzer - Container security scanning
+  - Mode: {{ if (index .Values "falcon-image-analyzer").deployment.enabled }}Deployment{{ else if (index .Values "falcon-image-analyzer").daemonset.enabled }}DaemonSet{{ end }}
+  - Cluster: {{ (index .Values "falcon-image-analyzer").crowdstrikeConfig.clusterName }}
+{{- end }}
+
+
+{{- if not $anyEnabled }}
+⚠️  No components are currently enabled.
+   Set individual component 'enabled: true' in values.yaml to deploy them.
+{{- end }}
+
+## Component Status
+
+Check deployment status with:
+  kubectl get pods -n {{ .Values.global.namespace | default "falcon-system" }}
+
+Monitor components:
+  kubectl logs -n {{ .Values.global.namespace | default "falcon-system" }} -l app.kubernetes.io/managed-by=falcon-platform
+
+## Documentation
+
+For detailed configuration of individual components, refer to:
+- Falcon Sensor: ../falcon-sensor/README.md  
+- Falcon KAC: ../falcon-kac/README.md
+- Falcon Image Analyzer: ../falcon-image-analyzer/README.md

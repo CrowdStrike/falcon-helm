@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: {{ include "falcon-image-analyzer.fullname" . }}
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "falcon-image-analyzer.namespace" . }}
   labels:
     {{- include "falcon-image-analyzer.labels" . | nindent 4 }}
 spec:

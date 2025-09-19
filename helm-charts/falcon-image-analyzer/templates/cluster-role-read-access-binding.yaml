@@ -7,7 +7,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.serviceAccount.name | default ( include "falcon-image-analyzer.fullname" . ) }}
-    namespace: {{ .Release.Namespace }}
+    namespace: {{ include "falcon-image-analyzer.namespace" . }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

@@ -195,3 +195,15 @@ runAsGroup: {{ .Values.securityContext.runAsGroup | default 0 }}
 {{- printf "%s:%s" .Values.image.repository .Values.image.tag -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Return namespace based on .Values.namespaceOverride or Release.Namespace
+namespaceOverride should only be used when installing falcon-image-analyzer as a subchart of falcon-platform
+*/}}
+{{- define "falcon-image-analyzer.namespace" -}}
+{{- if .Values.namespaceOverride -}}
+{{- .Values.namespaceOverride -}}
+{{- else -}}
+{{- .Release.Namespace -}}
+{{- end -}}
+{{- end -}}

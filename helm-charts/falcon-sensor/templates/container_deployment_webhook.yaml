@@ -1,19 +1,20 @@
 {{- if .Values.container.enabled }}
+{{- $namespace := (include "falcon-sensor.namespace" .) -}}
 {{- $name := (printf "%s-injector" (include "falcon-sensor.name" .)) -}}
-{{- $fullName := (printf "%s.%s.svc" $name .Release.Namespace) -}}
+{{- $fullName := (printf "%s.%s.svc" $name $namespace) -}}
 {{- if .Values.container.domainName }}
-{{- $fullName = (printf "%s.%s.svc.%s" $name .Release.Namespace .Values.container.domainName) -}}
+{{- $fullName = (printf "%s.%s.svc.%s" $name $namespace .Values.container.domainName) -}}
 {{- end }}
 {{- $certValid := (.Values.container.certExpiration | int) -}}
-{{- $altNames := list ( printf "%s" $fullName ) ( printf "%s.%s.svc" $name .Release.Namespace ) ( printf "%s.%s.svc.cluster.local" $name .Release.Namespace ) ( printf "%s.%s" $name .Release.Namespace ) ( printf "%s" $name ) -}}
-{{- $ca := genCA ( printf "%s ca" .Release.Namespace ) $certValid -}}
+{{- $altNames := list ( printf "%s" $fullName ) ( printf "%s.%s.svc" $name $namespace ) ( printf "%s.%s.svc.cluster.local" $name $namespace ) ( printf "%s.%s" $name $namespace ) ( printf "%s" $name ) -}}
+{{- $ca := genCA ( printf "%s ca" $namespace ) $certValid -}}
 {{- $cert := genSignedCert $fullName nil $altNames $certValid $ca -}}
 {{- if not .Values.container.autoCertificateUpdate }}
-{{- $tlscrt := (lookup "v1" "Secret" .Release.Namespace (printf "%s-tls" (include "falcon-sensor.name" .))).data -}}
+{{- $tlscrt := (lookup "v1" "Secret" $namespace (printf "%s-tls" (include "falcon-sensor.name" .))).data -}}
 {{- if kindIs "map" $tlscrt }}
 {{- $cert = dict "Cert" (index $tlscrt "tls.crt" | b64dec ) "Key" (index $tlscrt "tls.key" | b64dec ) -}}
 {{- end }}
-{{- $tlsca := (lookup "admissionregistration.k8s.io/v1" "MutatingWebhookConfiguration" .Release.Namespace $name).webhooks -}}
+{{- $tlsca := (lookup "admissionregistration.k8s.io/v1" "MutatingWebhookConfiguration" $namespace $name).webhooks -}}
 {{- if kindIs "slice" $tlsca }}
 {{- range $index, $wca := $tlsca -}}
   {{- $ca = dict "Cert" ($wca.clientConfig.caBundle | b64dec) }}
@@ -28,7 +29,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "falcon-sensor.name" . }}-injector
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "falcon-sensor.namespace" . }}
   labels:
     app: {{ include "falcon-sensor.name" . }}-injector
     app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}
@@ -154,7 +155,7 @@ spec:
           readOnly: true
         {{- if or (.Files.Glob "certs/*.crt") (.Values.container.registryCertSecret) }}
         - name: {{ include "falcon-sensor.name" . }}-registry-certs
-          mountPath: /etc/docker/certs.d/{{ .Release.Namespace }}-certs
+          mountPath: /etc/docker/certs.d/{{ include "falcon-sensor.namespace" . }}-certs
           readOnly: true
         {{- end }}
         {{- if .Values.container.azure.enabled }}
@@ -211,7 +212,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: {{ include "falcon-sensor.name" . }}-tls
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "falcon-sensor.namespace" . }}
   labels:
     app: {{ include "falcon-sensor.name" . }}
     app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}
@@ -239,7 +240,7 @@ metadata:
     crowdstrike.com/provider: crowdstrike
     helm.sh/chart: {{ include "falcon-sensor.chart" . }}
 webhooks:
-  - name: {{ $name }}.{{ .Release.Namespace }}.svc
+  - name: {{ $name }}.{{ include "falcon-sensor.namespace" . }}.svc
     admissionReviewVersions:
       - v1
     {{- if lt (int (semver .Capabilities.KubeVersion.Version).Minor) 22 }}
@@ -259,7 +260,7 @@ webhooks:
     {{- end }}
         operator: "NotIn"
         values:
-        - {{ .Release.Namespace }}
+        - {{ include "falcon-sensor.namespace" . }}
         - kube-system
         - kube-public
     clientConfig:
@@ -268,7 +269,7 @@ webhooks:
       {{- else }}
       service:
         name: {{ include "falcon-sensor.name" . }}-injector
-        namespace: {{ .Release.Namespace }}
+        namespace: {{ include "falcon-sensor.namespace" . }}
         path: "/mutate"
       {{- end }}
       caBundle: {{ $caCert }}

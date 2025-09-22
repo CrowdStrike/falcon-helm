@@ -191,3 +191,69 @@ Return namespace based on .Values.namespaceOverride or Release.Namespace
 {{- .Release.Namespace -}}
 {{- end -}}
 {{- end -}}
+
+
+{{/* ### GLOBAL HELPERS ### */}}
+
+{{/*
+Get Falcon CID from global value if it exists
+*/}}
+{{- define "falcon-sensor.falconCid" -}}
+{{- if .Values.global.falcon.cid -}}
+{{- .Values.global.falcon.cid -}}
+{{- else -}}
+{{- .Values.falcon.cid -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Check if Falcon secret is enabled from global value if it exists
+*/}}
+{{- define "falcon-sensor.falconSecretEnabled" -}}
+{{- or .Values.global.falconSecret.enabled .Values.falconSecret.enabled -}}
+{{- end -}}
+
+{{/*
+Get Falcon secret name from global value if it exists
+*/}}
+{{- define "falcon-sensor.falconSecretName" -}}
+{{- if .Values.global.falconSecret.secretName -}}
+{{- .Values.global.falconSecret.secretName -}}
+{{- else -}}
+{{- .Values.falconSecret.secretName -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get docker pull secret from global value if it exists
+*/}}
+{{- define "falcon-sensor.imagePullSecretName" -}}
+{{- if .Values.global.docker.pullSecret -}}
+{{- .Values.global.docker.pullSecret -}}
+{{- else -}}
+{{- if .Values.node.enabled -}}
+{{- .Values.node.image.pullSecrets | default "" -}}
+{{- else if .Values.container.image.pullSecrets.enable -}}
+{{- .Values.container.image.pullSecrets.name | default "" -}}
+{{- else -}}
+{{- "" -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get docker registry config json from global value if it exists
+*/}}
+{{- define "falcon-sensor.registryConfigJson" -}}
+{{- if .Values.global.docker.registryConfigJSON -}}
+{{- .Values.global.docker.registryConfigJSON -}}
+{{- else -}}
+{{- if .Values.node.enabled -}}
+{{- .Values.node.image.registryConfigJSON | default "" -}}
+{{- else if .Values.container.image.pullSecrets.enable -}}
+{{- .Values.container.image.pullSecrets.registryConfigJSON | default "" -}}
+{{- else -}}
+{{- "" -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

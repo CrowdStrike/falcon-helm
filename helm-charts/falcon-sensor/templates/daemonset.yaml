@@ -101,6 +101,9 @@ spec:
       # a file volume ensures that AID is preserved across container
       # restarts.  Sensor versions 6.54+ have a helper binary to initialize falconstore.
       - name: init-falconstore
+        volumeMounts:
+        - name: falconstore
+          mountPath: /opt/CrowdStrike/falconstore
         image: "{{ include "falcon-sensor.image" . }}"
         imagePullPolicy: "{{ .Values.node.image.pullPolicy }}"
         command:

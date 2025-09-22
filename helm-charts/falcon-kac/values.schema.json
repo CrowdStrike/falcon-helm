@@ -426,6 +426,10 @@
             }
         }
     },
+    "falconImageAnalyzerNamespace": {
+        "type": "string",
+        "default": "falcon-image-analyzer"
+    },
     "oneOf": [
         {
             "properties": {

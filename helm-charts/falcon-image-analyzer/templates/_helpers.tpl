@@ -172,7 +172,7 @@ runAsGroup: {{ .Values.securityContext.runAsGroup | default 0 }}
 {{- end }}
 {{- end }}
 
-{{- define "falcon-image-analyzer.imagePullSecret" }}
+{{- define "falcon-image-analyzer.pullSecretFromAPIToken" }}
 {{- with .Values.crowdstrikeConfig }}
 {{- if or (eq .agentRegion "us-gov-1") (eq .agentRegion "usgov1") (eq .agentRegion "us-gov1") (eq .agentRegion "gov1") (eq .agentRegion "gov-1") }}
 {{- printf "{\"auths\":{\"registry.laggar.gcw.crowdstrike.com\":{\"username\":\"fc-%s\",\"password\":\"%s\",\"email\":\"image-assessment@crowdstrike.com\",\"auth\":\"%s\"}}}" (first (regexSplit "-" (lower .cid) -1)) .dockerAPIToken (printf "fc-%s:%s" (first (regexSplit "-" (lower .cid) -1)) .dockerAPIToken | b64enc) | b64enc }}
@@ -205,5 +205,52 @@ namespaceOverride should only be used when installing falcon-image-analyzer as a
 {{- .Values.namespaceOverride -}}
 {{- else -}}
 {{- .Release.Namespace -}}
+{{- end -}}
+{{- end -}}
+
+
+{{/* ### GLOBAL HELPERS ### */}}
+
+{{/*
+Get Falcon CID from global value if it exists
+*/}}
+{{- define "falcon-image-analyzer.falconCid" -}}
+{{- if .Values.global.falcon.cid -}}
+{{- .Values.global.falcon.cid -}}
+{{- else -}}
+{{- .Values.crowdstrikeConfig.cid -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get Falcon secret name from global value if it exists
+*/}}
+{{- define "falcon-image-analyzer.falconSecretName" -}}
+{{- if .Values.global.falconSecret.secretName -}}
+{{- .Values.global.falconSecret.secretName -}}
+{{- else -}}
+{{- .Values.crowdstrikeConfig.existingSecret -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get docker pull secret from global value if it exists
+*/}}
+{{- define "falcon-image-analyzer.imagePullSecret" -}}
+{{- if .Values.global.docker.pullSecret -}}
+{{- .Values.global.docker.pullSecret -}}
+{{- else -}}
+{{- .Values.image.pullSecret | default "" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get docker registry config json from global value if it exists
+*/}}
+{{- define "falcon-image-analyzer.registryConfigJson" -}}
+{{- if .Values.global.docker.registryConfigJSON -}}
+{{- .Values.global.docker.registryConfigJSON -}}
+{{- else -}}
+{{- .Values.image.registryConfigJSON | default "" -}}
 {{- end -}}
 {{- end -}}

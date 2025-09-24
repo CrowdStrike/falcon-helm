@@ -9,6 +9,7 @@ on:
       - '!helm-charts/falcon-kac/**'
       - '!helm-charts/falcon-self-hosted-registry-assessment/**'
       - '!helm-charts/aspm-relay/**'
+      - '!helm-charts/falcon-platform/**'
 
 jobs:
   lint-test:

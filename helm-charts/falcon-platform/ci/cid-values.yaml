@@ -1,0 +1,10 @@
+global:
+  falcon:
+    cid: 1234567890ABCDEF1234567890ABCDEF-12
+
+falcon-image-analyzer:
+  enabled: true
+  crowdstrikeConfig:
+    clusterName: "cluster-name"
+    clientID: "K8mN2pQrS9tUvW3xY7zA1bC4dE6fG0hI"
+    clientSecret: "K8mN2pQrS9tUvW3xY7zA1bC4dE6fG0hIjL5ojL5o"

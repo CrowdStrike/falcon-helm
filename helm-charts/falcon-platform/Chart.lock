@@ -1,0 +1,12 @@
+dependencies:
+- name: falcon-sensor
+  repository: https://mr-jungchoi.github.io/falcon-helm
+  version: 1.34.1-rc2
+- name: falcon-kac
+  repository: https://mr-jungchoi.github.io/falcon-helm
+  version: 1.5.1-rc2
+- name: falcon-image-analyzer
+  repository: https://mr-jungchoi.github.io/falcon-helm
+  version: 1.1.16-rc2
+digest: sha256:85b0467b48ebe7d77143860b687fbb09a319ffeb7832b7d7473ed0bd83bd42a7
+generated: "2025-09-23T17:22:28.139246-04:00"

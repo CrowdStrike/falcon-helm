@@ -439,7 +439,7 @@ for e.g. for gitlab registries there exists the
 - The above is very registry provider specific. One needs to ensure nothing ie being blocked by Proxy 
 
 ### Pod Eviction
-If for some reason pod evivictions are observed in the Cluster due to exceeding ephemeral storage
+If for some reason pod evictions are observed in the Cluster due to exceeding ephemeral storage
 please set the `priorityClassName`  to `system-node-critical` or `system-cluster-critical` in `config-values.yaml` and update.
 
 ### Exclusions

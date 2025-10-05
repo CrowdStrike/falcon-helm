@@ -186,6 +186,6 @@ global:
   falconSecret:
     enabled: false
     secretName: ""
-  docker:
+  containerRegistry:
     pullSecret: ""
-    registryConfigJSON: ""
+    configJSON: ""

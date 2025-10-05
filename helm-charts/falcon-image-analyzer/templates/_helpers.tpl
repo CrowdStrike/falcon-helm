@@ -215,7 +215,7 @@ namespaceOverride should only be used when installing falcon-image-analyzer as a
 Get Falcon CID from global value if it exists
 */}}
 {{- define "falcon-image-analyzer.falconCid" -}}
-{{- if .Values.global.falcon.cid -}}
+{{- if and .Values.global.falcon.cid (not .Values.crowdstrikeConfig.cid) -}}
 {{- .Values.global.falcon.cid -}}
 {{- else -}}
 {{- .Values.crowdstrikeConfig.cid -}}
@@ -226,7 +226,7 @@ Get Falcon CID from global value if it exists
 Get Falcon secret name from global value if it exists
 */}}
 {{- define "falcon-image-analyzer.falconSecretName" -}}
-{{- if .Values.global.falconSecret.secretName -}}
+{{- if and .Values.global.falconSecret.secretName (not .Values.crowdstrikeConfig.existingSecret) -}}
 {{- .Values.global.falconSecret.secretName -}}
 {{- else -}}
 {{- .Values.crowdstrikeConfig.existingSecret -}}
@@ -234,22 +234,22 @@ Get Falcon secret name from global value if it exists
 {{- end -}}
 
 {{/*
-Get docker pull secret from global value if it exists
+Get container registry pull secret from global value if it exists
 */}}
 {{- define "falcon-image-analyzer.imagePullSecret" -}}
-{{- if .Values.global.docker.pullSecret -}}
-{{- .Values.global.docker.pullSecret -}}
+{{- if and .Values.global.containerRegistry.pullSecret (not .Values.image.pullSecret) -}}
+{{- .Values.global.containerRegistry.pullSecret -}}
 {{- else -}}
 {{- .Values.image.pullSecret | default "" -}}
 {{- end -}}
 {{- end -}}
 
 {{/*
-Get docker registry config json from global value if it exists
+Get container registry config json from global value if it exists
 */}}
 {{- define "falcon-image-analyzer.registryConfigJson" -}}
-{{- if .Values.global.docker.registryConfigJSON -}}
-{{- .Values.global.docker.registryConfigJSON -}}
+{{- if and .Values.global.containerRegistry.configJSON (not .Values.image.registryConfigJSON) -}}
+{{- .Values.global.containerRegistry.configJSON -}}
 {{- else -}}
 {{- .Values.image.registryConfigJSON | default "" -}}
 {{- end -}}

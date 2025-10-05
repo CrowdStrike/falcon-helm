@@ -1,4 +1,5 @@
 {{- if not .Values.node.cleanupOnly }}
+{{- include "falcon-sensor.validateOneOfFalconCidOrFalconSecret" .}}
 {{- $falconSecretKeys := list "cid" "provisioning_token" }}
 
 apiVersion: v1
@@ -43,7 +44,7 @@ data:
   FALCON_IMAGE: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}"
   FALCON_INJECTOR_LISTEN_PORT: "{{ .Values.container.injectorPort }}"
   {{- if .Values.container.image.pullSecrets.enable }}
-  FALCON_IMAGE_PULL_SECRET: {{ include "falcon-sensor.imagePullSecretName" . | default (printf "%s-pull-secret" (include "falcon-sensor.fullname" .)) }}
+  FALCON_IMAGE_PULL_SECRET: {{ include "falcon-sensor.container.imagePullSecretName" . | default (printf "%s-pull-secret" (include "falcon-sensor.fullname" .)) }}
   {{- end }}
   {{- if .Values.container.disablePodInjection }}
   INJECTION_DEFAULT_DISABLED: T

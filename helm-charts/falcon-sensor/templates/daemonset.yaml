@@ -1,6 +1,6 @@
 {{- if and .Values.node.enabled (not .Values.node.cleanupOnly) }}
-{{- $imagePullSecretName := include "falcon-sensor.imagePullSecretName" . }}
-{{- $registryConfigJson := include "falcon-sensor.registryConfigJson" . }}
+{{- $imagePullSecretName := include "falcon-sensor.node.imagePullSecretName" . }}
+{{- $registryConfigJson := include "falcon-sensor.node.registryConfigJson" . }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:

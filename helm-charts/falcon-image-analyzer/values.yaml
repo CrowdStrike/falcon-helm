@@ -117,7 +117,11 @@ hostNetwork: false
 # Define ImageAnalyzer POD DNS Policy, defaults to "ClusterFirstWithHostNet" when hostNetwork = true
 dnsPolicy:
 
-# Use this param to provide the comma separated registry secrets of the form namsepace1:secretname1,namespace:secret2
+# Use this param to provide the comma-separated registry secrets or auto discover the registry secrets.
+# if autoDiscoverCredentials is set to true then the provided credentials are ignored. Note that the secret
+# should be existing of type docker-registry in ANY namespace on the cluster to be discovered. IAR will NOT pick
+# up any new secret added to the cluster after IAR is running.For that a restart of IAR is needed.
+# of the form namsepace1:secretname1,namespace:secret2
 # each secret should be of type docker-registry for each of the private registry that is used.
 # for e.g.  a docker-registry secret can be created as below
 #  kubectl create secret docker-registry regcred \
@@ -129,6 +133,7 @@ dnsPolicy:
 # use the above secret as "my-app-ns:regcred"
 privateRegistries:
   credentials: ""
+  autoDiscoverCredentials: true
 
 # This is a mandatory mount for both deployment and daemon set.
 # this is used as a tmp working space for image storage.
@@ -151,20 +156,30 @@ log:
   output: 2
 
 
-# Set this flag to true to send scan error stats to cs cloud.
-# These events can be searched in investigate>events / advanced events search
-# note that if true, agent will send an error for image for first time only.
-# Repeated errors for same images will not be sent to preserve network footprint
-scanStats:
-  enabled: true
+
+iarAgentService:
+  httpPort: 8001
+  # Auto update the certificates every time there is an update
+  autoCertificateUpdate: true
+
+  # Certificate validity duration in number of days
+  certExpiration: 3650
+
+  # For custom DNS configurations when .svc requires a domain for services
+  # For example if service.my-namespace.svc doesn't resolve and the cluster uses
+  # service.my-namespace.svc.testing.io, you would add testing.io as the value below.
+  # Otherwise, keep this blank.
+  domainName:
+
+kac:
+  namespace : "falcon-kac"
 
 crowdstrikeConfig:
-  clusterName: ""
+  clusterName: "" # optional. if not provided agent will try to auto-discover
 
   # These are special Kubernetes SDK Verbose Logs. Helpful for troubleshooting kube API.
   # Only Enable for extreme troubleshooting.
   enableKlogs: "false"
-
 
   enableDebug: "false"
   clientID: ""

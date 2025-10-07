@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "falcon-image-analyzer.iarAgentService" . }}
+  namespace: {{ include "falcon-image-analyzer.namespace" . }}
+  labels:
+    {{- include "falcon-image-analyzer.labels" . | nindent 4 }}
+spec:
+  ports:
+    - port: 443
+      targetPort: service-port
+  selector:
+    {{- include "falcon-image-analyzer.selectorLabels" . | nindent 4 }}

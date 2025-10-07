@@ -19,7 +19,7 @@ more.
   - [Deployment considerations](#deployment-considerations)
   - [Pod Security Standards](#pod-security-standards)
   - [Temp Mounts](#temp-volume-mount)
-  - [IAM Roles](#iam-roles--eks-or-partially-managed-using-ec2-instances)
+  - [IAM Roles](#aws-iam-roles-for-service-accounts)
   - [Authentication for Private Registries](#authentication-for-private-registries)
   - [Proxy Usage](#proxy-usage)
   - [Pod Eviction Issue](#pod-eviction)
@@ -42,9 +42,9 @@ The Falcon Image Analyzer Helm chart has been tested to deploy on the following 
 
 
 ## New updates in current release
-Helm (1.1.15) + iar 1.0.20
-- Moving to new container uploads URL
-- Setting the scan stats to default `true`
+Helm (1.1.16) + iar 1.0.21
+- scan stats field ~~deprecated~~. The feature is always on from IAR 1.0.21 onwards
+- Adding Cluster Name autodiscovery in IAR 1.0.21 if cluster name is left blank
 
 
 
@@ -91,7 +91,7 @@ The following tables list the Falcon sensor configurable parameters and their de
 | `hostNetwork`                  optional   ( available  Helm Chart v >= 1.1.11)                                             | Set the value to `true` to use the hostNetwork instead of pod network                                                                                          | `false`                                                                                                     |
 | `dnsPolicy`                  optional   ( available  Helm Chart v >= 1.1.11)                                               | Set the value to any supported value from https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy                            | ``  no value implies `Default`                                                                              |
 | `scanStats.enabled`                  optional   ( available  Helm Chart v >= 1.1.8 & falcon-imageanalyzer >= 1.0.13)       | Set `enabled` to true for agent to send scan error and stats to cloud                                                                                          | `true`                                                                                                      |
-| `crowdstrikeConfig.clusterName`     required                                                                               | Cluster name                                                                                                                                                   | None                                                                                                        |
+| `crowdstrikeConfig.clusterName`     optional                                                                               | Cluster name                                                                                                                                                   | None                                                                                                        |
 | `crowdstrikeConfig.enableDebug`   optional                                                                                 | Set to `true` for debug level log verbosity.                                                                                                                   | false                                                                                                       |
 | `crowdstrikeConfig.enableKlogs`   optional                                                                                 | Set to `true` for kubernetes api log verbosity.                                                                                                                | false                                                                                                       |
 | `crowdstrikeConfig.clientID`    required                                                                                   | CrowdStrike Falcon OAuth API Client ID                                                                                                                         | None                                                                                                        |
@@ -304,8 +304,9 @@ volumes:
 **From the IAR `1.0.8` on wards any image that is greater than the allowed size will NOT be scanned to avoid container eviction crash due to tmp space shortage.**
 
 
-### IAM Roles  ( EKS or Partially Managed using EC2 Instances)
-- For the IAR to detect cloud as AWS, it should be able to retrieve sts token to assume role to retrieve ECR Tokens.
+### AWS IAM Roles for Service Accounts
+- **KIAM OR Kube2IAM.** 
+For the IAR to detect cloud as AWS, it should be able to retrieve sts token to assume role to retrieve ECR Tokens.
   There are 2 options for  that . If your EKS cluster us using the **kiam** or **kube2iam** admission controller, add annotations
   for the IAR service account in the `config_values.yaml` as stated below, before installing. Make sure the roles have trust-relationship to allow
   the serviceaccount in the `falcon-image-analyzer` namespace
@@ -338,7 +339,8 @@ Consult the AWS IAM Role Guide/Wizard for syntax and avoid typos.
 
 Make sure the trust-relationship of the has  principal role of `kiam` or `kube2iam` service with `s2s:assumeRole` permissions.
 
-- For the EKS Cluster using the OIDC providers add the annotation as below.Make sure the roles have trust-relationship to allow
+- **OIDC Connector.**
+For the EKS Cluster using the OIDC providers add the annotation as below.Make sure the roles have trust-relationship to allow
   the serviceaccount in the `falcon-image-analyzer` namespace
 
 

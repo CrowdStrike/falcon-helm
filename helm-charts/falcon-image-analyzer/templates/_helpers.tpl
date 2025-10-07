@@ -49,6 +49,14 @@ isKubernetes definition
 {{- printf "true" }}
 {{- end }}
 
+
+{{/*
+iar agent service  definition
+*/}}
+{{- define "falcon-image-analyzer.iarAgentService" -}}
+{{- printf "iar-agent-service" }}
+{{- end }}
+
 {{/*
 tmp-volume volume size definition
 */}}
@@ -64,6 +72,9 @@ tmp-volume volume size definition
 Common labels
 */}}
 {{- define "falcon-image-analyzer.labels" -}}
+app.kubernetes.io/component: iar
+app.kubernetes.io/name: {{ include "falcon-image-analyzer.name" . }}
+crowdstrike.com/provider: crowdstrike
 helm.sh/chart: {{ include "falcon-image-analyzer.chart" . }}
 {{ include "falcon-image-analyzer.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
@@ -76,6 +87,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 Selector labels
 */}}
 {{- define "falcon-image-analyzer.selectorLabels" -}}
+app: {{ include "falcon-image-analyzer.name" . }}
 app.kubernetes.io/name: {{ include "falcon-image-analyzer.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}

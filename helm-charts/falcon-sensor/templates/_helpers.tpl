@@ -199,10 +199,10 @@ Return namespace based on .Values.namespaceOverride or Release.Namespace
 Get Falcon CID from global value if it exists
 */}}
 {{- define "falcon-sensor.falconCid" -}}
-{{- if .Values.global.falcon.cid -}}
+{{- if and .Values.global.falcon.cid (not .Values.falcon.cid) -}}
 {{- .Values.global.falcon.cid -}}
 {{- else -}}
-{{- .Values.falcon.cid -}}
+{{- .Values.falcon.cid | default "" -}}
 {{- end -}}
 {{- end -}}
 
@@ -217,43 +217,70 @@ Check if Falcon secret is enabled from global value if it exists
 Get Falcon secret name from global value if it exists
 */}}
 {{- define "falcon-sensor.falconSecretName" -}}
-{{- if .Values.global.falconSecret.secretName -}}
+{{- if and .Values.global.falconSecret.secretName (not .Values.falconSecret.secretName) -}}
 {{- .Values.global.falconSecret.secretName -}}
 {{- else -}}
-{{- .Values.falconSecret.secretName -}}
+{{- .Values.falconSecret.secretName | default "" -}}
 {{- end -}}
 {{- end -}}
 
 {{/*
-Get docker pull secret from global value if it exists
+Validate one of falcon.cid or falconSecret is configured
 */}}
-{{- define "falcon-sensor.imagePullSecretName" -}}
-{{- if .Values.global.docker.pullSecret -}}
-{{- .Values.global.docker.pullSecret -}}
+{{- define "falcon-sensor.validateOneOfFalconCidOrFalconSecret" -}}
+{{- $hasCid := include "falcon-sensor.falconCid" . -}}
+{{- $secretEnabled := (include "falcon-sensor.falconSecretEnabled" . | eq "true") -}}
+{{- $hasSecret := include "falcon-sensor.falconSecretName" . -}}
+
+{{- if and (not $hasCid) (or (not $secretEnabled) (not $hasSecret)) -}}
+{{- fail "Must configure one of falcon.cid or falconSecret with FALCONCTL_OPT_CID data" }}
+{{- end -}}
+
+{{- if and ($hasCid) ($secretEnabled) -}}
+{{- fail "Cannot use both falcon.cid and falconSecret" }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get node container registry pull secret from global value if it exists
+*/}}
+{{- define "falcon-sensor.node.imagePullSecretName" -}}
+{{- if and .Values.global.containerRegistry.pullSecret (not .Values.node.image.pullSecrets) -}}
+{{- .Values.global.containerRegistry.pullSecret -}}
 {{- else -}}
-{{- if .Values.node.enabled -}}
 {{- .Values.node.image.pullSecrets | default "" -}}
-{{- else if .Values.container.image.pullSecrets.enable -}}
-{{- .Values.container.image.pullSecrets.name | default "" -}}
-{{- else -}}
-{{- "" -}}
-{{- end -}}
 {{- end -}}
 {{- end -}}
 
 {{/*
-Get docker registry config json from global value if it exists
+Get sidecar container registry pull secret from global value if it exists
 */}}
-{{- define "falcon-sensor.registryConfigJson" -}}
-{{- if .Values.global.docker.registryConfigJSON -}}
-{{- .Values.global.docker.registryConfigJSON -}}
+{{- define "falcon-sensor.container.imagePullSecretName" -}}
+{{- if and .Values.global.containerRegistry.pullSecret (not .Values.container.image.pullSecrets.name) -}}
+{{- .Values.global.containerRegistry.pullSecret -}}
 {{- else -}}
-{{- if .Values.node.enabled -}}
-{{- .Values.node.image.registryConfigJSON | default "" -}}
-{{- else if .Values.container.image.pullSecrets.enable -}}
-{{- .Values.container.image.pullSecrets.registryConfigJSON | default "" -}}
-{{- else -}}
-{{- "" -}}
+{{- .Values.container.image.pullSecrets.name | default "" -}}
 {{- end -}}
+{{- end -}}
+
+{{/*
+Get node container registry config json from global value if it exists
+*/}}
+{{- define "falcon-sensor.node.registryConfigJson" -}}
+{{- if and .Values.global.containerRegistry.configJSON (not .Values.node.image.registryConfigJSON) -}}
+{{- .Values.global.containerRegistry.configJSON -}}
+{{- else -}}
+{{- .Values.node.image.registryConfigJSON | default "" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get sidecar container registry config json from global value if it exists
+*/}}
+{{- define "falcon-sensor.container.registryConfigJson" -}}
+{{- if and .Values.global.containerRegistry.configJSON (not .Values.container.image.pullSecrets.registryConfigJSON) -}}
+{{- .Values.global.containerRegistry.configJSON -}}
+{{- else -}}
+{{- .Values.container.image.pullSecrets.registryConfigJSON | default "" -}}
 {{- end -}}
 {{- end -}}

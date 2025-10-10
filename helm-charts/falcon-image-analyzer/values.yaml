@@ -196,6 +196,6 @@ global:
     cid:
   falconSecret:
     secretName: ""
-  docker:
+  containerRegistry:
     pullSecret: ""
-    registryConfigJSON: ""
+    configJSON: ""

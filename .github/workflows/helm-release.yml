@@ -39,6 +39,11 @@ jobs:
         with:
           version: v3.8.1
 
+      - name: Add Helm repositories and build dependencies
+        run: |
+          helm repo add crowdstrike https://crowdstrike.github.io/falcon-helm
+          helm dependency build helm-charts/falcon-platform
+
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@a917fd15b20e8b64b94d9158ad54cd6345335584 # v1.6.0
         with:

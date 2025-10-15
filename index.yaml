@@ -1000,6 +1000,48 @@ entries:
     urls:
     - https://github.com/CrowdStrike/falcon-helm/releases/download/falcon-kac-1.0.0/falcon-kac-1.0.0.tgz
     version: 1.0.0
+  falcon-platform:
+  - apiVersion: v2
+    created: "2025-10-15T23:13:11.577605339Z"
+    dependencies:
+    - condition: falcon-sensor.enabled
+      name: falcon-sensor
+      repository: file://../falcon-sensor
+      version: 1.34.1
+    - condition: falcon-kac.enabled
+      name: falcon-kac
+      repository: file://../falcon-kac
+      version: 1.5.1
+    - condition: falcon-image-analyzer.enabled
+      name: falcon-image-analyzer
+      repository: file://../falcon-image-analyzer
+      version: 1.1.16
+    description: A comprehensive Helm umbrella chart to deploy the complete CrowdStrike
+      Falcon platform for Kubernetes runtime security
+    digest: 753eede64f56823ccb5e15c71a20f60bb844547cc364902d1fea244f2fa41384
+    home: https://crowdstrike.com
+    icon: https://raw.githubusercontent.com/CrowdStrike/falcon-helm/main/images/crowdstrike-logo.svg
+    keywords:
+    - CrowdStrike
+    - Falcon
+    - EDR
+    - kubernetes
+    - security
+    - monitoring
+    - alerting
+    - platform
+    - umbrella
+    kubeVersion: '>1.22.0-0'
+    maintainers:
+    - email: integrations@crowdstrike.com
+      name: CrowdStrike Solutions Architecture
+    name: falcon-platform
+    sources:
+    - https://github.com/CrowdStrike/falcon-helm
+    type: application
+    urls:
+    - https://github.com/CrowdStrike/falcon-helm/releases/download/falcon-platform-1.0.0/falcon-platform-1.0.0.tgz
+    version: 1.0.0
   falcon-self-hosted-registry-assessment:
   - apiVersion: v2
     appVersion: 1.5.1
@@ -3328,4 +3370,4 @@ entries:
     urls:
     - https://github.com/CrowdStrike/falcon-helm/releases/download/registry-scanner-0.1.0/registry-scanner-0.1.0.tgz
     version: 0.1.0
-generated: "2025-10-15T22:12:50.344472336Z"
+generated: "2025-10-15T23:13:11.577988475Z"

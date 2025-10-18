@@ -12,5 +12,5 @@ deployment considerations.
 To check the status of Falcon Kubernetes Admissions Controller pods, run the 
 following command:
 
-  kubectl -n {{ .Release.Namespace }} get pods
+  kubectl -n {{ include "falcon-kac.namespace" . }} get pods
 

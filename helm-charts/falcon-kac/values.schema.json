@@ -95,12 +95,12 @@
         },
         "falcon": {
             "type": "object",
-            "required": [
-                "cid"
-            ],
             "properties": {
                 "cid": {
-                    "type": "string",
+                    "type": [
+                        "null",
+                        "string"
+                    ],
                     "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$",
                     "example": [
                         "1234567890ABCDEF1234567890ABCDEF-12"
@@ -134,12 +134,6 @@
                     "maximum": 65535
                 },
                 "feature": {
-                    "type": [
-                        "null",
-                        "string"
-                    ]
-                },
-                "message_log": {
                     "type": [
                         "null",
                         "string"
@@ -219,7 +213,8 @@
                                         "key": "kubernetes.io/arch",
                                         "operator": "In",
                                         "values": [
-                                            "amd64"
+                                            "amd64",
+                                            "arm64"
                                         ]
                                     }
                                 ]
@@ -257,6 +252,33 @@
             }
         },
         "falconClientResources": {
+            "type": "object",
+            "properties": {
+                "requests": {
+                    "type": "object",
+                    "properties": {
+                        "cpu": {
+                            "type": "string"
+                        },
+                        "memory": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "limits": {
+                    "type": "object",
+                    "properties": {
+                        "cpu": {
+                            "type": "string"
+                        },
+                        "memory": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "falconClientNoWebhookResources": {
             "type": "object",
             "properties": {
                 "requests": {

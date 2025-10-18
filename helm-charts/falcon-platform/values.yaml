@@ -1,0 +1,59 @@
+# Default values for falcon-platform umbrella chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Namespace management configuration
+# Enable pre-install namespace creation - fails if component namespaces already exist
+# Falcon component namespace(s) have to be created manually before upgrades that enable new components.
+createComponentNamespaces: false
+
+# Global configuration shared across all Falcon components
+global:
+  # Falcon Customer ID (CID) - required for all components if not using falconSecret
+  falcon:
+    cid:
+
+  # Global Falcon Secret configuration
+  # Use an existing Kubernetes secret containing sensitive Falcon configuration values
+  # Secret must be in the same namespace as the installed namespace
+  # Required data for falcon-sensor and falcon-kac:
+  #   - FALCONCTL_OPT_CID
+  # Required data for falcon-image-analyzer:
+  #   - AGENT_CLIENT_ID
+  #   - AGENT_CLIENT_SECRET
+  # Optional data:
+  #   - FALCONCTL_OPT_PROVISIONING_TOKEN
+  falconSecret:
+    enabled: false
+    secretName: ""
+
+  # Container registry configuration
+  containerRegistry:
+    # Name of existing Kubernetes docker registry secret
+    pullSecret: ""
+
+    # Value must be base64. Global pullSecret is not supported.
+    # The base64 encoded string of the docker config json for the pull secret can be gotten through:
+    # $ cat ~/.docker/config.json | base64 -
+    configJSON: ""
+
+# Enable/disable individual components
+# Set enabled: true to deploy, enabled: false to skip
+
+# Falcon Sensor - Runtime node protection
+# Override specific values for falcon-sensor
+falcon-sensor:
+  enabled: true
+  namespaceOverride: falcon-system
+
+# Falcon Kubernetes Admission Controller - Policy enforcement
+# Override specific values for falcon-kac
+falcon-kac:
+  enabled: true
+  namespaceOverride: falcon-kac
+
+# Falcon Image Analyzer - Container image security scanning
+# Override specific values for falcon-image-analyzer
+falcon-image-analyzer:
+  enabled: true
+  namespaceOverride: falcon-image-analyzer

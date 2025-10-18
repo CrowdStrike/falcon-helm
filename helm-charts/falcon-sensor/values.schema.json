@@ -4,16 +4,23 @@
     "properties": {
         "falcon": {
             "type": "object",
-            "required": [
-                "cid"
-            ],
             "properties": {
                 "cid": {
-                    "type": "string",
+                    "type": [
+                        "null",
+                        "string"
+                    ],
                     "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$",
                     "example": [
                         "1234567890ABCDEF1234567890ABCDEF-12"
                     ]
+                },
+                "cloud": {
+                    "type": [
+                        "null",
+                        "string"
+                    ],
+                    "enum": [null, "", "us-1", "us-2", "eu-1", "us-gov-1", "us-gov-2"]
                 },
                 "trace": {
                     "type": [
@@ -46,6 +53,16 @@
                         "autopilot": {
                             "type": "boolean",
                             "default": "false"
+                        },
+                        "deployAllowListVersion": {
+                            "type": "string",
+                            "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$",
+                            "default": ""
+                        },
+                        "cleanupAllowListVersion": {
+                            "type": "string",
+                            "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$",
+                            "default": ""
                         }
                     }
                 },
@@ -253,7 +270,7 @@
                 },
                 "terminationGracePeriod": {
                     "type": "integer",
-                    "default": "30",
+                    "default": "60",
                     "pattern": "^[0-9]+$"
                 },
                 "hooks": {
@@ -368,6 +385,10 @@
                     "default": "false"
                 },
                 "disablePodInjection": {
+                    "type": "boolean",
+                    "default": "false"
+                },
+                "alternateMountPath": {
                     "type": "boolean",
                     "default": "false"
                 },

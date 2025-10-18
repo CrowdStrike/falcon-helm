@@ -1,4 +1,6 @@
-{{- if .Values.node.enabled }}
+{{- if and .Values.node.enabled (not .Values.node.cleanupOnly) }}
+{{- $imagePullSecretName := include "falcon-sensor.node.imagePullSecretName" . }}
+{{- $registryConfigJson := include "falcon-sensor.node.registryConfigJson" . }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -22,7 +24,7 @@ metadata:
     {{ $key }}: {{ $value | quote }}
     {{- end }}
   {{- end }}
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "falcon-sensor.namespace" . }}
 spec:
   selector:
     matchLabels:
@@ -43,6 +45,7 @@ spec:
         {{- range $key, $value := .Values.node.podAnnotations }}
         {{ $key }}: {{ $value | quote }}
         {{- end }}
+        checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum | quote }}
       labels:
         app: "{{ include "falcon-sensor.name" . }}"
         app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}
@@ -56,16 +59,17 @@ spec:
         {{ $key }}: {{ $value | quote }}
         {{- end }}
         {{- end }}
+        {{ include "falcon-sensor.workloadDeployAllowlistLabel" . }}
     spec:
-    {{- if and (.Values.node.image.pullSecrets) (.Values.node.image.registryConfigJSON) }}
+    {{- if and (len $imagePullSecretName) (len $registryConfigJson) }}
       {{- fail "node.image.pullSecrets and node.image.registryConfigJSON cannot be used together." }}
     {{- else }}
-    {{- if or (.Values.node.image.pullSecrets) (.Values.node.image.registryConfigJSON) }}
+    {{- if or (len $imagePullSecretName) (len $registryConfigJson) }}
       imagePullSecrets:
-      {{- if .Values.node.image.pullSecrets }}
-        - name: {{ .Values.node.image.pullSecrets }}
+      {{- if (len $imagePullSecretName) }}
+        - name: {{ $imagePullSecretName }}
       {{- end }}
-      {{- if .Values.node.image.registryConfigJSON }}
+      {{- if (len $registryConfigJson) }}
         - name: {{ include "falcon-sensor.fullname" . }}-pull-secret
       {{- end }}
     {{- end }}
@@ -128,6 +132,11 @@ spec:
         {{- else }}
           readOnlyRootFilesystem: false
         {{- end }}
+        env:
+          - name: POD_NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
       containers:
       - name: falcon-node-sensor
         image: "{{ include "falcon-sensor.image" . }}"
@@ -167,7 +176,11 @@ spec:
         {{- end }}
         envFrom:
         - configMapRef:
-            name: {{ include "falcon-sensor.fullname" . }}-config
+            name: {{ include "falcon-sensor.configMapName" . }}
+        {{- if (include "falcon-sensor.falconSecretEnabled" . | eq "true") }}
+        - secretRef:
+            name: {{ include "falcon-sensor.falconSecretName" . }}
+        {{- end }}
         volumeMounts:
           - name: falconstore
             mountPath: /opt/CrowdStrike/falconstore

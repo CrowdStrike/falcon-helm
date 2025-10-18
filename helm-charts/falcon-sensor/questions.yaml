@@ -185,6 +185,14 @@ questions:
     label: Disable Pod injection
     group: "Falcon Container settings"
 
+  - variable: container.alternateMountPath
+    description: "Enable volume mounts at /falcon instead of /tmp for NVCF environment"
+    required: false
+    type: boolean
+    default: false
+    label: Enable Alternate Mount Path
+    group: "Falcon Container settings"
+
   - variable: container.certExpiration
     description: "Certificate validity duration in number of days"
     required: false
@@ -258,14 +266,6 @@ questions:
     required: false
     type: string
     label: Enable or disable certain sensor features
-    group: "Falcon Sensor Settings"
-
-  - variable: falcon.message_log
-    description: "Enable message log (true/false)"
-    required: false
-    type: boolean
-    default: false
-    label: Enable logging
     group: "Falcon Sensor Settings"
 
   - variable: falcon.billing

@@ -153,10 +153,10 @@ log:
 
 # Set this flag to true to send scan error stats to cs cloud.
 # These events can be searched in investigate>events / advanced events search
-# note that if true,  agent will send an error for image for first time only.
+# note that if true, agent will send an error for image for first time only.
 # Repeated errors for same images will not be sent to preserve network footprint
 scanStats:
-  enabled: false
+  enabled: true
 
 crowdstrikeConfig:
   clusterName: ""
@@ -169,7 +169,7 @@ crowdstrikeConfig:
   enableDebug: "false"
   clientID: ""
   clientSecret: ""
-  cid: ""
+  cid:
 
   # Use the value for the crowdstrike Artifactory
   # Token retrieved by calling container-security
@@ -189,3 +189,13 @@ proxyConfig:
   HTTP_PROXY: ""
   HTTPS_PROXY: ""
   NO_PROXY: ""
+
+# GLOBAL VALUES - for unified helm chart use only
+global:
+  falcon:
+    cid:
+  falconSecret:
+    secretName: ""
+  containerRegistry:
+    pullSecret: ""
+    configJSON: ""

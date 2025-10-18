@@ -172,7 +172,7 @@ runAsGroup: {{ .Values.securityContext.runAsGroup | default 0 }}
 {{- end }}
 {{- end }}
 
-{{- define "falcon-image-analyzer.imagePullSecret" }}
+{{- define "falcon-image-analyzer.pullSecretFromAPIToken" }}
 {{- with .Values.crowdstrikeConfig }}
 {{- if or (eq .agentRegion "us-gov-1") (eq .agentRegion "usgov1") (eq .agentRegion "us-gov1") (eq .agentRegion "gov1") (eq .agentRegion "gov-1") }}
 {{- printf "{\"auths\":{\"registry.laggar.gcw.crowdstrike.com\":{\"username\":\"fc-%s\",\"password\":\"%s\",\"email\":\"image-assessment@crowdstrike.com\",\"auth\":\"%s\"}}}" (first (regexSplit "-" (lower .cid) -1)) .dockerAPIToken (printf "fc-%s:%s" (first (regexSplit "-" (lower .cid) -1)) .dockerAPIToken | b64enc) | b64enc }}
@@ -193,5 +193,64 @@ runAsGroup: {{ .Values.securityContext.runAsGroup | default 0 }}
 {{- end -}}
 {{- else -}}
 {{- printf "%s:%s" .Values.image.repository .Values.image.tag -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return namespace based on .Values.namespaceOverride or Release.Namespace
+namespaceOverride should only be used when installing falcon-image-analyzer as a subchart of falcon-platform
+*/}}
+{{- define "falcon-image-analyzer.namespace" -}}
+{{- if .Values.namespaceOverride -}}
+{{- .Values.namespaceOverride -}}
+{{- else -}}
+{{- .Release.Namespace -}}
+{{- end -}}
+{{- end -}}
+
+
+{{/* ### GLOBAL HELPERS ### */}}
+
+{{/*
+Get Falcon CID from global value if it exists
+*/}}
+{{- define "falcon-image-analyzer.falconCid" -}}
+{{- if and .Values.global.falcon.cid (not .Values.crowdstrikeConfig.cid) -}}
+{{- .Values.global.falcon.cid -}}
+{{- else -}}
+{{- .Values.crowdstrikeConfig.cid -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get Falcon secret name from global value if it exists
+*/}}
+{{- define "falcon-image-analyzer.falconSecretName" -}}
+{{- if and .Values.global.falconSecret.secretName (not .Values.crowdstrikeConfig.existingSecret) -}}
+{{- .Values.global.falconSecret.secretName -}}
+{{- else -}}
+{{- .Values.crowdstrikeConfig.existingSecret -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get container registry pull secret from global value if it exists
+*/}}
+{{- define "falcon-image-analyzer.imagePullSecret" -}}
+{{- if and .Values.global.containerRegistry.pullSecret (not .Values.image.pullSecret) -}}
+{{- .Values.global.containerRegistry.pullSecret -}}
+{{- else -}}
+{{- .Values.image.pullSecret | default "" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get container registry config json from global value if it exists
+*/}}
+{{- define "falcon-image-analyzer.registryConfigJson" -}}
+{{- if and .Values.global.containerRegistry.configJSON (not .Values.image.registryConfigJSON) -}}
+{{- .Values.global.containerRegistry.configJSON -}}
+{{- else -}}
+{{- .Values.image.registryConfigJSON | default "" -}}
 {{- end -}}
 {{- end -}}

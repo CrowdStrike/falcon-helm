@@ -1,24 +1,36 @@
+{{- include "falcon-kac.validateOneOfFalconCidOrFalconSecret" .}}
+{{- $falconSecretKeys := list "cid" "provisioning_token" }}
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ include "falcon-kac.fullname" . }}-config
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "falcon-kac.namespace" . }}
   labels:
     {{- include "falcon-kac.labels" . | nindent 4 }}
 data:
-  FALCONCTL_OPT_CID: {{ .Values.falcon.cid }}
+  __CS_ADMISSION_CONTROL_ENABLED: {{ .Values.admissionControl.enabled | quote }}
+  {{- include "falcon-kac.generateWatcherEnvVars" . | nindent 2 }}
+  {{- if not (include "falcon-kac.falconSecretEnabled" . | eq "true") }}
+  FALCONCTL_OPT_CID: {{ include "falcon-kac.falconCid" . }}
+  {{- if .Values.falcon.provisioning_token }}
+  FALCONCTL_OPT_PROVISIONING_TOKEN: {{ .Values.falcon.provisioning_token }}
+  {{- end }}
+  {{- end }}
+
   {{- range $key, $value := .Values.falcon }}
-  {{- if and (or $value (eq ($value | toString) "false")) (ne $key "cid") }}
+  {{- if and (or $value (eq ($value | toString) "false")) (not (has $key $falconSecretKeys)) }}
   FALCONCTL_OPT_{{ $key | upper }}: {{ $value | quote }}
   {{- end }}
   {{- end }}
+
 {{- if .Values.clusterName }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: falcon-kac-meta
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "falcon-kac.namespace" . }}
   labels:
     {{- include "falcon-kac.labels" . | nindent 4 }}
 data:

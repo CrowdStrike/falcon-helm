@@ -5,6 +5,31 @@ platform purpose-built to stop breaches via a unified set of cloud-delivered
 technologies that prevent all types of attacks — including malware and much
 more.
 
+## Table of Contents
+- [Kubernetes Cluster Compatibility](#kubernetes-cluster-compatibility)
+- [New Updates in the Current Version](#new-updates-in-current-release)
+- [Dependencies](#dependencies)
+- [Helm Repo Setup](#helm-repo-setup)
+  - [Add The Crowdstrike Falcon Helm Repo](#add-the-crowdstrike-falcon-helm-repository)
+  - [Update Helm Repo](#update-the-local-helm-repository-cache)
+- [Configuration Options](#falcon-configuration-options)
+  - [Allow traffic to CrowdStrike servers](#allow-traffic-to-crowdstrike-servers)
+- [Installation on Kubernetes Cluster](#installing-on-kubernetes-cluster-nodes)
+  - [Installing using Helm Chart](#install-using-helm-chart)
+  - [Deployment considerations](#deployment-considerations)
+  - [Pod Security Standards](#pod-security-standards)
+  - [Temp Mounts](#temp-volume-mount)
+  - [IAM Roles](#iam-roles--eks-or-partially-managed-using-ec2-instances)
+  - [Authentication for Private Registries](#authentication-for-private-registries)
+  - [Proxy Usage](#proxy-usage)
+  - [Pod Eviction Issue](#pod-eviction)
+  - [Exclusions](#exclusions)
+    - [Registry Exclusion](#registry)
+    - [Namespace Exclusion](#namespace)
+    - [Pod Exclusions](#pod-exclusions-via-podspec)
+- [Uninstalling IAR](#uninstall-helm-chart)
+
+
 ## Kubernetes cluster compatibility
 
 The Falcon Image Analyzer Helm chart has been tested to deploy on the following Kubernetes distributions:
@@ -15,19 +40,21 @@ The Falcon Image Analyzer Helm chart has been tested to deploy on the following 
 * SUSE Rancher K3s
 * Red Hat OpenShift Kubernetes
 
-## New updates in current release (1.1.11) for iar 1.0.17
-- Support for multiarch IAR. IAR now is supported on both amd64 and arm64 nodes from iar 1.0.17 onwards
-- add `hostNetwork` param in values to support usage of hostnetwork
-- add `dnsPolicy` param in values to support k8s DNS supported polices. no value implies `Default`. see 
-https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
+
+## New updates in current release
+Helm (1.1.15) + iar 1.0.20
+- Moving to new container uploads URL
+- Setting the scan stats to default `true`
+
+
 
 ## Dependencies
 
-1. Requires a x86_64 Kubernetes cluster
-1. Before deploying the Helm chart, you should have the `falcon-imageanalyzer` container image in your own container registry, or use CrowdStrike's registry before installing the Helm chart. See the [Deployment Considerations](#deployment-considerations) for more.
-1. Helm 3.x is installed and supported by the Kubernetes vendor.
+1. Requires a x86_64/arm64 Kubernetes cluster
+2. Before deploying the Helm chart, you should have the `falcon-imageanalyzer` container image in your own container registry, or use CrowdStrike's registry before installing the Helm chart. See the [Deployment Considerations](#deployment-considerations) for more.
+3. Helm 3.x is installed and supported by the Kubernetes vendor.
 
-## Installation
+## Helm Repo Setup
 
 ### Add the CrowdStrike Falcon Helm repository
 
@@ -63,7 +90,7 @@ The following tables list the Falcon sensor configurable parameters and their de
 | `log.output`                  optional   ( available  Helm Chart v >= 1.1.7 & falcon-imageanalyzer >= 1.0.12)              | Set the value to for log output terminal. `2=stderr` and `1=stdout`                                                                                            | 2 ( stderr )                                                                                                |
 | `hostNetwork`                  optional   ( available  Helm Chart v >= 1.1.11)                                             | Set the value to `true` to use the hostNetwork instead of pod network                                                                                          | `false`                                                                                                     |
 | `dnsPolicy`                  optional   ( available  Helm Chart v >= 1.1.11)                                               | Set the value to any supported value from https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy                            | ``  no value implies `Default`                                                                              |
-| `scanStats.enabled`                  optional   ( available  Helm Chart v >= 1.1.8 & falcon-imageanalyzer >= 1.0.13)       | Set `enabled` to true for agent to send scan error and stats to cloud                                                                                          | false                                                                                                       |
+| `scanStats.enabled`                  optional   ( available  Helm Chart v >= 1.1.8 & falcon-imageanalyzer >= 1.0.13)       | Set `enabled` to true for agent to send scan error and stats to cloud                                                                                          | `true`                                                                                                      |
 | `crowdstrikeConfig.clusterName`     required                                                                               | Cluster name                                                                                                                                                   | None                                                                                                        |
 | `crowdstrikeConfig.enableDebug`   optional                                                                                 | Set to `true` for debug level log verbosity.                                                                                                                   | false                                                                                                       |
 | `crowdstrikeConfig.enableKlogs`   optional                                                                                 | Set to `true` for kubernetes api log verbosity.                                                                                                                | false                                                                                                       |
@@ -185,8 +212,56 @@ If the IAR image is already pulled in advance and pushed to another customer pri
 of `[CROWDSTRIKE_IMAGE_REGISTRY]` and the secret for that should be passed in the
 `image.registryConfigJSON` with explanation above and `crowdstrikeConfig.dockerAPIToken` should NOT be used
 
+
+<!-- markdown-link-check-disable -->
+### Allow traffic to CrowdStrike servers
+***( The below server settings are default for IAR >= `v1.0.20`  )***
+
+From IAR ver >-= 1.0.20 IAR will dynamically switch between PRIMARY and SECONDARY Scan Upload Servers so as to maximize throughput and minmize error rate
+
+IAR requires internet access to your assigned CrowdStrike authentication API and upload servers.
+If your network requires it, configure your allowlists with your assigned CrowdStrike cloud servers.
+
+| Region | Authentication API |             PRIMARY Scan Upload Servers             | SECONDARY Scan Upload Servers          |   
+|:----:|:--:|:---------------------------------------------------:|----------------------------------------| 
+| US-1 | https://api.crowdstrike.com |    https://container-upload.us-1.crowdstrike.com    | https://api.crowdstrike.com            |
+| US-2 | https://api.us-2.crowdstrike.com |    https://container-upload.us-2.crowdstrike.com    | https://api.us-2.crowdstrike.com       |
+| EU-1 | https://api.eu-1.crowdstrike.com |    https://container-upload.eu-1.crowdstrike.com    | https://api.eu-1.crowdstrike.com       |
+| US-GOV-1 | https://api.laggar.gcw.crowdstrike.com | https://container-upload.laggar.gcw.crowdstrike.com | https://api.laggar.gcw.crowdstrike.com |
+| US-GOV-2 | https://api.us-gov-2.crowdstrike.mil |  https://container-upload.us-gov-2.crowdstrike.mil  | https://api.us-gov-2.crowdstrike.mil   |
+
+#### ***For IAR versions < 1.0.20 both Authtentication/Upload Servers point to the same
+
+| Region | Authentication API |          Scan Upload Servers           |   
+|:----:|:--:|:--------------------------------------:| 
+| US-1 | https://api.crowdstrike.com |      https://api.crowdstrike.com       |
+| US-2 | https://api.us-2.crowdstrike.com |    https://api.us-2.crowdstrike.com    |
+| EU-1 | https://api.eu-1.crowdstrike.com |    https://api.eu-1.crowdstrike.com    |
+| US-GOV-1 | https://api.laggar.gcw.crowdstrike.com | https://api.laggar.gcw.crowdstrike.com |
+| US-GOV-2 | https://api.us-gov-2.crowdstrike.mil |  https://api.us-gov-2.crowdstrike.mil  |
+
+
+
+<!-- markdown-link-check-enable -->
+
+
 ## Installing on Kubernetes cluster nodes
 
+### Install Using Helm Chart
+
+Before you install IAR, set the Helm chart variables and add them to the `config_values.yaml` file. Then, run the following to install IAR:
+
+```
+helm upgrade --install -f /path/to/config_values.yaml \
+      --create-namespace -n falcon-image-analyzer imageanalyzer crowdstrike/falcon-image-analyzer
+```
+
+
+For more details, see the [falcon-helm](https://github.com/CrowdStrike/falcon-helm) repository.
+
+```
+helm show values crowdstrike/falcon-image-analyzer
+```
 
 
 ### Deployment considerations
@@ -343,10 +418,20 @@ for e.g.  a docker-registry secret can be created as below
 use the above secret as `"my-app-ns:regcred,my-app-ns:regcred2"`
 
 ### PROXY Usage
-If a customer us using proxy settings . Please make sure to add the registry domains ```myreg.some.com``` in the ```NO_PROXY```.
+
+The proxy parameters canbe set as below
+```
+proxyConfig:
+  HTTP_PROXY: ""
+  HTTPS_PROXY: ""
+  NO_PROXY: ""
+
+```
+
+If a customer us using proxy settings. Please make sure to add the registry domains ```myreg.some.com``` in the ```NO_PROXY```.
 This is so that the IAR can connect to the registries without proxy and authenticate if needed using secrets provided or download the public free images.
 
-***Note that some registries domains also have other urls based on the auth challange that is sent by the registry service. Please make sure to add those as well to ```NO_PROXY```
+***Note that some registries domains also have other urls based on the auth challenge that is sent by the registry service. Please make sure to add those as well to ```NO_PROXY```
 for e.g. for gitlab registries there exists the 
 - registry domain ```my-reg.gitlab.com``` 
 - and the other ```www.gitlab.com```
@@ -354,10 +439,12 @@ for e.g. for gitlab registries there exists the
 - The above is very registry provider specific. One needs to ensure nothing ie being blocked by Proxy 
 
 ### Pod Eviction
-If for some reason pod evivictions are observed in the Cluster due to exceeding ephemeral storage
+If for some reason pod evictions are observed in the Cluster due to exceeding ephemeral storage
 please set the `priorityClassName`  to `system-node-critical` or `system-cluster-critical` in `config-values.yaml` and update.
 
-### Exclusions ( available in falcon-imageanalyzer v >= 1.0.8 and Helm Chart v >= 1.1.3)
+### Exclusions
+***(Available in falcon-imageanalyzer v >= 1.0.8 and Helm Chart v >= 1.1.3)***
+
 In order to exclude pods from scans, you can either exclude the registries, namespace, or specific pods
 
 #### Registry
@@ -436,22 +523,6 @@ spec:
     spec:
       containers:
       .....
-```
-
-### Install CrowdStrike Falcon Helm chart on Kubernetes nodes
-
-Before you install IAR, set the Helm chart variables and add them to the `config_values.yaml` file. Then, run the following to install IAR:
-
-```
-helm upgrade --install -f /path/to/config_values.yaml \
-      --create-namespace -n falcon-image-analyzer imageanalyzer crowdstrike/falcon-image-analyzer
-```
-
-
-For more details, see the [falcon-helm](https://github.com/CrowdStrike/falcon-helm) repository.
-
-```
-helm show values crowdstrike/falcon-image-analyzer
 ```
 
 ## Uninstall Helm chart

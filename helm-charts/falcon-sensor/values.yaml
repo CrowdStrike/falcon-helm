@@ -10,8 +10,12 @@ node:
   backend: bpf
 
   # Enable for use on Google's GKE Autopilot clusters
+  # deployAllowListVersion - specify the version of the workload allowlist to use for the primary daemonset
+  # cleanupAllowListVersion - specify the version of the workload allowlist to use for the cleanup daemonset
   gke:
     autopilot: false
+    # deployAllowListVersion: ""
+    # cleanupAllowListVersion: ""
 
   daemonset:
     # Annotations to apply to the daemonset
@@ -97,12 +101,15 @@ node:
   podAnnotations: {}
 
   # How long to wait for Falcon pods to stop gracefully
-  terminationGracePeriod: 30
+  terminationGracePeriod: 60
 
   hooks:
     # Settings for the node post-delete helm hook
     postDelete:
       enabled: true
+
+  # Enable, to run cleanup for the prior daemonset deployment
+  cleanupOnly: false
 
 container:
   # When enabled, Helm chart deploys the Falcon Container Sensor to Pods through Webhooks
@@ -150,11 +157,30 @@ container:
   # Disable injection for all Pods
   disablePodInjection: false
 
+  # Enable volume mounts at /falcon instead of /tmp for NVCF environment
+  alternateMountPath: false
+
   # Certificate validity duration in number of days
   certExpiration: 3650
 
   # Configure the Injector Port
   injectorPort: 4433
+
+  # https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
+  # Allow setting additional node selections e.g. processor type
+  # nodeAffinity:
+  #   requiredDuringSchedulingIgnoredDuringExecution:
+  #     nodeSelectorTerms:
+  #     - matchExpressions:
+  #       - key: kubernetes.io/os
+  #         operator: In
+  #         values:
+  #         - linux
+  #       - key: kubernetes.io/arch
+  #         operator: In
+  #         values:
+  #         - amd64
+  nodeAffinity: {}
 
   # Configure the requests and limits of the sensor
   sensorResources:
@@ -242,19 +268,36 @@ serviceAccount:
 testing:
   enabled: false
 
+# falcon.cid is required unless falconSecret.enabled is true and FALCONCTL_OPT_CID is already defined in an existing secret.
 falcon:
   cid:
+  cloud:
   apd:
   aph:
   app:
   trace: none
   feature:
-  message_log:
   billing:
   tags:
   provisioning_token:
+
+# If falcon.cid is not defined, falconSecret.enabled must be true, and FALCONCTL_OPT_CID must be defined in an existing secret.
+falconSecret:
+  enabled: false
+  secretName: ""
 
 # Override various naming aspects of this chart
 # Only edit these if you know what you're doing
 nameOverride: ""
 fullnameOverride: ""
+
+# GLOBAL VALUES - for unified helm chart use only
+global:
+  falcon:
+    cid:
+  falconSecret:
+    enabled: false
+    secretName: ""
+  containerRegistry:
+    pullSecret: ""
+    configJSON: ""

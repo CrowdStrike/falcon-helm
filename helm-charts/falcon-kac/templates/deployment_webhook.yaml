@@ -1,25 +1,26 @@
+{{ include "validateValues" . }}
 {{- $name := (printf "%s" (include "falcon-kac.name" .)) -}}
-{{- $fullName := (printf "%s.%s.svc" $name .Release.Namespace) -}}
+{{- $fullName := (printf "%s.%s.svc" $name (include "falcon-kac.namespace" .)) -}}
 {{- $webhookName := (printf "webhook") -}}
-{{- $webhookFullName := (printf "%s.%s.svc" $webhookName .Release.Namespace) -}}
+{{- $webhookFullName := (printf "%s.%s.svc" $webhookName (include "falcon-kac.namespace" .)) -}}
 {{- if .Values.domainName }}
-{{- $fullName = (printf "%s.%s.svc.%s" $name .Release.Namespace .Values.domainName) -}}
-{{- $webhookFullName = (printf "%s.%s.svc.%s" $webhookName .Release.Namespace .Values.domainName) -}}
+{{- $fullName = (printf "%s.%s.svc.%s" $name (include "falcon-kac.namespace" .) .Values.domainName) -}}
+{{- $webhookFullName = (printf "%s.%s.svc.%s" $webhookName (include "falcon-kac.namespace" .) .Values.domainName) -}}
 {{- end }}
 {{- $myns := list }}
 {{- if .Values.webhook.disableNamespaces }}
 {{- $myns = split "," .Values.webhook.disableNamespaces }}
 {{- end }}
 {{- $certValid := (.Values.certExpiration | int) -}}
-{{- $altNames := list ( printf "%s" $webhookFullName ) ( printf "%s.cluster.local" $webhookFullName ) ( printf "%s.%s" $webhookName .Release.Namespace ) ( printf "%s" $webhookName ) -}}
-{{- $ca := genCA ( printf "%s ca" .Release.Namespace ) $certValid -}}
+{{- $altNames := list ( printf "%s" $webhookFullName ) ( printf "%s.cluster.local" $webhookFullName ) ( printf "%s.%s" $webhookName (include "falcon-kac.namespace" .)) ( printf "%s" $webhookName ) -}}
+{{- $ca := genCA ( printf "%s ca" (include "falcon-kac.namespace" .) ) $certValid -}}
 {{- $cert := genSignedCert $webhookFullName nil $altNames $certValid $ca -}}
 {{- if not .Values.autoCertificateUpdate }}
-{{- $tlscrt := (lookup "v1" "Secret" .Release.Namespace (printf "%s-tls" (include "falcon-kac.name" .))).data -}}
+{{- $tlscrt := (lookup "v1" "Secret" (include "falcon-kac.namespace" .) (printf "%s-tls" (include "falcon-kac.name" .))).data -}}
 {{- if kindIs "map" $tlscrt }}
 {{- $cert = dict "Cert" (index $tlscrt "tls.crt" | b64dec ) "Key" (index $tlscrt "tls.key" | b64dec ) -}}
 {{- end }}
-{{- $tlsca := (lookup "admissionregistration.k8s.io/v1" "ValidatingWebhookConfiguration" .Release.Namespace $name).webhooks -}}
+{{- $tlsca := (lookup "admissionregistration.k8s.io/v1" "ValidatingWebhookConfiguration" (include "falcon-kac.namespace" .) $name).webhooks -}}
 {{- if kindIs "slice" $tlsca }}
 {{- range $index, $wca := $tlsca -}}
 {{- $ca = dict "Cert" ($wca.clientConfig.caBundle | b64dec) }}
@@ -29,11 +30,15 @@
 {{- $tlsCert := $cert.Cert | b64enc }}
 {{- $tlsKey := $cert.Key | b64enc }}
 {{- $caCert := $ca.Cert | b64enc -}}
+{{- $falconSecretEnabled := include "falcon-kac.falconSecretEnabled" . | eq "true" }}
+{{- $falconSecretName := include "falcon-kac.falconSecretName" . }}
+{{- $imagePullSecret := include "falcon-kac.imagePullSecret" . }}
+{{- $registryConfigJson := include "falcon-kac.registryConfigJson" . }}
 apiVersion: v1
 kind: Secret
 metadata:
   name: {{ include "falcon-kac.name" . }}-tls
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "falcon-kac.namespace" . }}
   labels:
     {{- include "falcon-kac.labels" . | nindent 4 }}
 type: kubernetes.io/tls
@@ -46,7 +51,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "falcon-kac.name" . }}
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "falcon-kac.namespace" . }}
   labels:
     {{- include "falcon-kac.labels" . | nindent 4 }}
     {{- if .Values.labels }}
@@ -81,6 +86,7 @@ spec:
         {{- end }}
       annotations:
         sensor.falcon-system.crowdstrike.com/injection: disabled
+        checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum | quote }}
       {{- if or (.Values.autoDeploymentUpdate) (.Values.podAnnotations) }}
         {{- if .Values.autoDeploymentUpdate }}
         rollme: {{ randAlphaNum 5 | quote }}
@@ -92,21 +98,22 @@ spec:
         {{- end }}
       {{- end }}
     spec:
-    {{- if and (.Values.image.pullSecrets) (.Values.image.registryConfigJSON) }}
+    {{- if and $imagePullSecret $registryConfigJson }}
       {{- fail "image.pullSecrets and image.registryConfigJSON cannot be used together." }}
     {{- else -}}
-    {{- if or (.Values.image.pullSecrets) (.Values.image.registryConfigJSON) }}
+    {{- if or $imagePullSecret $registryConfigJson }}
       imagePullSecrets:
-      {{- if .Values.image.pullSecrets }}
-        - name: {{ .Values.image.pullSecrets }}
+      {{- if $imagePullSecret }}
+        - name: {{ $imagePullSecret }}
       {{- end }}
-      {{- if .Values.image.registryConfigJSON }}
+      {{- if $registryConfigJson }}
         - name: {{ include "falcon-kac.fullname" . }}-pull-secret
       {{- end }}
     {{- end }}
     {{- end }}
       containers:
-      - args:
+      - name: falcon-client
+        args:
         - client
         - "-port={{ .Values.webhookPort }}"
         env:
@@ -128,6 +135,10 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "falcon-kac.fullname" . }}-config
+        {{- if $falconSecretEnabled }}
+        - secretRef:
+            name: {{ $falconSecretName }}
+        {{- end }}
         image: {{ include "falcon-kac.image" . }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         livenessProbe:
@@ -139,12 +150,15 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
-        name: falcon-client
         ports:
         - containerPort: {{ .Values.webhookPort }}
           name: webhook-port
         resources:
+          {{- if .Values.admissionControl.enabled }}
           {{- toYaml .Values.falconClientResources | nindent 10 }}
+          {{- else }}
+          {{- toYaml .Values.falconClientNoWebhookResources | nindent 10 }}
+          {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -169,7 +183,8 @@ spec:
           name: crowdstrike-falcon-vol0
         - mountPath: /var/private
           name: crowdstrike-falcon-vol1
-      - args:
+      - name: falcon-watcher
+        args:
         - "client"
         - "-app=watcher"
         - "-http-port={{ .Values.watcherPort }}"
@@ -189,10 +204,13 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
-        {{- include "falcon-kac.generateWatcherEnvVars" . | nindent 8 }}
         envFrom:
         - configMapRef:
             name: {{ include "falcon-kac.fullname" . }}-config
+        {{- if $falconSecretEnabled }}
+        - secretRef:
+            name: {{ $falconSecretName }}
+        {{- end }}
         image: {{ include "falcon-kac.image" . }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         livenessProbe:
@@ -204,7 +222,6 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
-        name: falcon-watcher
         ports:
         - containerPort: {{ .Values.watcherPort }}
           name: healthcheck
@@ -233,9 +250,14 @@ spec:
           name: crowdstrike-falcon-vol1
         - mountPath: /var/falcon-watcher
           name: crowdstrike-falcon-vol2
-      - envFrom:
+      - name: falcon-ac
+        envFrom:
         - configMapRef:
             name: {{ include "falcon-kac.fullname" . }}-config
+        {{- if $falconSecretEnabled }}
+        - secretRef:
+            name: {{ $falconSecretName }}
+        {{- end }}
         image: {{ include "falcon-kac.image" . }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         livenessProbe:
@@ -247,7 +269,6 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
-        name: falcon-ac
         resources:
           {{- toYaml .Values.falconAcResources | nindent 10 }}
         securityContext:
@@ -309,6 +330,7 @@ spec:
         emptyDir:
           sizeLimit: 64Mi
 ---
+{{- if .Values.admissionControl.enabled }}
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
@@ -325,7 +347,7 @@ webhooks:
     {{- else }}
     service:
       name: webhook
-      namespace: {{ .Release.Namespace }}
+      namespace: {{ include "falcon-kac.namespace" . }}
       path: /validate
     {{- end }}
   failurePolicy: {{ .Values.webhook.failurePolicy }}
@@ -336,7 +358,7 @@ webhooks:
     - key: kubernetes.io/metadata.name
       operator: NotIn
       values:
-      - {{ .Release.Namespace }}
+      - {{ include "falcon-kac.namespace" . }}
       - kube-system
       - kube-public
       - falcon-system
@@ -374,7 +396,7 @@ webhooks:
     {{- else }}
     service:
       name: webhook
-      namespace: {{ .Release.Namespace }}
+      namespace: {{ include "falcon-kac.namespace" . }}
       path: /validate
     {{- end }}
   failurePolicy: Ignore
@@ -385,7 +407,7 @@ webhooks:
     - key: kubernetes.io/metadata.name
       operator: NotIn
       values:
-      - {{ .Release.Namespace }}
+      - {{ include "falcon-kac.namespace" . }}
       - kube-system
       - kube-public
       - falcon-system
@@ -438,4 +460,4 @@ webhooks:
     scope: '*'
   sideEffects: None
   timeoutSeconds: 10
-
+{{- end }}

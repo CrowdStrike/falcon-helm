@@ -48,6 +48,7 @@ serviceAccount:
   name: falcon-kac-sa
   annotations: {}
 
+# falcon.cid is required unless falconSecret.enabled is true and FALCONCTL_OPT_CID is already defined in an existing secret.
 falcon:
   cid:
   apd:
@@ -58,6 +59,16 @@ falcon:
   billing:
   tags:
   provisioning_token:
+
+# If set to false, KAC doesn't act as an admission control webhook.
+# Available for KAC since version 7.26.
+admissionControl:
+  enabled: true
+
+# If falcon.cid is not defined, falconSecret.enabled must be true, and FALCONCTL_OPT_CID must be defined in an existing secret.
+falconSecret:
+  enabled: false
+  secretName: ""
 
 # These variables can be used to customize the way KAC provides visibility into
 # resources on your Kubernetes cluster. The variables are initially set to the
@@ -113,6 +124,7 @@ affinity:
           operator: In
           values:
           - amd64
+          - arm64
 
 # Default limits for all KAC Pods. Review resource consumption for
 # each Pod in your environment and update accordingly
@@ -122,6 +134,13 @@ falconClientResources:
   requests:
     cpu: 250m
     memory: 384Mi
+
+falconClientNoWebhookResources:
+  limits:
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
 
 falconWatcherResources:
   limits:
@@ -159,3 +178,14 @@ dnsPolicy:
 # Number of pods for resourceQuota object
 resourceQuota:
   pods: 2
+
+# GLOBAL VALUES - for unified helm chart use only
+global:
+  falcon:
+    cid:
+  falconSecret:
+    enabled: false
+    secretName: ""
+  containerRegistry:
+    pullSecret: ""
+    configJSON: ""

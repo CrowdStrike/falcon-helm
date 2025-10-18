@@ -1,8 +1,12 @@
+{{- if not .Values.node.cleanupOnly }}
+{{- include "falcon-sensor.validateOneOfFalconCidOrFalconSecret" .}}
+{{- $falconSecretKeys := list "cid" "provisioning_token" }}
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "falcon-sensor.fullname" . }}-config
-  namespace: {{ .Release.Namespace }}
+  name: {{ include "falcon-sensor.configMapName" . }}
+  namespace: {{ include "falcon-sensor.namespace" . }}
   labels:
     app: "{{ include "falcon-sensor.name" . }}"
     app.kubernetes.io/name: {{ include "falcon-sensor.name" . }}
@@ -12,31 +16,44 @@ metadata:
     app.kubernetes.io/component: "container_sensor"
     {{ else if .Values.node.enabled }}
     app.kubernetes.io/component: "kernel_sensor"
-    {{ end -}}
+    {{- end }}
     crowdstrike.com/provider: crowdstrike
     helm.sh/chart: {{ include "falcon-sensor.chart" . }}
+
 data:
-  FALCONCTL_OPT_CID: {{ .Values.falcon.cid }}
+  {{- if not (include "falcon-sensor.falconSecretEnabled" . | eq "true") }}
+  FALCONCTL_OPT_CID: {{ include "falcon-sensor.falconCid" . }}
+  {{- if .Values.falcon.provisioning_token }}
+  FALCONCTL_OPT_PROVISIONING_TOKEN: {{ .Values.falcon.provisioning_token }}
+  {{- end }}
+  {{- end }}
+
   {{- range $key, $value := .Values.falcon }}
-  {{- if and (or $value (eq ($value | toString) "false")) (ne $key "cid") }}
+  {{- if and (or $value (eq ($value | toString) "false")) (not (has $key $falconSecretKeys)) }}
   FALCONCTL_OPT_{{ $key | upper }}: {{ $value | quote }}
   {{- end }}
   {{- end }}
+
   {{- if and .Values.node.enabled .Values.node.backend }}
   FALCONCTL_OPT_BACKEND: "{{ .Values.node.backend }}"
   {{- end }}
+
   {{- if .Values.container.enabled }}
-  CP_NAMESPACE: {{ .Release.Namespace }}
+  CP_NAMESPACE: {{ include "falcon-sensor.namespace" . }}
   FALCON_IMAGE_PULL_POLICY: "{{ .Values.container.image.pullPolicy }}"
   FALCON_IMAGE: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}"
   FALCON_INJECTOR_LISTEN_PORT: "{{ .Values.container.injectorPort }}"
   {{- if .Values.container.image.pullSecrets.enable }}
-  FALCON_IMAGE_PULL_SECRET: {{ .Values.container.image.pullSecrets.name | default (printf "%s-pull-secret" (include "falcon-sensor.fullname" .)) }}
+  FALCON_IMAGE_PULL_SECRET: {{ include "falcon-sensor.container.imagePullSecretName" . | default (printf "%s-pull-secret" (include "falcon-sensor.fullname" .)) }}
   {{- end }}
   {{- if .Values.container.disablePodInjection }}
   INJECTION_DEFAULT_DISABLED: T
+  {{- end }}
+  {{- if .Values.container.alternateMountPath }}
+  FALCON_MOUNT_ENABLED: T
   {{- end }}
   {{- if .Values.container.sensorResources }}
   FALCON_RESOURCES: '{{ toJson .Values.container.sensorResources | b64enc }}'
   {{- end }}
   {{- end }}
+{{- end }}

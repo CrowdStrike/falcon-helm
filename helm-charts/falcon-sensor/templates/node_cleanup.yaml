@@ -1,4 +1,6 @@
 {{- if and .Values.node.enabled .Values.node.hooks.postDelete.enabled }}
+{{- $imagePullSecretName := include "falcon-sensor.node.imagePullSecretName" . }}
+{{- $registryConfigJson := include "falcon-sensor.node.registryConfigJson" . }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -17,15 +19,17 @@ metadata:
     {{- end }}
     {{- end }}
   annotations:
+    {{- if not .Values.node.cleanupOnly }}
     "helm.sh/hook": post-delete
     "helm.sh/hook-weight": "1"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    {{- end }}
   {{- if .Values.node.daemonset.annotations }}
     {{- range $key, $value := .Values.node.daemonset.annotations }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
   {{- end }}
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "falcon-sensor.namespace" . }}
 spec:
   selector:
     matchLabels:
@@ -53,16 +57,17 @@ spec:
         {{ $key }}: {{ $value | quote }}
         {{- end }}
         {{- end }}
+        {{ include "falcon-sensor.workloadCleanupAllowlistLabel" . }}
     spec:
-    {{- if and (.Values.node.image.pullSecrets) (.Values.node.image.registryConfigJSON) }}
+    {{- if and (len $imagePullSecretName) (len $registryConfigJson) }}
       {{- fail "node.image.pullSecrets and node.image.registryConfigJSON cannot be used together." }}
     {{- else }}
-    {{- if or (.Values.node.image.pullSecrets) (.Values.node.image.registryConfigJSON) }}
+    {{- if or (len $imagePullSecretName) (len $registryConfigJson) }}
       imagePullSecrets:
-      {{- if .Values.node.image.pullSecrets }}
-        - name: {{ .Values.node.image.pullSecrets }}
+      {{- if (len $imagePullSecretName) }}
+        - name: {{ $imagePullSecretName }}
       {{- end }}
-      {{- if .Values.node.image.registryConfigJSON }}
+      {{- if (len $registryConfigJson) }}
         - name: {{ include "falcon-sensor.fullname" . }}-pull-secret-cleanup
       {{- end }}
     {{- end }}
@@ -125,7 +130,7 @@ spec:
         imagePullPolicy: "{{ .Values.node.image.pullPolicy }}"
         args:
         - -c
-        - sleep 10
+        - sleep infinity
         command:
         - /bin/bash
         {{- if or .Values.node.gke.autopilot .Values.node.daemonset.resources }}
@@ -143,7 +148,7 @@ spec:
           privileged: false
           readOnlyRootFilesystem: true
           allowPrivilegeEscalation: true
-      serviceAccountName: {{ .Values.serviceAccount.name }}-node-cleanup
+      serviceAccountName: {{ include "falcon-sensor.cleanupServiceAccountName" . }}
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
       hostPID: true
 {{- end }}

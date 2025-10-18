@@ -115,10 +115,112 @@ Create Watcher container environment variables
   {{- end -}}
 {{- end -}}
 {{- end -}}
-- name: __CS_SNAPSHOTS_ENABLED
-  value: {{ $snapshotsEnabled | toString | quote }}
-- name: __CS_SNAPSHOT_INTERVAL
-  value: {{ $snapshotInterval | toString | quote }}
-- name: __CS_WATCH_EVENTS_ENABLED
-  value: {{ $watcherEnabled | toString | quote }}
+__CS_SNAPSHOTS_ENABLED: {{ $snapshotsEnabled | toString | quote }}
+__CS_SNAPSHOT_INTERVAL: {{ $snapshotInterval | toString | quote }}
+__CS_WATCH_EVENTS_ENABLED: {{ $watcherEnabled | toString | quote }}
+{{- end -}}
+
+{{- define "validateValues" }}
+  {{- if and (eq (include "admissionControlEnabled" .) "false") (eq (include "visibilityEnabled" .) "false") }}
+    {{- fail "Error: .Values.admissionControl.enabled, .Values.clusterVisibility.resourceSnapshots.enabled, .Values.clusterVisibility.resourceWatcher.enabled cannot all be false." }}
+  {{- end }}
+{{- end }}
+
+{{- define "visibilityEnabled" -}}
+  {{- if or .Values.clusterVisibility.resourceSnapshots.enabled .Values.clusterVisibility.resourceWatcher.enabled -}}
+    true
+  {{- else -}}
+    false
+  {{- end -}}
+{{- end }}
+
+{{- define "admissionControlEnabled" -}}
+  {{- if .Values.admissionControl.enabled -}}
+    true
+  {{- else -}}
+    false
+  {{- end -}}
+{{- end }}
+
+{{/*
+Return namespace based on .Values.namespaceOverride or Release.Namespace
+namespaceOverride should only be used when installing falcon-kac as a subchart of falcon-platform
+*/}}
+{{- define "falcon-kac.namespace" -}}
+{{- if .Values.namespaceOverride -}}
+{{- .Values.namespaceOverride -}}
+{{- else -}}
+{{- .Release.Namespace -}}
+{{- end -}}
+{{- end -}}
+
+
+{{/* ### GLOBAL HELPERS ### */}}
+
+{{/*
+Get Falcon CID from global value if it exists
+*/}}
+{{- define "falcon-kac.falconCid" -}}
+{{- if and .Values.global.falcon.cid (not .Values.falcon.cid) -}}
+{{- .Values.global.falcon.cid -}}
+{{- else -}}
+{{- .Values.falcon.cid | default "" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Check if Falcon secret is enabled from global value if it exists
+*/}}
+{{- define "falcon-kac.falconSecretEnabled" -}}
+{{- or .Values.global.falconSecret.enabled .Values.falconSecret.enabled -}}
+{{- end -}}
+
+{{/*
+Get Falcon secret name from global value if it exists
+*/}}
+{{- define "falcon-kac.falconSecretName" -}}
+{{- if and .Values.global.falconSecret.secretName (not .Values.falconSecret.secretName) -}}
+{{- .Values.global.falconSecret.secretName -}}
+{{- else -}}
+{{- .Values.falconSecret.secretName | default "" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Validate one of falcon.cid or falconSecret is configured
+*/}}
+{{- define "falcon-kac.validateOneOfFalconCidOrFalconSecret" -}}
+{{- $hasCid := include "falcon-kac.falconCid" . -}}
+{{- $secretEnabled := (include "falcon-kac.falconSecretEnabled" . | eq "true") -}}
+{{- $hasSecret := include "falcon-kac.falconSecretName" . -}}
+
+{{- if and (not $hasCid) (or (not $secretEnabled) (not $hasSecret)) -}}
+{{- fail "Must configure one of falcon.cid or falconSecret with FALCONCTL_OPT_CID data" }}
+{{- end -}}
+
+{{- if and ($hasCid) ($secretEnabled) -}}
+{{- fail "Cannot use both falcon.cid and falconSecret" }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get container registry pull secret from global value if it exists
+*/}}
+{{- define "falcon-kac.imagePullSecret" -}}
+{{- if and .Values.global.containerRegistry.pullSecret (not .Values.image.pullSecrets) -}}
+{{- .Values.global.containerRegistry.pullSecret -}}
+{{- else -}}
+{{- .Values.image.pullSecrets | default "" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get container registry config json from global value if it exists
+*/}}
+{{- define "falcon-kac.registryConfigJson" -}}
+{{- if and .Values.global.containerRegistry.configJSON (not .Values.image.registryConfigJSON) -}}
+{{- .Values.global.containerRegistry.configJSON -}}
+{{- else -}}
+{{- .Values.image.registryConfigJSON | default "" -}}
+{{- end -}}
 {{- end -}}

@@ -134,11 +134,153 @@ args:
   - '-c'
   - >-
       echo "Running /opt/CrowdStrike/falcon-daemonset-init -i";
-{{- if .Values.node.gke.autopilot }}
-      /opt/CrowdStrike/falcon-daemonset-init -i
-{{- else -}}
       /opt/CrowdStrike/falcon-daemonset-init -i;
       echo "Running /opt/CrowdStrike/configure-cluster-id";
       test -f "/opt/CrowdStrike/configure-cluster-id" && /opt/CrowdStrike/configure-cluster-id || echo "/opt/CrowdStrike/configure-cluster-id not found. Skipping."
+{{- end -}}
+
+{{/*
+Create the name of the config map if GKE Autopilot is used.
+WorkloadAllowlists require an exact match for naming.
+*/}}
+{{- define "falcon-sensor.configMapName" -}}
+{{- if and .Values.node.gke.autopilot -}}
+{{- printf "falcon-node-sensor-config" -}}
+{{- else -}}
+{{- printf "%s-config" (include "falcon-sensor.fullname" .) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Add label for WorkloadAllowlist for the deploy daemonset
+*/}}
+{{- define "falcon-sensor.workloadDeployAllowlistLabel" -}}
+{{- if and .Values.node.gke.autopilot .Values.node.enabled .Values.node.gke.deployAllowListVersion -}}
+{{- printf "cloud.google.com/matching-allowlist: \"crowdstrike-falconsensor-deploy-allowlist-%s\"" .Values.node.gke.deployAllowListVersion -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Add label for WorkloadAllowlist for the cleanup daemonset
+*/}}
+{{- define "falcon-sensor.workloadCleanupAllowlistLabel" -}}
+{{- if and .Values.node.gke.autopilot .Values.node.enabled .Values.node.gke.cleanupAllowListVersion -}}
+{{- printf "cloud.google.com/matching-allowlist: \"crowdstrike-falconsensor-cleanup-allowlist-%s\"" .Values.node.gke.cleanupAllowListVersion -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Create service account name for the cleanup daemonset
+*/}}
+{{- define "falcon-sensor.cleanupServiceAccountName" -}}
+{{- if not .Values.node.cleanupOnly -}}
+{{- printf "%s-node-cleanup" .Values.serviceAccount.name -}}
+{{- else -}}
+{{- printf "%s-node-cleanup-standalone" .Values.serviceAccount.name -}}
+{{- end -}}
+{{- end -}}
+
+
+{{/*
+Return namespace based on .Values.namespaceOverride or Release.Namespace
+*/}}
+{{- define "falcon-sensor.namespace" -}}
+{{- if .Values.namespaceOverride -}}
+{{- .Values.namespaceOverride -}}
+{{- else -}}
+{{- .Release.Namespace -}}
+{{- end -}}
+{{- end -}}
+
+
+{{/* ### GLOBAL HELPERS ### */}}
+
+{{/*
+Get Falcon CID from global value if it exists
+*/}}
+{{- define "falcon-sensor.falconCid" -}}
+{{- if and .Values.global.falcon.cid (not .Values.falcon.cid) -}}
+{{- .Values.global.falcon.cid -}}
+{{- else -}}
+{{- .Values.falcon.cid | default "" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Check if Falcon secret is enabled from global value if it exists
+*/}}
+{{- define "falcon-sensor.falconSecretEnabled" -}}
+{{- or .Values.global.falconSecret.enabled .Values.falconSecret.enabled -}}
+{{- end -}}
+
+{{/*
+Get Falcon secret name from global value if it exists
+*/}}
+{{- define "falcon-sensor.falconSecretName" -}}
+{{- if and .Values.global.falconSecret.secretName (not .Values.falconSecret.secretName) -}}
+{{- .Values.global.falconSecret.secretName -}}
+{{- else -}}
+{{- .Values.falconSecret.secretName | default "" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Validate one of falcon.cid or falconSecret is configured
+*/}}
+{{- define "falcon-sensor.validateOneOfFalconCidOrFalconSecret" -}}
+{{- $hasCid := include "falcon-sensor.falconCid" . -}}
+{{- $secretEnabled := (include "falcon-sensor.falconSecretEnabled" . | eq "true") -}}
+{{- $hasSecret := include "falcon-sensor.falconSecretName" . -}}
+
+{{- if and (not $hasCid) (or (not $secretEnabled) (not $hasSecret)) -}}
+{{- fail "Must configure one of falcon.cid or falconSecret with FALCONCTL_OPT_CID data" }}
+{{- end -}}
+
+{{- if and ($hasCid) ($secretEnabled) -}}
+{{- fail "Cannot use both falcon.cid and falconSecret" }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get node container registry pull secret from global value if it exists
+*/}}
+{{- define "falcon-sensor.node.imagePullSecretName" -}}
+{{- if and .Values.global.containerRegistry.pullSecret (not .Values.node.image.pullSecrets) -}}
+{{- .Values.global.containerRegistry.pullSecret -}}
+{{- else -}}
+{{- .Values.node.image.pullSecrets | default "" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get sidecar container registry pull secret from global value if it exists
+*/}}
+{{- define "falcon-sensor.container.imagePullSecretName" -}}
+{{- if and .Values.global.containerRegistry.pullSecret (not .Values.container.image.pullSecrets.name) -}}
+{{- .Values.global.containerRegistry.pullSecret -}}
+{{- else -}}
+{{- .Values.container.image.pullSecrets.name | default "" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get node container registry config json from global value if it exists
+*/}}
+{{- define "falcon-sensor.node.registryConfigJson" -}}
+{{- if and .Values.global.containerRegistry.configJSON (not .Values.node.image.registryConfigJSON) -}}
+{{- .Values.global.containerRegistry.configJSON -}}
+{{- else -}}
+{{- .Values.node.image.registryConfigJSON | default "" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get sidecar container registry config json from global value if it exists
+*/}}
+{{- define "falcon-sensor.container.registryConfigJson" -}}
+{{- if and .Values.global.containerRegistry.configJSON (not .Values.container.image.pullSecrets.registryConfigJSON) -}}
+{{- .Values.global.containerRegistry.configJSON -}}
+{{- else -}}
+{{- .Values.container.image.pullSecrets.registryConfigJSON | default "" -}}
 {{- end -}}
 {{- end -}}

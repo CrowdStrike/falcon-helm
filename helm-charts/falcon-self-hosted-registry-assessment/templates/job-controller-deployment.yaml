@@ -19,7 +19,11 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/job-controller-configmap.yaml") . | sha256sum }}
     spec:
       securityContext:
-        fsGroup: 2001
+{{ if .Values.jobController.podSecurityContext -}}
+{{ .Values.jobController.podSecurityContext | toYaml | indent 8 }}
+{{- else -}}
+{{ .Values.podSecurityContext | toYaml | indent 8 }}
+{{- end }}
      {{- if or (.Values.jobController.image.pullSecret) (.Values.jobController.image.registryConfigJSON) }}
       imagePullSecrets:
        {{ if .Values.jobController.image.registryConfigJSON }}
@@ -50,6 +54,12 @@ spec:
             - name: GRPC_KEY_FILE
               value: /etc/tls/tls.key
             {{- end }}
+            {{- if .Values.jobController.additionalEnv }}
+            {{- range .Values.jobController.additionalEnv }}
+            - name: {{ .name }}
+              value: {{ .value }}
+            {{- end }}
+            {{- end }}
           {{ if (or .Values.registryConfigs .Values.crowdstrikeConfig.jobTypeConfigs .Values.jobController.additionalCMEnvFrom .Values.jobController.additionalSecretEnvFrom) -}}
           envFrom:
             {{- if .Values.registryConfigs }}
@@ -73,11 +83,11 @@ spec:
               name: tls
             {{- end }}
           securityContext:
-            runAsUser: 1001
-            runAsGroup: 2001
-            runAsNonRoot: true
-            readOnlyRootFilesystem: true
-            allowPrivilegeEscalation: false
+{{ if .Values.jobController.securityContext }}
+{{ .Values.jobController.securityContext | toYaml | indent 12 }}
+{{- else -}}
+{{ .Values.securityContext | toYaml | indent 12 }}
+{{- end }}
       containers:
         - name: job-controller
           image: {{ include "ra-self-hosted-job-controller.image" . }}
@@ -99,8 +109,8 @@ spec:
             - name: GRPC_KEY_FILE
               value: /etc/tls/tls.key
             {{- end }}
-            {{- if .Values.additionalEnv }}
-            {{- range .Values.additionalEnv }}
+            {{- if .Values.jobController.additionalEnv }}
+            {{- range .Values.jobController.additionalEnv }}
             - name: {{ .name }}
               value: {{ .value }}
             {{- end }}
@@ -131,11 +141,11 @@ spec:
               name: tls
             {{- end }}
           securityContext:
-            runAsUser: 1001
-            runAsGroup: 2001
-            runAsNonRoot: true
-            readOnlyRootFilesystem: true
-            allowPrivilegeEscalation: false
+{{ if .Values.jobController.securityContext }}
+{{ .Values.jobController.securityContext | toYaml | indent 12 }}
+{{- else -}}
+{{ .Values.securityContext | toYaml | indent 12 }}
+{{- end }}
       {{- if .Values.jobController.nodeSelector }}
       nodeSelector:
         {{- .Values.jobController.nodeSelector | toYaml | nindent 8 }}

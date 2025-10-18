@@ -13,11 +13,11 @@ If release name contains chart name it will be used as a full name.
 {{- define "ra-self-hosted.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 40 | trimSuffix "-" }}
-{{- else }}
+{{- else -}}
 {{- $name := default "shra" .Values.nameOverride }}
 {{- if contains $name .Release.Name }}
 {{- .Release.Name | trunc 40 | trimSuffix "-" }}
-{{- else }}
+{{- else -}}
 {{- printf "%s-%s" .Release.Name $name | trunc 50 | trimSuffix "-" }}
 {{- end }}
 {{- end }}
@@ -172,6 +172,9 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- $credString := ($credsDict | toString)}}
 {{- $credDetails = set $credDetails "details" $credsDict -}}
 {{- $cred = set $cred "credential" $credDetails -}}
+{{- $cred = set $cred "registry_allowed_repositories" $v.allowedRepositories -}}
+{{- $cred = set $cred "registry_ignored_repositories" $v.ignoredRepositories -}}
+{{- $cred = set $cred "is_multi_registry" $v.isMultiRegistry -}}
 {{- $cred = set $cred "registry_id" (sha256sum (printf "%v:%v:%v" $v.host $v.port $credString)) -}}
 {{- $creds = append $creds $cred }}
 {{- end -}}
@@ -192,9 +195,9 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- $props = set $props "registry_host" $v.host -}}
 {{- $props = set $props "registry_port" $v.port -}}
 {{- $props = set $props "registry_type" $v.type -}}
+{{- $props = set $props "is_multi_registry" $v.isMultiRegistry -}}
 {{- $credsDict := (include "yamlToJson" $v.credentials | fromYaml )}}
 {{- $credString := ($credsDict | toString)}}
-{{- $props = set $props "registry_allowed_repositories" $v.allowedRepositories -}}
 {{- $props = set $props "registry_id" (sha256sum (printf "%v:%v:%v" $v.host $v.port $credString)) -}}
 {{- $job = set $job "properties" $props -}}
 {{- $jobs = append $jobs $job -}}

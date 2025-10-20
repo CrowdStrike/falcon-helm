@@ -94,6 +94,13 @@ clusterVisibility:
     # snapshot has been taken. Any resources deleted when KAC does not watch the Kubernetes
     # cluster will not be shown as deleted in the Falcon UI.
     enabled: true
+  # KAC watches configmaps by default. It tries to redact sensitive information by doing
+  # regex pattern matching for known sensitive patterns, before sending the events to
+  # CrowdStrike cloud.
+  resourceConfigMap:
+    # If set to false, KAC does not watch the ConfigMap events, and you will not be able to
+    # see the latest state of the configmaps.
+    enabled: true
 
 # Falcon KAC can usually discover the clusterName automatically so setting clusterName here is normally
 # not necessary, but in some cases the clusterName cannot be discovered by the KAC, e.g. for self-hosted

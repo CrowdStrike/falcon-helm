@@ -100,6 +100,7 @@ Create Watcher container environment variables
 {{- $snapshotsEnabled := true -}}
 {{- $snapshotInterval := "22h" -}}
 {{- $watcherEnabled := true -}}
+{{- $configMapEnabled := true -}}
 {{- if .Values.clusterVisibility -}}
 {{- if .Values.clusterVisibility.resourceSnapshots -}}
   {{- if ne .Values.clusterVisibility.resourceSnapshots.enabled nil -}}
@@ -114,10 +115,16 @@ Create Watcher container environment variables
   {{ $watcherEnabled = .Values.clusterVisibility.resourceWatcher.enabled -}}
   {{- end -}}
 {{- end -}}
+{{- if .Values.clusterVisibility.resourceConfigMap -}}
+  {{- if ne .Values.clusterVisibility.resourceConfigMap.enabled nil -}}
+  {{ $configMapEnabled = .Values.clusterVisibility.resourceConfigMap.enabled -}}
+  {{- end -}}
+{{- end -}}
 {{- end -}}
 __CS_SNAPSHOTS_ENABLED: {{ $snapshotsEnabled | toString | quote }}
 __CS_SNAPSHOT_INTERVAL: {{ $snapshotInterval | toString | quote }}
 __CS_WATCH_EVENTS_ENABLED: {{ $watcherEnabled | toString | quote }}
+__CS_VISIBILITY_CONFIGMAPS_ENABLED: {{ $configMapEnabled | toString | quote }}
 {{- end -}}
 
 {{- define "validateValues" }}

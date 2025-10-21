@@ -151,20 +151,30 @@ log:
   output: 2
 
 
-# Set this flag to true to send scan error stats to cs cloud.
-# These events can be searched in investigate>events / advanced events search
-# note that if true, agent will send an error for image for first time only.
-# Repeated errors for same images will not be sent to preserve network footprint
-scanStats:
-  enabled: true
+
+iarAgentService:
+  httpPort: 8001
+  # Auto update the certificates every time there is an update
+  autoCertificateUpdate: true
+
+  # Certificate validity duration in number of days
+  certExpiration: 3650
+
+  # For custom DNS configurations when .svc requires a domain for services
+  # For example if service.my-namespace.svc doesn't resolve and the cluster uses
+  # service.my-namespace.svc.testing.io, you would add testing.io as the value below.
+  # Otherwise, keep this blank.
+  domainName:
+
+kac:
+  namespace : "falcon-kac"
 
 crowdstrikeConfig:
-  clusterName: ""
+  clusterName: "" # optional. if not provided agent will try to auto-discover
 
   # These are special Kubernetes SDK Verbose Logs. Helpful for troubleshooting kube API.
   # Only Enable for extreme troubleshooting.
   enableKlogs: "false"
-
 
   enableDebug: "false"
   clientID: ""

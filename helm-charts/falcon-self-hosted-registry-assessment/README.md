@@ -251,7 +251,7 @@ crowdstrikeConfig:
 |:------------------------------------|-----------|:------------------------------------------------------------------------------------------------------|:----------|
 | `crowdstrikeConfig.clientID`        | required  | The client ID used to authenticate the self-hosted registry assessment service with CrowdStrike.      | ""        |
 | `crowdstrikeConfig.clientSecret`    | required  | The client secret used to authenticate the self-hosted registry assessment service with CrowdStrike.  | ""        |
-| `crowdstrikeConfig.clientSecretRef` | optional  | Refernce to a secret which contains `CLIENT_ID` and `CLIENT_SECRET` data.  | ""
+| `crowdstrikeConfig.clientSecretRef` | optional  | Reference to a secret which contains `CLIENT_ID` and `CLIENT_SECRET` data.  | ""
 
 
 #### Option 2. Configure your CrowdStrike credentials using Kubernetes secrets or configmaps

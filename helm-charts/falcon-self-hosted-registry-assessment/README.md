@@ -31,6 +31,7 @@ These costs may or may not be offset by the savings for data egress costs incurr
   - [Optional. Configure CrowdStrike allow list](#optional-configure-crowdstrike-allow-list)
   - [Optional. Configure gRPC over TLS](#optional-configure-grpc-over-tls)
   - [Optional. Configure HTPP Proxy](#optional-configure-http-proxy)
+  - [Optional. Customize Security Context](#optional-customize-security-context)
 - [Forward SHRA Container Logs to Logscale](#forward-shra-container-logs-to-logscale)
 - [Install the SHRA Helm Chart](#install-the-shra-helm-chart)
 - [Update SHRA](#update-shra)
@@ -250,6 +251,7 @@ crowdstrikeConfig:
 |:------------------------------------|-----------|:------------------------------------------------------------------------------------------------------|:----------|
 | `crowdstrikeConfig.clientID`        | required  | The client ID used to authenticate the self-hosted registry assessment service with CrowdStrike.      | ""        |
 | `crowdstrikeConfig.clientSecret`    | required  | The client secret used to authenticate the self-hosted registry assessment service with CrowdStrike.  | ""        |
+| `crowdstrikeConfig.clientSecretRef` | optional  | Reference to a secret which contains `CLIENT_ID` and `CLIENT_SECRET` data.  | ""
 
 
 #### Option 2. Configure your CrowdStrike credentials using Kubernetes secrets or configmaps
@@ -271,14 +273,14 @@ kubectl create secret generic crowdstrike-credentials \
    --from-literal=CLIENT_SECRET="aabbccddee112233445566aabbccddee11223344"
 ```
 
-To use a Kubernetes secret for your credentials, add the following reference to the `executor` section of your `values_override.yaml` file. Update `name` to match the name of your secret.
 
-   ```yaml
-   executor:
-     additionalSecretEnvFrom:
-       - name: "crowdstrike-credentials"
-         optional: false
-   ```
+
+To use a Kubernetes secret for your credentials, set the `crowdstrikeConfig.clientSecretRef` value to the name of the secret you created.
+
+| Parameter                           |           | Description                                                                                           | Default   |
+|:------------------------------------|-----------|:------------------------------------------------------------------------------------------------------|:----------|
+| `crowdstrikeConfig.clientSecretRef` | optional  | Reference to a secret which contains `CLIENT_ID` and `CLIENT_SECRET`.  | ""
+
 
 To use a Kubernetes configmap for your credentials, add the following references to the `executor` section of your `values_override.yaml` file. Update `name` to match the name of your configmap.
 
@@ -1529,6 +1531,60 @@ After completing the remaining steps to configure and install SHRA, return here 
 ```sh
 kubectl exec -n falcon-self-hosted-registry-assessment <pod-name> -- env | grep -i proxy
 ```
+
+### Optional. Customize Security Context
+
+By default, SHRA runs with a secure configuration that includes running as a non-root user and dropping all Linux capabilities. You can customize these security settings if your environment has specific security requirements.
+
+The default security context configuration provides:
+- **Non-root execution**: Runs as user ID 1001 and group ID 2001
+- **Read-only root filesystem**: Prevents runtime modifications to the container's root filesystem  
+- **No privilege escalation**: Blocks attempts to gain additional privileges
+- **Dropped capabilities**: Removes all Linux capabilities for enhanced security
+- **seccomp profile**: Uses the runtime default seccomp profile for system call filtering
+
+The default security settings are defined in the `values.yaml` file. You can override these settings in your `values_override.yaml` file if your environment requires different configurations.
+
+To customize the pod-level security context, add the `podSecurityContext` section to your `values_override.yaml` file:
+
+```yaml
+podSecurityContext:
+  runAsUser: 2000
+  runAsGroup: 3000
+  fsGroup: 3000
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+```
+
+To customize security context for specific components, you can override settings for individual services:
+
+```yaml
+executor:
+  podSecurityContext:
+    runAsUser: 2000
+    runAsGroup: 3000
+    fsGroup: 3000
+  securityContext:
+    runAsUser: 2000
+    runAsGroup: 3000
+
+jobController:
+  podSecurityContext:
+    runAsUser: 2000
+    runAsGroup: 3000
+    fsGroup: 3000
+  securityContext:
+    runAsUser: 2000
+    runAsGroup: 3000
+```
+
+> [!WARNING]  
+> Modifying security context settings may impact the security posture of your SHRA deployment. Ensure that any changes align with your organization's security policies and requirements.
+
+> [!NOTE]  
+> When customizing user and group IDs, ensure the specified IDs have appropriate permissions to access the configured persistent volumes and perform required operations.
+
 
 ## Forward SHRA Container Logs to LogScale
 

@@ -218,3 +218,4 @@ The following tables lists the Falcon KAC configurable parameters and their defa
 | `admissionControl.enabled`                     | Enable Admission Control                                                                                                           | `true`                                                        |
 | `falconSecret.enabled`                         | Enable k8s secrets to inject sensitive Falcon values                                                                               | false      (Must be true if falcon.cid is not set)            |
 | `falconSecret.secretName`                      | Existing k8s secret name to inject sensitive Falcon values.<br> The secret must be under the same namespace as the KAC deployment. | None       (Existing secret must include `FALCONCTL_OPT_CID`) |
+| `falconImageAnalyzerNamespace`                 | Falcon Image Analyzer namespace | falcon-image-analyzer |

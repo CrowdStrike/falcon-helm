@@ -195,6 +195,10 @@ spec:
     {{- end }}
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
+      {{- with .Values.node.daemonset.dnsConfig }}
+      dnsConfig:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
       hostPID: true
       hostIPC: true
 {{- end }}

@@ -190,7 +190,7 @@ spec:
             path: /opt/CrowdStrike/falconstore
       serviceAccountName: {{ .Values.serviceAccount.name }}
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
-    {{- if or .Values.node.daemonset.priorityClassName .Values.node.gke.autopilot }}
+    {{- if or .Values.node.daemonset.priorityClassCreate .Values.node.gke.autopilot }}
       priorityClassName: {{ include "falcon-sensor.priorityClassName" . }}
     {{- end }}
       hostNetwork: true

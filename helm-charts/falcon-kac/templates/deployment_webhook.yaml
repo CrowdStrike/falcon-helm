@@ -132,6 +132,10 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
+        {{- if .Values.falconImageAnalyzerNamespace }}
+        - name: __CS_IAR_NAMESPACE
+          value: {{ .Values.falconImageAnalyzerNamespace | quote }}
+        {{- end }}
         envFrom:
         - configMapRef:
             name: {{ include "falcon-kac.fullname" . }}-config

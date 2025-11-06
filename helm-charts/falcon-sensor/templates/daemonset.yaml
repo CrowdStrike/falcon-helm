@@ -184,11 +184,14 @@ spec:
         volumeMounts:
           - name: falconstore
             mountPath: /opt/CrowdStrike/falconstore
+        {{- include "falcon-sensor.extraVolumeMounts" . | nindent 10 }}
       volumes:
         - name: falconstore
           hostPath:
             path: /opt/CrowdStrike/falconstore
+        {{- include "falcon-sensor.extraVolumes" . | nindent 8 }}
       serviceAccountName: {{ .Values.serviceAccount.name }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
     {{- if or .Values.node.daemonset.priorityClassName .Values.node.gke.autopilot }}
       priorityClassName: {{ include "falcon-sensor.priorityClassName" . }}

@@ -260,9 +260,15 @@ container:
       cpu: 10m
       memory: 20Mi
 
+  # Additional volume mounts in falcon sensor container
+  extraVolumeMounts: []
+  # Additional volumes in falcon-sensor pod
+  extraVolumes: []
+
 serviceAccount:
   name: crowdstrike-falcon-sa
   annotations: {}
+  automountServiceAccountToken: true
 
 # Deploys the test suite during install for testing purposes.
 testing:

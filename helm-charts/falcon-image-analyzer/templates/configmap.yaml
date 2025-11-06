@@ -6,9 +6,10 @@ metadata:
   labels:
   {{- include "falcon-image-analyzer.labels" . | nindent 4 }}
 data:
+  SECRETS_AUTODISCOVER_ENABLED: {{.Values.privateRegistries.autoDiscoverCredentials | quote}}
+  IAR_AGENT_SERVICE_PORT: {{.Values.iarAgentService.httpPort | quote}}
   WATCHER_LIST_PAGESIZE: {{ .Values.watcher.listPageSize | quote }}
   IS_KUBERNETES: {{ include "falcon-image-analyzer.isKubernetes" . | quote }}
-  SEND_SCAN_STATS: {{ .Values.scanStats.enabled | quote }}
   AGENT_HELM_VERSION: {{ .Chart.Version | quote }}
   LOG_OUTPUT: {{ .Values.log.output | quote }}
   AGENT_CID: {{ include "falcon-image-analyzer.falconCid" . | quote }}

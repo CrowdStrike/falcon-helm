@@ -132,20 +132,12 @@
         },
         "crowdstrikeConfig": {
             "type": "object",
-            "required": [
-                "clusterName"
-            ],
             "properties": {
                 "agentMaxConsumerThreads": {
                     "type": "string",
                     "pattern": "^[1-9][0-9]*$",
                     "description": "Maximum number of threads to use for image analysis",
                     "default": "1"
-                },
-                "clusterName": {
-                    "type": "string",
-                    "pattern": "[\\S\\s]+[\\S]+",
-                    "description": "Cluster name to use for the agent"
                 },
                 "dockerAPIToken": {
                     "type": [

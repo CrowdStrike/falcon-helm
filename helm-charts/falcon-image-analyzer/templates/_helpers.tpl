@@ -87,7 +87,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 Selector labels
 */}}
 {{- define "falcon-image-analyzer.selectorLabels" -}}
-app: {{ include "falcon-image-analyzer.name" . }}
+app: falcon-image-analyzer
 app.kubernetes.io/name: {{ include "falcon-image-analyzer.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}

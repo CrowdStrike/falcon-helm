@@ -36,6 +36,7 @@ data:
 
   {{- if and .Values.node.enabled .Values.node.backend }}
   FALCONCTL_OPT_BACKEND: "{{ .Values.node.backend }}"
+  FALCON_CLUSTER_NAME: "{{ .Values.node.clusterName }}"
   {{- end }}
 
   {{- if .Values.container.enabled }}

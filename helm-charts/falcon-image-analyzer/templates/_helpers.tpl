@@ -73,7 +73,6 @@ Common labels
 */}}
 {{- define "falcon-image-analyzer.labels" -}}
 app.kubernetes.io/component: iar
-app.kubernetes.io/name: {{ include "falcon-image-analyzer.name" . }}
 crowdstrike.com/provider: crowdstrike
 helm.sh/chart: {{ include "falcon-image-analyzer.chart" . }}
 {{ include "falcon-image-analyzer.selectorLabels" . }}

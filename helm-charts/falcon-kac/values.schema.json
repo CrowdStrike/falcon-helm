@@ -69,6 +69,13 @@
             "default": "3650",
             "minimum": 0
         },
+        "tlsVersionMinimum": {
+            "type": [
+                "null",
+                "string"
+            ],
+            "pattern": "^(TLS1.2|TLS1.3)$"
+        },
         "domainName": {
             "type": [
                 "null",

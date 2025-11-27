@@ -60,8 +60,10 @@ falcon:
   tags:
   provisioning_token:
 
-# If set to false, KAC doesn't act as an admission control webhook.
+# If set to false, KAC doesn't act as an admission control webhook or detect misconfigurations.
 # Available for KAC since version 7.26.
+# The default admission controller policy allows all pods and workloads.
+# Configure your Admission Control policy in Falcon UI.
 admissionControl:
   enabled: true
 
@@ -112,7 +114,7 @@ falconImageAnalyzerNamespace: ""
 # Annotations to apply to the webhook deployment
 annotations: {}
 
-# additionals labels to apply to the webhook deployment
+# additional labels to apply to the webhook deployment
 labels: {}
 
 # Annotations to apply to the webhook deployment
@@ -170,7 +172,7 @@ nameOverride: ""
 fullnameOverride: ""
 webhook:
   failurePolicy: Ignore
-  # Comma sparated list of namespaces in which we need to disable validation e.g test1,test2
+  # Comma separated list of namespaces in which we need to disable validation e.g test1,test2
   disableNamespaces:
 
 # Specifies if Falcon KAC should use hostNetwork mode. This is required in some scenarios such as when a

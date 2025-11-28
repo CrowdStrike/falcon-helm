@@ -273,6 +273,15 @@
                     "default": "60",
                     "pattern": "^[0-9]+$"
                 },
+                "extraVolumes": {
+                    "type": "array"
+                },
+                "extraVolumeMounts": {
+                    "type": "array"
+                },
+                "extraInitVolumeMounts": {
+                    "type": "array"
+                },
                 "hooks": {
                     "type": "object",
                     "properties": {
@@ -481,6 +490,9 @@
                     }
                 }
             }
+        },
+        "extraObjects": {
+            "type": "array"
         },
         "serviceAccount": {
             "type": "object",

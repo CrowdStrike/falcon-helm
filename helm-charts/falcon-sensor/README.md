@@ -126,12 +126,69 @@ The following tables lists the more common configurable parameters of the chart 
 | `node.image.registryConfigJSON` | base64 encoded docker config json for the pull secret                                                                                                                                                                                                                                                 | None       (Conflicts with node.image.pullSecrets)                                                                         |
 | `node.daemonset.resources`      | Configure Node sensor resource requests and limits (eBPF mode only)<br><br><div class="warning">:warning: **Warning**:<br>If you configure resources, you must configure the CPU and Memory Resource requests and limits correctly for your node instances for the node sensor to run properly!</div> | None       (Minimum setting of 250m CPU and 500Mi memory allowed). Default for GKE Autopilot is 750m CPU and 1.5Gi memory. |
 | `node.cleanupOnly`              | Run the cleanup Daemonset only.                                                                                                                                                                                                                                                                       | `false`    Requires `node.hooks.postDelete.enabled: true`                                                                  |
+| `node.extraVolumes`             | Additional volumes appended to the node daemonset pod spec (e.g., CSI SecretProviderClass, projected secrets).                                                                                                                                                                                       | `[]`                                                                                                                       |
+| `node.extraVolumeMounts`        | Additional volume mounts for the node sensor container; names must match `node.extraVolumes`.                                                                                                                                                                                                        | `[]`                                                                                                                       |
+| `node.extraInitVolumeMounts`    | Additional volume mounts for the init container.                                                                                                                                                                                                                                                     | `[]`                                                                                                                       |
 | `falcon.cid`                    | CrowdStrike Customer ID (CID)                                                                                                                                                                                                                                                                         | None       (Required if falconSecret.enabled is false)                                                                     |
 | `falcon.cloud`                  | CrowdStrike cloud region (`us-1`, `us-2`, `eu-1`, `us-gov-1`, `us-gov-2`)<br><br>**NOTE:** This option is supported by Falcon sensor version 7.28 and above                                                                                                                                           | None                                                                                                                       |
 | `falconSecret.enabled`          | Enable k8s secrets to inject sensitive Falcon values                                                                                                                                                                                                                                                  | false       (Must be true if falcon.cid is not set)                                                                        |
 | `falconSecret.secretName`       | Existing k8s secret name to inject sensitive Falcon values.<br> The secret must be under the same namespace as the sensor deployment.                                                                                                                                                                 | None       (Existing secret must include `FALCONCTL_OPT_CID`)                                                              |
+| `extraObjects`                  | List of additional manifests to render with the release (e.g., SecretProviderClass, ExternalSecret).                                                                                                                                                                                                 | `[]`                                                                                                                       |
 
 `falcon.cid` and `node.image.repository` are required values.
+
+#### Using external secret providers
+When you do not want to place `falcon.cid` (or other Falcon API values) directly in `values.yaml`, enable `falconSecret` and supply the secret name that will contain `FALCONCTL_OPT_CID` (and any other keys). You can render operator CRDs such as a Secrets Store CSI `SecretProviderClass` with `extraObjects` and mount it with the new volume hooks:
+
+```
+falconSecret:
+  enabled: true
+  secretName: falcon-credentials
+
+extraObjects:
+  - apiVersion: secrets-store.csi.x-k8s.io/v1
+    kind: SecretProviderClass
+    metadata:
+      name: falcon-credentials
+    spec:
+      provider: aws
+      parameters:
+        objects: |
+          - objectName: "falcon/credentials"
+            objectType: secretsmanager
+            jmesPath:
+              - path: "FALCONCTL_OPT_CID"
+                objectAlias: "FALCONCTL_OPT_CID"
+              - path: "FALCON_CLIENT_ID"
+                objectAlias: "FALCON_CLIENT_ID"
+              - path: "FALCON_CLIENT_SECRET"
+                objectAlias: "FALCON_CLIENT_SECRET"
+      secretObjects:
+        - secretName: falcon-credentials
+          type: Opaque
+          data:
+            - key: FALCONCTL_OPT_CID
+              objectName: FALCONCTL_OPT_CID
+            - key: FALCON_CLIENT_ID
+              objectName: FALCON_CLIENT_ID
+            - key: FALCON_CLIENT_SECRET
+              objectName: FALCON_CLIENT_SECRET
+
+node:
+  extraVolumes:
+    - name: falcon-credentials
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: falcon-credentials
+  extraVolumeMounts:
+    - name: falcon-credentials
+      mountPath: /var/run/secrets/falcon
+      readOnly: true
+```
+
+The SecretProviderClass above syncs a Kubernetes Secret named `falcon-credentials` so the daemonset can read `FALCONCTL_OPT_*` keys via `falconSecret`; the CSI volume mount triggers the sync and optionally exposes materialized files if you need them.
 
 For a complete listing of configurable parameters, run the following command:
 

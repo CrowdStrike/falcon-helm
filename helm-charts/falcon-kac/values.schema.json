@@ -190,6 +190,15 @@
                             "default": "true"
                         }
                     }
+                },
+                "resourceConfigMap": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": "true"
+                        }
+                    }
                 }
             }
         },

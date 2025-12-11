@@ -98,6 +98,9 @@ spec:
       {{- end }}
       securityContext:
         runAsNonRoot: true
+        allowPrivilegeEscalation: false
+        seccompProfile:
+          type: RuntimeDefault
       {{- if .Values.container.image.pullSecrets.enable }}
       imagePullSecrets:
         - name: {{ include "falcon-sensor.container.imagePullSecretName" . | default (printf "%s-pull-secret" (include "falcon-sensor.fullname" .)) }}
@@ -139,6 +142,9 @@ spec:
         image: "{{ include "falcon-sensor.image" . }}"
         imagePullPolicy: "{{ .Values.container.image.pullPolicy }}"
         command: ["injector"]
+        securityContext:
+          runAsUser: 1234
+          runAsGroup: 1234
         envFrom:
         - configMapRef:
             name: {{ include "falcon-sensor.configMapName" . }}

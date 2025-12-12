@@ -242,6 +242,18 @@ Validate one of falcon.cid or falconSecret is configured
 {{- end -}}
 
 {{/*
+Validate falconSecret.secretName
+*/}}
+{{- define "falcon-sensor.validateFalconSecretName" -}}
+{{- $gkeAutopilotEnabled := (.Values.node.gke.autopilot . | eq "true") -}}
+{{- $falconSecretNameIsAllowed := (include "falcon-sensor.falconSecretName" . | eq "falcon-node-sensor-secret") -}}
+
+{{- if and $gkeAutopilotEnabled (not $falconSecretNameIsAllowed) -}}
+{{- fail "falconSecret.secretName must be \"falcon-node-sensor-secret\" when GKE Autopilot is enabled" }}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Get node container registry pull secret from global value if it exists
 */}}
 {{- define "falcon-sensor.node.imagePullSecretName" -}}

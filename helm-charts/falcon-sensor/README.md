@@ -129,7 +129,7 @@ The following tables lists the more common configurable parameters of the chart 
 | `falcon.cid`                    | CrowdStrike Customer ID (CID)                                                                                                                                                                                                                                                                         | None       (Required if falconSecret.enabled is false)                                                                     |
 | `falcon.cloud`                  | CrowdStrike cloud region (`us-1`, `us-2`, `eu-1`, `us-gov-1`, `us-gov-2`)<br><br>**NOTE:** This option is supported by Falcon sensor version 7.28 and above                                                                                                                                           | None                                                                                                                       |
 | `falconSecret.enabled`          | Enable k8s secrets to inject sensitive Falcon values                                                                                                                                                                                                                                                  | false       (Must be true if falcon.cid is not set)                                                                        |
-| `falconSecret.secretName`       | Existing k8s secret name to inject sensitive Falcon values.<br> The secret must be under the same namespace as the sensor deployment.                                                                                                                                                                 | None       (Existing secret must include `FALCONCTL_OPT_CID`)                                                              |
+| `falconSecret.secretName`       | Existing k8s secret name to inject sensitive Falcon values.<br> The secret must be under the same namespace as the sensor deployment.<br><br> Secret name must be `"falcon-node-sensor-secret"` if deploying to a GKE Autopilot cluster.                                                              | None       (Existing secret must include `FALCONCTL_OPT_CID`)                                                              |
 
 `falcon.cid` and `node.image.repository` are required values.
 
@@ -205,6 +205,9 @@ For option 2, we provide an automation script to simplify the process:
 [https://github.com/CrowdStrike/falcon-scripts/tree/main/bash/containers/falcon-container-sensor-pull](https://github.com/CrowdStrike/falcon-scripts/tree/main/bash/containers/falcon-container-sensor-pull)
 
 When copying images to a private registry, it's crucial to preserve the image digest. We recommend using tools like Skopeo for this purpose, as they ensure the digest of the image remains the same after the transfer.
+
+#### Falcon Secret Usage with GKE Autopilot
+When using the `falconSecret` configuration options with GKE Autopilot, `falconSecret.secretName` must be `"falcon-node-sensor-secret"`. Any other K8s secret name for the `falconSecret` option is disallowed.
 
 ## Installing in Kubernetes Cluster as a Sidecar
 

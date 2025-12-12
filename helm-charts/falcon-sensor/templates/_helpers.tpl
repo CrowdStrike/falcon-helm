@@ -284,3 +284,22 @@ Get sidecar container registry config json from global value if it exists
 {{- .Values.container.image.pullSecrets.registryConfigJSON | default "" -}}
 {{- end -}}
 {{- end -}}
+
+
+{{/*
+Extra volume mounts for falcon-sensor container
+*/}}
+{{- define "falcon-sensor.extraVolumeMounts" -}}
+{{- if .Values.container.extraVolumeMounts }}
+{{- toYaml .Values.container.extraVolumeMounts }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Extra volumes for falcon-sensor container
+*/}}
+{{- define "falcon-sensor.extraVolumes" -}}
+{{- if .Values.container.extraVolumes }}
+{{- toYaml .Values.container.extraVolumes }}
+{{- end -}}
+{{- end -}}

@@ -103,6 +103,11 @@ node:
   # How long to wait for Falcon pods to stop gracefully
   terminationGracePeriod: 60
 
+  # Extra volumes and mounts for the daemonset (e.g., CSI SecretProviderClass mounts)
+  extraVolumes: []
+  extraVolumeMounts: []
+  extraInitVolumeMounts: []
+
   hooks:
     # Settings for the node post-delete helm hook
     postDelete:
@@ -259,6 +264,9 @@ container:
     requests:
       cpu: 10m
       memory: 20Mi
+
+# Render arbitrary Kubernetes manifests (e.g., SecretProviderClass, ExternalSecret)
+extraObjects: []
 
 serviceAccount:
   name: crowdstrike-falcon-sa

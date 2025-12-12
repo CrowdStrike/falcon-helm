@@ -137,6 +137,12 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
+        {{- if .Values.node.extraInitVolumeMounts }}
+        volumeMounts:
+        {{- with .Values.node.extraInitVolumeMounts }}
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- end }}
       containers:
       - name: falcon-node-sensor
         image: "{{ include "falcon-sensor.image" . }}"
@@ -189,10 +195,16 @@ spec:
         volumeMounts:
           - name: falconstore
             mountPath: /opt/CrowdStrike/falconstore
+        {{- with .Values.node.extraVolumeMounts }}
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
       volumes:
         - name: falconstore
           hostPath:
             path: /opt/CrowdStrike/falconstore
+      {{- with .Values.node.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       serviceAccountName: {{ .Values.serviceAccount.name }}
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
     {{- if or .Values.node.daemonset.priorityClassName .Values.node.gke.autopilot }}

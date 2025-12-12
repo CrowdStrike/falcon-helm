@@ -133,6 +133,11 @@ Create init script for daemonset
 args:
   - '-c'
   - >-
+      set -e;
+      if [ ! -f /opt/CrowdStrike/falcon-daemonset-init ]; then
+      echo "Error: This is not a falcon node sensor(DaemonSet) image";
+      exit 1;
+      fi;
       echo "Running /opt/CrowdStrike/falcon-daemonset-init -i";
       /opt/CrowdStrike/falcon-daemonset-init -i;
       echo "Running /opt/CrowdStrike/configure-cluster-id";

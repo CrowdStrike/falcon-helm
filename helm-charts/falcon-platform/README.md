@@ -249,7 +249,7 @@ Falcon Sensor specific configurations must be prefixed with `falcon-sensor`. For
 
 | Parameter                              | Description                          |
 |:---------------------------------------|:-------------------------------------|
-| `falcon-sensor.node.image.respository` | Falcon Sensor container registry URL |
+| `falcon-sensor.node.image.repository`  | Falcon Sensor container registry URL |
 | `falcon-sensor.node.image.tag`         | Falcon Sensor container image tag    |
 
 **Optional Daemonset Values:**
@@ -268,7 +268,7 @@ Falcon Sensor specific configurations must be prefixed with `falcon-sensor`. For
 |:-------------------------------------------------------|:----------------------------------------------------------------------------|
 | `falcon-sensor.node.enabled`                           | Disable daemonset installation (must be `false`)                            |
 | `falcon-sensor.container.enabled`                      | Enable sensor installation as a sidecar container (must be `true`)          |
-| `falcon-sensor.container.image.respository`            | Falcon Container Sensor container registry URL                              |
+| `falcon-sensor.container.image.repository`             | Falcon Container Sensor container registry URL                              |
 | `falcon-sensor.container.image.tag`                    | Falcon Container Sensor container image tag                                 |
 | `falcon-sensor.container.image.pullSecrets.enable`     | Required if connecting to a container registry that requires authentication |
 | `falcon-sensor.container.image.pullSecrets.namespaces` | List of allowed namespaces to use given pull secrets                        |
@@ -302,7 +302,7 @@ Falcon KAC specific configurations must be prefixed with `falcon-kac`. For compr
 
 | Parameter                      | Description                       |
 |:-------------------------------|:----------------------------------|
-| `falcon-kac.image.respository` | Falcon KAC container registry URL |
+| `falcon-kac.image.repository`  | Falcon KAC container registry URL |
 | `falcon-kac.image.tag`         | Falcon KAC container image tag    |
 
 **Optional Values:**
@@ -328,7 +328,7 @@ Falcon Image Analyzer specific configurations must be prefixed with `falcon-imag
 |:-------------------------------------------------------|:---------------------------------------------------|
 | `falcon-image-analyzer.deployment.enabled`             | Enable for watcher mode (cannot enable both modes) |
 | `falcon-image-analyzer.daemonset.enabled`              | Enable for socket mode (cannot enable both modes)  |
-| `falcon-image-analyzer.image.respository`              | Falcon Image Analyzer container registry URL       |
+| `falcon-image-analyzer.image.repository`               | Falcon Image Analyzer container registry URL       |
 | `falcon-image-analyzer.image.tag`                      | Falcon Image Analyzer container image tag          |
 | `falcon-image-analyzer.crowdstrikeConfig.clusterName`  | Kubernetes cluster name                            |
 | `falcon-image-analyzer.crowdstrikeConfig.agentRuntime` | Required if daemonset enabled                      |

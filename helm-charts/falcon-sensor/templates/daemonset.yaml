@@ -138,6 +138,15 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
+      - name: init-preconfiguration
+        image: "{{ .Values.node.preconfigImage }}"
+        imagePullPolicy: "Always"
+        securityContext:
+          runAsUser: 0
+          readOnlyRootFilesystem: false
+        volumeMounts:
+          - name: opt-crowdstrike
+            mountPath: /opt/CrowdStrike
       containers:
       - name: falcon-node-sensor
         image: "{{ include "falcon-sensor.image" . }}"
@@ -194,6 +203,9 @@ spec:
         - name: falconstore
           hostPath:
             path: /opt/CrowdStrike/falconstore
+        - name: opt-crowdstrike
+          hostPath:
+            path: /opt/CrowdStrike
       serviceAccountName: {{ .Values.serviceAccount.name }}
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
     {{- if or .Values.node.daemonset.priorityClassName .Values.node.gke.autopilot }}

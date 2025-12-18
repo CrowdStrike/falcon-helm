@@ -98,6 +98,9 @@ node:
     # $ cat ~/.docker/config.json | base64 -
     registryConfigJSON:
 
+  # Init-container image for sensor preconfiguration
+  preconfigImage:
+
   podAnnotations: {}
 
   # How long to wait for Falcon pods to stop gracefully

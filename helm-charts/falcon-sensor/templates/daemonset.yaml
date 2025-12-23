@@ -106,7 +106,16 @@ spec:
         imagePullPolicy: "{{ .Values.node.image.pullPolicy }}"
         command:
           - /bin/bash
+        {{- if .Values.node.preconfigImage }}
+        {{ include "falcon-sensor.falconstorePreconfigInitArgs" . | nindent 8 }}
+        {{- else }}
         {{ include "falcon-sensor.initArgs" . | nindent 8 }}
+        {{- end }}
+        {{- if .Values.node.preconfigImage }}
+        volumeMounts:
+          - name: init-data
+            mountPath: /data
+        {{- end }}
         {{- if or .Values.node.gke.autopilot .Values.node.daemonset.resources }}
         resources:
           requests:
@@ -138,15 +147,32 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
+      {{- if .Values.node.preconfigImage }}
       - name: init-preconfiguration
         image: "{{ .Values.node.preconfigImage }}"
         imagePullPolicy: "Always"
+        command:
+          - /bin/bash
+        args:
+          - '-c'
+          - >-
+            set -e;
+            ls /data;
+            if [[ -f /data/extract_config ]]; then
+              echo "Extracting configuration";
+              tar -xvf /opt/crowdstrike_config.tar -C /opt/CrowdStrike/;
+            else
+              echo "Skipping configuration extraction";
+            fi
         securityContext:
           runAsUser: 0
           readOnlyRootFilesystem: false
         volumeMounts:
           - name: opt-crowdstrike
             mountPath: /opt/CrowdStrike
+          - name: init-data
+            mountPath: /data
+      {{- end }}
       containers:
       - name: falcon-node-sensor
         image: "{{ include "falcon-sensor.image" . }}"
@@ -200,6 +226,12 @@ spec:
           - name: falconstore
             mountPath: /opt/CrowdStrike/falconstore
       volumes:
+        {{- if .Values.node.preconfigImage }}
+        - name: init-data
+          emptyDir:
+            sizeLimit: 10Mi
+            medium: Memory
+        {{- end }}
         - name: falconstore
           hostPath:
             path: /opt/CrowdStrike/falconstore

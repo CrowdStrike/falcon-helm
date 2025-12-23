@@ -99,6 +99,8 @@ node:
     registryConfigJSON:
 
   # Init-container image for sensor preconfiguration
+  # When specified, adds init container to support sensor pre-configuration
+  # Only copies configuration on first install (when AID is not set)
   preconfigImage:
 
   podAnnotations: {}

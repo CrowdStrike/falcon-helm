@@ -22,9 +22,9 @@ metadata:
 
 data:
   {{- if not (include "falcon-sensor.falconSecretEnabled" . | eq "true") }}
-  FALCONCTL_OPT_CID: {{ include "falcon-sensor.falconCid" . }}
+  FALCONCTL_OPT_CID: {{ include "falcon-sensor.falconCid" . | quote }}
   {{- if .Values.falcon.provisioning_token }}
-  FALCONCTL_OPT_PROVISIONING_TOKEN: {{ .Values.falcon.provisioning_token }}
+  FALCONCTL_OPT_PROVISIONING_TOKEN: {{ .Values.falcon.provisioning_token | quote }}
   {{- end }}
   {{- end }}
 

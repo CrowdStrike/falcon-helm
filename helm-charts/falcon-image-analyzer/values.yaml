@@ -121,7 +121,7 @@ dnsPolicy:
 # if autoDiscoverCredentials is set to true then the provided credentials are ignored. Note that the secret
 # should be existing of type docker-registry in ANY namespace on the cluster to be discovered. IAR will NOT pick
 # up any new secret added to the cluster after IAR is running.For that a restart of IAR is needed.
-# of the form namsepace1:secretname1,namespace:secret2
+# of the form namespace1:secretname1,namespace:secret2
 # each secret should be of type docker-registry for each of the private registry that is used.
 # for e.g.  a docker-registry secret can be created as below
 #  kubectl create secret docker-registry regcred \

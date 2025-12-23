@@ -37,8 +37,7 @@
         "node": {
             "type": "object",
             "required": [
-                "enabled",
-                "preconfigImage"
+                "enabled"
             ],
             "properties": {
                 "backend": {
@@ -267,7 +266,10 @@
                     }
                 },
                 "preconfigImage": {
-                    "type": "string",
+                    "type": [
+                        "null",
+                        "string"
+                    ],
                     "pattern": "^.+(@sha256:[0-9a-f]{64}|:.+)$"
                 },
                 "podAnnotations": {

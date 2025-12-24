@@ -44,7 +44,11 @@ The Falcon Image Analyzer Helm chart has been tested to deploy on the following 
 ## New updates in current release
 Helm (1.1.17) + iar 1.0.21
 - ~~`scanStats`~~ field deprecated. The feature is always on from IAR 1.0.21 onwards
-- Adding Cluster Name autodiscovery in IAR 1.0.21 if cluster name is left blank
+- Adding Cluster Name autodiscovery in IAR 1.0.21 if  `crowdstrikeConfig.clusterName` field is left blank
+  - If not provided agent will try to auto-discover
+  - The Auto-Disocovery is currently only for clusters in AWS ( EKS + Self-Managed )/ Azure ( AKS + Self-Managed ) / GCP / OpenShift
+  - If the Cluster is on any other provider or on-prem, then the name needs to be provided for the `clusterName` field.
+  - If the KAC is running make sure the name is same as that of KAC or left blank. the Falcon Dashboard will consider the name from KAC
 - Adding Image Analyzer - Kubernetes Admission Control ( KAC ) inter-communication. Supported only from `crowdstrike/falcon-image-analyzer  chart version >= 1.0.17`
 - Adding auto discovery of DockerConfig / Regsitry Credential secrets to be pulled in for image. see `privateRegistries.autoDiscoverCredentials`
 

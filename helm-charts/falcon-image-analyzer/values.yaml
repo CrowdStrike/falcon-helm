@@ -175,7 +175,11 @@ kac:
   namespace : "falcon-kac"
 
 crowdstrikeConfig:
-  clusterName: "" # optional. if not provided agent will try to auto-discover
+  # optional. if not provided agent will try to auto-discover
+  # The Auto-Disocovery is currently only for clusters in AWS ( EKS + Self-Managed )/ Azure ( AKS + Self-Managed ) / GCP / OpenShift
+  # If the Cluster is on any other provider or on-prem, then the name needs to be provided for the below field.
+  # if the KAC is running make sure the name is same as that of KAC or left blank. the Falcon Dashboard will consider the name from KAC
+  clusterName: ""
 
   # These are special Kubernetes SDK Verbose Logs. Helpful for troubleshooting kube API.
   # Only Enable for extreme troubleshooting.

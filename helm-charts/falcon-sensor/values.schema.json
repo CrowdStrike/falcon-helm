@@ -265,6 +265,13 @@
                         }
                     }
                 },
+                "preconfigImage": {
+                    "type": [
+                        "null",
+                        "string"
+                    ],
+                    "pattern": "^.+(@sha256:[0-9a-f]{64}|:.+)$"
+                },
                 "podAnnotations": {
                     "type": "object"
                 },

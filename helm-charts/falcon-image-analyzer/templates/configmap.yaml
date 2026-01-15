@@ -17,6 +17,7 @@ data:
   AGENT_REGISTRY_CREDENTIALS: {{ .Values.privateRegistries.credentials | quote }}
   AGENT_NAMESPACE_EXCLUSIONS: {{ .Values.exclusions.namespace | quote }}
   AGENT_REGISTRY_EXCLUSIONS: {{ .Values.exclusions.registry | quote }}
+  AGENT_IMAGE_EXCLUSIONS: {{ .Values.exclusions.imageName | quote }}
   AGENT_DEBUG: {{ .Values.crowdstrikeConfig.enableDebug | quote }}
   ENABLE_KLOGS: {{ .Values.crowdstrikeConfig.enableKlogs | quote }}
   AGENT_RUNMODE: {{ include "falcon-image-analyzer.agentrunmode" . | quote }}

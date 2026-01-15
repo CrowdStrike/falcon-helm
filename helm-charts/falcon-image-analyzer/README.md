@@ -42,7 +42,10 @@ The Falcon Image Analyzer Helm chart has been tested to deploy on the following 
 
 
 ## New updates in current release
-Helm (1.1.17) + iar 1.0.21
+### Helm (1.1.19) + iar 1.0.23
+- Adding support for excluding specific images from scanning.
+
+### Helm (1.1.17) + iar 1.0.21
 - ~~`scanStats`~~ field deprecated. The feature is always on from IAR 1.0.21 onwards
 - Adding Cluster Name autodiscovery in IAR 1.0.21 if  `crowdstrikeConfig.clusterName` field is left blank
   - If not provided agent will try to auto-discover
@@ -94,6 +97,7 @@ The following tables list the Falcon sensor configurable parameters and their de
 | `gcp.enabled`                  optional                                                                                                            | Set to `true` if cluster is Gogle GKE or self-managed on Google Cloud GCP nodes.                                                                               | false                                                                                                       |
 | `exclusions.namespace`                  optional   ( available in falcon-imageanalyzer >= 1.0.8 and Helm Chart v >= 1.1.3)                         | Set the value as a comma separate list of namespaces to be excluded. all pods in that namespace(s) will be excluded                                            | ""                                                                                                          |
 | `exclusions.registry`                  optional   ( available in falcon-imageanalyzer >= 1.0.8 and Helm Chart v >= 1.1.3)                          | Set the value as a comma separate list of registries to be excluded. all images in that registry(s) will be excluded                                           | ""                                                                                                          |
+| `exclusions.imageName`                  optional   ( available in falcon-imageanalyzer >= 1.0.23 and Helm Chart v >= 1.1.19)                       | Set the value as a comma separate list of fully qualified image names.                                                                                         | ""                                                                                                          |
 | `log.output`                  optional   ( available  Helm Chart v >= 1.1.7 & falcon-imageanalyzer >= 1.0.12)                                      | Set the value to for log output terminal. `2=stderr` and `1=stdout`                                                                                            | 2 ( stderr )                                                                                                |
 | `hostNetwork`                  optional   ( available  Helm Chart v >= 1.1.11)                                                                     | Set the value to `true` to use the hostNetwork instead of pod network                                                                                          | `false`                                                                                                     |
 | `dnsPolicy`                  optional   ( available  Helm Chart v >= 1.1.11)                                                                       | Set the value to any supported value from https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy                            | ``  no value implies `Default`                                                                              |
@@ -499,6 +503,15 @@ metadata:
   name: "my-newnamespace-to-be-excluded"
   annotations:
     sensor.crowdstrike.com/imageanalyzer: "disabled"
+```
+
+#### Images
+Images can be excluded by adding the full image name in the below section of the `config_values.yaml`
+- Image without registries will be defaulted to `index.docker.io`
+- Images without tags will be defaulted to `latest` tag 
+```
+  exclusions:
+    imageName: "myregistry.io/mynamespace/myimage:tag1,myregistry.io/mynamespace/myimage@sha2561234678901209"
 ```
 
 #### POD Exclusions via PodSpec

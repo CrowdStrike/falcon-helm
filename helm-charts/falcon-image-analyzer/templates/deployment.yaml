@@ -41,6 +41,17 @@ metadata:
   namespace: {{ include "falcon-image-analyzer.namespace" . }}
   labels:
     {{- include "falcon-image-analyzer.labels" . | nindent 4 }}
+    {{- if .Values.labels }}
+    {{- range $key, $value := .Values.labels }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    {{- end }}
+  {{- if .Values.annotations }}
+  annotations:
+    {{- range $key, $value := .Values.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -56,7 +67,12 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
       labels:
-    {{- include "falcon-image-analyzer.labels" . | nindent 8 }}
+        {{- include "falcon-image-analyzer.labels" . | nindent 8 }}
+        {{- if .Values.labels }}
+        {{- range $key, $value := .Values.labels }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
     spec:
       {{- if or $imagePullSecret $registryConfigJson (.Values.crowdstrikeConfig.dockerAPIToken) }}
       imagePullSecrets:

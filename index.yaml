@@ -145,6 +145,32 @@ entries:
     version: 0.43.8
   falcon-image-analyzer:
   - apiVersion: v2
+    appVersion: 1.0.23
+    created: "2026-01-26T22:00:54.448352234Z"
+    description: A Helm chart for Falcon Image Analyzer
+    digest: da91addf6645200373931fbfc4972a14a595cf8ea078aa9a95a0a1bba606434d
+    home: https://crowdstrike.com
+    icon: https://raw.githubusercontent.com/CrowdStrike/falcon-helm/main/images/crowdstrike-logo.svg
+    keywords:
+    - CrowdStrike
+    - Falcon
+    - Image Analyzer
+    - kubernetes
+    - security
+    - monitoring
+    - alerting
+    kubeVersion: '>1.22.0-0'
+    maintainers:
+    - email: integrations@crowdstrike.com
+      name: CrowdStrike Solutions Architecture
+    name: falcon-image-analyzer
+    sources:
+    - https://github.com/CrowdStrike/falcon-helm
+    type: application
+    urls:
+    - https://github.com/CrowdStrike/falcon-helm/releases/download/falcon-image-analyzer-1.1.19/falcon-image-analyzer-1.1.19.tgz
+    version: 1.1.19
+  - apiVersion: v2
     appVersion: 1.0.21
     created: "2026-01-06T23:30:29.853506681Z"
     description: A Helm chart for Falcon Image Analyzer
@@ -3593,4 +3619,4 @@ entries:
     urls:
     - https://github.com/CrowdStrike/falcon-helm/releases/download/registry-scanner-0.1.0/registry-scanner-0.1.0.tgz
     version: 0.1.0
-generated: "2026-01-06T23:30:30.339342716Z"
+generated: "2026-01-26T22:00:54.624684613Z"

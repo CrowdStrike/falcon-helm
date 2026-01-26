@@ -44,5 +44,5 @@ dependencies:
     condition: falcon-kac.enabled
   - name: falcon-image-analyzer
     version: 1.1.18
-    repository: file://../falcon-image-analyzer
+    repository: https://crowdstrike.github.io/falcon-helm
     condition: falcon-image-analyzer.enabled

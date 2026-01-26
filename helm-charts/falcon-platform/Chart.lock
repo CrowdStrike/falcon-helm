@@ -6,7 +6,7 @@ dependencies:
   repository: file://../falcon-kac
   version: 1.6.0
 - name: falcon-image-analyzer
-  repository: file://../falcon-image-analyzer
+  repository: https://crowdstrike.github.io/falcon-helm
   version: 1.1.18
-digest: sha256:eea92b156512fe9f18e330af50ac77b42b3dba96a97ecb01a2317eb0092f3220
-generated: "2026-01-06T16:51:23.317401-06:00"
+digest: sha256:541918aa74f4754e63f8eb5eb15d593bdbd64ef2c177337df64cf7224b6f4c85
+generated: "2026-01-26T16:56:27.05327-05:00"

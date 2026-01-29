@@ -34,9 +34,13 @@ data:
   {{- end }}
   {{- end }}
 
-  {{- if and .Values.node.enabled .Values.node.backend }}
+  {{- if .Values.node.enabled }}
+  {{- if .Values.node.backend }}
   FALCONCTL_OPT_BACKEND: "{{ .Values.node.backend }}"
+  {{- end }}
+  {{- if .Values.node.clusterName }}
   FALCON_CLUSTER_NAME: "{{ .Values.node.clusterName }}"
+  {{- end }}
   {{- end }}
 
   {{- if .Values.container.enabled }}

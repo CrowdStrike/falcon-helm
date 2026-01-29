@@ -286,6 +286,16 @@
                             }
                         }
                     }
+                },
+                "clusterName": {
+                    "type": [
+                        "null",
+                        "string"
+                    ],
+                    "pattern": "^[0-9a-zA-Z]{1}[0-9a-zA-Z_-]{1,99}$",
+                    "example": [
+                        "my_prod_cluster"
+                    ]
                 }
             }
         },

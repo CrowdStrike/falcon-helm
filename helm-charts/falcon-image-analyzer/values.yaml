@@ -108,6 +108,14 @@ exclusions:
   #    registry: "index.docker.io,my.private.registry,localhost,localhost:1234"
   registry: ""
 
+  # provide a comma separate list of Fully Qualified Image Names (FQINs) to be excluded
+  # e.g.-1  myregistry.io/mynamespace/myimage:sometag
+  # e.g.-2  myregistry.io/mynamespace/myimage@sha2561234678901209
+  # image without registries will be defaulted to index.docker.io
+  # images without tags will be defaulted to latest tag
+  # e.g. "myregistry.io/mynamespace/myimage:tag1,myregistry.io/mynamespace/myimage@sha2561234678901209"
+  imageName: ""
+
 
 # set this to true will bypass the kubernetes network and use the node/host network. This is needed in some
 # setups where proxy rules are strict and if we IAR to make calls especially for private registry/auth via the host.
@@ -121,7 +129,7 @@ dnsPolicy:
 # if autoDiscoverCredentials is set to true then the provided credentials are ignored. Note that the secret
 # should be existing of type docker-registry in ANY namespace on the cluster to be discovered. IAR will NOT pick
 # up any new secret added to the cluster after IAR is running.For that a restart of IAR is needed.
-# of the form namsepace1:secretname1,namespace:secret2
+# of the form namespace1:secretname1,namespace:secret2
 # each secret should be of type docker-registry for each of the private registry that is used.
 # for e.g.  a docker-registry secret can be created as below
 #  kubectl create secret docker-registry regcred \
@@ -175,7 +183,11 @@ kac:
   namespace : "falcon-kac"
 
 crowdstrikeConfig:
-  clusterName: "" # optional. if not provided agent will try to auto-discover
+  # optional. if not provided agent will try to auto-discover
+  # The Auto-Disocovery is currently only for clusters in AWS ( EKS + Self-Managed )/ Azure ( AKS + Self-Managed ) / GCP / OpenShift
+  # If the Cluster is on any other provider or on-prem, then the name needs to be provided for the below field.
+  # if the KAC is running make sure the name is same as that of KAC or left blank. the Falcon Dashboard will consider the name from KAC
+  clusterName: ""
 
   # These are special Kubernetes SDK Verbose Logs. Helpful for troubleshooting kube API.
   # Only Enable for extreme troubleshooting.

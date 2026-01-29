@@ -10,11 +10,14 @@ metadata:
     {{- include "falcon-kac.labels" . | nindent 4 }}
 data:
   __CS_ADMISSION_CONTROL_ENABLED: {{ .Values.admissionControl.enabled | quote }}
+  {{- if .Values.tlsVersionMinimum }}
+  __CS_TLS_PROTOCOL_MIN: {{ .Values.tlsVersionMinimum | quote }}
+  {{- end }}
   {{- include "falcon-kac.generateWatcherEnvVars" . | nindent 2 }}
   {{- if not (include "falcon-kac.falconSecretEnabled" . | eq "true") }}
-  FALCONCTL_OPT_CID: {{ include "falcon-kac.falconCid" . }}
+  FALCONCTL_OPT_CID: {{ include "falcon-kac.falconCid" . | quote }}
   {{- if .Values.falcon.provisioning_token }}
-  FALCONCTL_OPT_PROVISIONING_TOKEN: {{ .Values.falcon.provisioning_token }}
+  FALCONCTL_OPT_PROVISIONING_TOKEN: {{ .Values.falcon.provisioning_token | quote }}
   {{- end }}
   {{- end }}
 
@@ -34,5 +37,5 @@ metadata:
   labels:
     {{- include "falcon-kac.labels" . | nindent 4 }}
 data:
-  ClusterName: {{ .Values.clusterName }}
+  ClusterName: {{ .Values.clusterName | quote }}
 {{- end -}}

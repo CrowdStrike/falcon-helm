@@ -133,10 +133,19 @@ Create init script for daemonset
 args:
   - '-c'
   - >-
+      set -e;
+      if [ ! -f /opt/CrowdStrike/falcon-daemonset-init ]; then
+      echo "Error: This is not a falcon node sensor(DaemonSet) image";
+      exit 1;
+      fi;
       echo "Running /opt/CrowdStrike/falcon-daemonset-init -i";
       /opt/CrowdStrike/falcon-daemonset-init -i;
+      if [ ! -f /opt/CrowdStrike/configure-cluster-id ]; then
+      echo "/opt/CrowdStrike/configure-cluster-id not found. Skipping.";
+      else
       echo "Running /opt/CrowdStrike/configure-cluster-id";
-      test -f "/opt/CrowdStrike/configure-cluster-id" && /opt/CrowdStrike/configure-cluster-id || echo "/opt/CrowdStrike/configure-cluster-id not found. Skipping."
+      /opt/CrowdStrike/configure-cluster-id;
+      fi
 {{- end -}}
 
 {{/*
@@ -238,6 +247,19 @@ Validate one of falcon.cid or falconSecret is configured
 
 {{- if and ($hasCid) ($secretEnabled) -}}
 {{- fail "Cannot use both falcon.cid and falconSecret" }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Validate falconSecret.secretName
+*/}}
+{{- define "falcon-sensor.validateFalconSecretName" -}}
+{{- $falconSecretName := include "falcon-sensor.falconSecretName" . }}
+{{- $gkeAutopilotEnabled := (dig "node" "gke" "autopilot" false .Values.AsMap | eq true) -}}
+{{- $falconSecretNameIsAllowed := $falconSecretName | eq "falcon-node-sensor-secret" -}}
+
+{{- if and $falconSecretName $gkeAutopilotEnabled (not $falconSecretNameIsAllowed) -}}
+{{- fail "falconSecret.secretName must be \"falcon-node-sensor-secret\" when GKE Autopilot is enabled" }}
 {{- end -}}
 {{- end -}}
 

@@ -42,9 +42,16 @@ The Falcon Image Analyzer Helm chart has been tested to deploy on the following 
 
 
 ## New updates in current release
-Helm (1.1.17) + iar 1.0.21
+### Helm (1.1.19) + iar 1.0.23
+- Adding support for excluding specific images from scanning.
+
+### Helm (1.1.17) + iar 1.0.21
 - ~~`scanStats`~~ field deprecated. The feature is always on from IAR 1.0.21 onwards
-- Adding Cluster Name autodiscovery in IAR 1.0.21 if cluster name is left blank
+- Adding Cluster Name autodiscovery in IAR 1.0.21 if  `crowdstrikeConfig.clusterName` field is left blank
+  - If not provided agent will try to auto-discover
+  - The Auto-Disocovery is currently only for clusters in AWS ( EKS + Self-Managed )/ Azure ( AKS + Self-Managed ) / GCP / OpenShift
+  - If the Cluster is on any other provider or on-prem, then the name needs to be provided for the `clusterName` field.
+  - If the KAC is running make sure the name is same as that of KAC or left blank. the Falcon Dashboard will consider the name from KAC
 - Adding Image Analyzer - Kubernetes Admission Control ( KAC ) inter-communication. Supported only from `crowdstrike/falcon-image-analyzer  chart version >= 1.0.17`
 - Adding auto discovery of DockerConfig / Regsitry Credential secrets to be pulled in for image. see `privateRegistries.autoDiscoverCredentials`
 
@@ -80,9 +87,9 @@ The following tables list the Falcon sensor configurable parameters and their de
 | `daemsonset.enabled`     required                                                                                                                  | Set to `true` if running in Socket Mode i.e. Both CANNOT be true . This  causes the IAR to run in `socket` mode                                                | false                                                                                                       |
 | `watcher.listPageSize`     optional ( available in falcon-imageanalyzer Helm Chart >= 1.1.9)                                                       | numeric value to be used for listing pods in watcher mode                                                                                                      | 500                                                                                                         |
 | `priorityClassName`                  optional    ( available in falcon-imageanalyzer Helm Chart >= 1.1.4)                                          | Set to `system-node-critical` or `system-cluster-critical` to avoid pod evictions due to resource limits.                                                      | ""                                                                                                          |
-| `privateRegistries.credentials`  optional                                                                                                          | Use this param to provide the comma separated registry secrets of the form namsepace1:secretname1,namespace:secret2                                            | ""                                                                                                          |
+| `privateRegistries.credentials`  optional                                                                                                          | Use this param to provide the comma separated registry secrets of the form namespace1:secretname1,namespace:secret2                                            | ""                                                                                                          |
 | `privateRegistries.autoDiscoverCredentials`  optional                                                                                              | Set to `true` to automatically discovery all Docker secrets for private registries. note that if this is `true` the above `privateRegistries.credentials`is NA | true                                                                                                        |
-| `image.repo`       required                                                                                                                        | IAR image repo name                                                                                                                                            | `[CROWDSTRIKE_IMAGE_REGISTRY]/falcon-imageanalyzer/[us-1/us-2/eu-1/gov1/gov2]/release/falcon-imageanalyzer` |
+| `image.repository`       required                                                                                                                  | IAR image repo name                                                                                                                                            | `[CROWDSTRIKE_IMAGE_REGISTRY]/falcon-imageanalyzer/[us-1/us-2/eu-1/gov1/gov2]/release/falcon-imageanalyzer` |
 | `image.tag`        required                                                                                                                        | Image tag version                                                                                                                                              | None                                                                                                        |
 | `image.registryConfigJSON`        optional                                                                                                         | iar private registry secret in docker config format                                                                                                            | None                                                                                                        |
 | `azure.enabled`         optional                                                                                                                   | Set to `true` if cluster is Azure AKS or self-managed on Azure nodes.                                                                                          | false                                                                                                       |
@@ -90,6 +97,7 @@ The following tables list the Falcon sensor configurable parameters and their de
 | `gcp.enabled`                  optional                                                                                                            | Set to `true` if cluster is Gogle GKE or self-managed on Google Cloud GCP nodes.                                                                               | false                                                                                                       |
 | `exclusions.namespace`                  optional   ( available in falcon-imageanalyzer >= 1.0.8 and Helm Chart v >= 1.1.3)                         | Set the value as a comma separate list of namespaces to be excluded. all pods in that namespace(s) will be excluded                                            | ""                                                                                                          |
 | `exclusions.registry`                  optional   ( available in falcon-imageanalyzer >= 1.0.8 and Helm Chart v >= 1.1.3)                          | Set the value as a comma separate list of registries to be excluded. all images in that registry(s) will be excluded                                           | ""                                                                                                          |
+| `exclusions.imageName`                  optional   ( available in falcon-imageanalyzer >= 1.0.23 and Helm Chart v >= 1.1.19)                       | Set the value as a comma separate list of fully qualified image names.                                                                                         | ""                                                                                                          |
 | `log.output`                  optional   ( available  Helm Chart v >= 1.1.7 & falcon-imageanalyzer >= 1.0.12)                                      | Set the value to for log output terminal. `2=stderr` and `1=stdout`                                                                                            | 2 ( stderr )                                                                                                |
 | `hostNetwork`                  optional   ( available  Helm Chart v >= 1.1.11)                                                                     | Set the value to `true` to use the hostNetwork instead of pod network                                                                                          | `false`                                                                                                     |
 | `dnsPolicy`                  optional   ( available  Helm Chart v >= 1.1.11)                                                                       | Set the value to any supported value from https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy                            | ``  no value implies `Default`                                                                              |
@@ -407,7 +415,7 @@ privateRegistries:
   autoDiscoverCredentials: true
 ```
 `credentials`
-to provide the comma separated registry secrets of the form `"namsepace1:secretname1,namespace:secret2"`
+to provide the comma separated registry secrets of the form `"namespace1:secretname1,namespace:secret2"`
 each secret should be of type docker-registry for each of the private registry that is used.
 for e.g.  a docker-registry secret can be created as below
 ```
@@ -495,6 +503,15 @@ metadata:
   name: "my-newnamespace-to-be-excluded"
   annotations:
     sensor.crowdstrike.com/imageanalyzer: "disabled"
+```
+
+#### Images
+Images can be excluded by adding the full image name in the below section of the `config_values.yaml`
+- Image without registries will be defaulted to `index.docker.io`
+- Images without tags will be defaulted to `latest` tag 
+```
+  exclusions:
+    imageName: "myregistry.io/mynamespace/myimage:tag1,myregistry.io/mynamespace/myimage@sha2561234678901209"
 ```
 
 #### POD Exclusions via PodSpec

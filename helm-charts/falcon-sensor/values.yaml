@@ -111,8 +111,6 @@ node:
   # Enable, to run cleanup for the prior daemonset deployment
   cleanupOnly: false
 
-  clusterName: ""
-
 container:
   # When enabled, Helm chart deploys the Falcon Container Sensor to Pods through Webhooks
   enabled: false

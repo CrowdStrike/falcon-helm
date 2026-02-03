@@ -46,6 +46,9 @@ node:
         operator: "Equal"
         value: "spot"
         effect: "NoSchedule"
+      - effect: NoSchedule
+        key: CriticalAddonsOnly
+        operator: Exists
       # Daemonsets automatically get additional tolerations: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
 
     # https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity

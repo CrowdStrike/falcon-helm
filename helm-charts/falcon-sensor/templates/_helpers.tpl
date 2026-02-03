@@ -306,3 +306,14 @@ Get sidecar container registry config json from global value if it exists
 {{- .Values.container.image.pullSecrets.registryConfigJSON | default "" -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Check if OpenShift is enabled
+*/}}
+{{- define "falcon-sensor.openshiftEnabled" -}}
+{{- if (dig "openshift" "enabled" false .Values.AsMap) -}}
+true
+{{- else -}}
+false
+{{- end -}}
+{{- end -}}

@@ -31,10 +31,10 @@ Below is a table of subchart versions locked to the latest falcon-platform relea
 
 | Helm Chart Name       | Helm Chart Version |
 |:----------------------|:-------------------|
-| falcon-platform       | `1.0.0`            |
-| falcon-sensor         | `1.34.1`           |
-| falcon-kac            | `1.5.1`            |
-| falcon-image-analyzer | `1.1.16`           |
+| falcon-platform       | `1.2.0`            |
+| falcon-sensor         | `1.34.2`           |
+| falcon-kac            | `1.6.0`            |
+| falcon-image-analyzer | `1.1.18`           |
 
 ### Namespace Isolation Strategy
 Each Falcon component operates in its own dedicated namespace.

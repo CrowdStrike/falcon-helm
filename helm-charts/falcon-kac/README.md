@@ -56,10 +56,10 @@ policy to identify IOMs. The admission control policy tells the Falcon KAC how t
 create an alert in the Falcon console, or prevent the object from being deployed.
 The Falcon KAC comprises two containers:
 
-- **Kubernetes Client (falcon-client)**  
+- **Kubernetes Client (falcon-client)**
   This is the validating webhook that is responsible for listening to events from the Kubernetes API and forwarding them
   to the admission control process.
-- **Admission controller (falcon-ac)**  
+- **Admission controller (falcon-ac)**
   This is the controller process that is responsible for admission control policy management, cloud communication, and
   event handling.
 
@@ -83,7 +83,7 @@ The Falcon KAC does not monitor these namespaces:
 - Set a variable for the Falcon KAC image repository:
    ```
    export KAC_IMAGE_REPO=<registry_name>/falcon-kac
-   ``` 
+   ```
 - Set a variable for the Falcon KAC image tag:
    ```
    export KAC_IMAGE_TAG=<KAC_version>.container.x86_64.Release.<cloud_region>
@@ -107,7 +107,7 @@ CID checksum, and then click **Copy your Customer ID checksum to the clipboard**
     --set falcon.cid=$FALCON_CID \
     --set image.repository=$KAC_IMAGE_REPO \
     --set image.tag=$KAC_IMAGE_TAG
-  ```  
+  ```
   **Tip**: Use the --set flag to pass individual values to the values file when running helm install. For a complete
   list and description of configurable parameters, run
   ```
@@ -164,7 +164,7 @@ GitOps or CI/CD pipeline per Kubernetes Best Operational and Security practices.
   ```
 
 - Update your Helm chart with the new container image:
-  ``` 
+  ```
     helm upgrade --install falcon-kac $KAC_HELM_REPO \
        -n falcon-kac --create-namespace \
        --set falcon.cid=$FALCON_CID \
@@ -179,7 +179,7 @@ GitOps or CI/CD pipeline per Kubernetes Best Operational and Security practices.
   kubectl get pods -n falcon-kac -o jsonpath='{range .items[*]}{"\n"}{.metadata.name}{":\t"}{range .spec.containers[*]}{.image}{", "}{end}{end}'
   ```
 
-  The output looks similar to the example below and shows that version  
+  The output looks similar to the example below and shows that version
   falcon-kac:7.01.0-103.container.x86_64.Release.US-1 is running on both Falcon KAC pods.
    ```
    falcon-kac-5bd6986f6f-x86vw: falcon-kac:7.01.0-103.container.x86_64.Release.US-1, falcon-kac:7.01.0-103.container.x86_64.Release.US-1,
@@ -218,4 +218,5 @@ The following tables lists the Falcon KAC configurable parameters and their defa
 | `admissionControl.enabled`                     | Enable Admission Control                                                                                                           | `true`                                                        |
 | `falconSecret.enabled`                         | Enable k8s secrets to inject sensitive Falcon values                                                                               | false      (Must be true if falcon.cid is not set)            |
 | `falconSecret.secretName`                      | Existing k8s secret name to inject sensitive Falcon values.<br> The secret must be under the same namespace as the KAC deployment. | None       (Existing secret must include `FALCONCTL_OPT_CID`) |
+| `clusterName`                                  | Manually set cluster name for self-hosted Kubernetes clusters where auto-discovery fails (e.g., MicroK8s). Displayed as hostname in Host Management UI. | None (auto-discovery used) |
 | `falconImageAnalyzerNamespace`                 | Falcon Image Analyzer namespace | falcon-image-analyzer |

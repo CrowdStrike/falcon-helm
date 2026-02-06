@@ -31,10 +31,10 @@ Below is a table of subchart versions locked to the latest falcon-platform relea
 
 | Helm Chart Name       | Helm Chart Version |
 |:----------------------|:-------------------|
-| falcon-platform       | `1.0.0`            |
-| falcon-sensor         | `1.34.1`           |
-| falcon-kac            | `1.5.1`            |
-| falcon-image-analyzer | `1.1.16`           |
+| falcon-platform       | `1.2.0`            |
+| falcon-sensor         | `1.34.2`           |
+| falcon-kac            | `1.6.0`            |
+| falcon-image-analyzer | `1.1.18`           |
 
 ### Namespace Isolation Strategy
 Each Falcon component operates in its own dedicated namespace.
@@ -432,6 +432,14 @@ helm upgrade falcon-platform crowdstrike/falcon-platform --version 1.0.1 -n falc
 ```
 
 ### Individual Component Updates
+
+> [!NOTE]
+> DaemonSet deployments of sensor versions 7.33 and earlier of the Falcon sensor for Linux are blocked from updates and
+> uninstallation if their sensor update policy has the **Uninstall and maintenance protection** setting enabled. Before
+> upgrading or uninstalling these versions of the sensor, move the sensors to a new sensor update policy with this
+> policy setting turned off. For more info, see [Sensor update and uninstallation for DaemonSet sensor versions 7.33
+> and lower](https://falcon.crowdstrike.com/documentation/anchor/sc632f2e).
+
 ```bash
 # Upgrade the version of each Falcon component image
 helm upgrade falcon-platform crowdstrike/falcon-platform --version 1.0.0 -n falcon-platform \
@@ -450,6 +458,14 @@ helm upgrade falcon-platform crowdstrike/falcon-platform --version 1.0.0 -n falc
 ## Uninstall
 
 ### Uninstall a Single Component
+
+> [!NOTE]
+> DaemonSet deployments of sensor versions 7.33 and earlier of the Falcon sensor for Linux are blocked from updates and
+> uninstallation if their sensor update policy has the **Uninstall and maintenance protection** setting enabled. Before
+> upgrading or uninstalling these versions of the sensor, move the sensors to a new sensor update policy with this
+> policy setting turned off. For more info, see [Sensor update and uninstallation for DaemonSet sensor versions 7.33
+> and lower](https://falcon.crowdstrike.com/documentation/anchor/sc632f2e).
+
 ```bash
 # Upgrade your helm release with the component disabled - for example to uninstall falcon-image-analyzer only:
 helm upgrade falcon-platform crowdstrike/falcon-platform --version 1.0.0 -n falcon-platform \

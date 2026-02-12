@@ -53,6 +53,12 @@ This isolation provides security boundaries with individual RBAC policies and se
 independent resource quotas and limits per component, and operational isolation where component
 failures don't impact other components.
 
+### Sensor uninstall and maintenance protection
+Important notes for Kubernetes and other container deployments of the Falcon sensor.
+- **Falcon Node sensor for Linux with sensor version 7.33 and earlier:** We do not recommend enabling the **Uninstall and maintenance protection** policy setting for DaemonSet deployments. This setting can cause operational issues that require manual intervention.
+- **Falcon Node sensor for Linux with sensors version 7.34 and later:** DaemonSet deployments do not support the **Uninstall and maintenance protection** policy setting and automatically ignores it.
+- **Falcon Container sensor for Linux:** Deployed as a sidecar container within application pods. This sensor does not support the **Uninstall and maintenance protection** policy setting and automatically ignores it.
+
 ## Prerequisites
 ### Minimum Requirements
 - Helm 3.x

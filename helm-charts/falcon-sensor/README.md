@@ -75,6 +75,12 @@ To ensure a successful deployment, you will want to ensure that:
 1. The Falcon Linux Sensor will create `/opt/CrowdStrike` on the Kubernetes nodes. DO NOT DELETE this folder.
 1. CrowdStrike's Helm Chart is a project, not a product, and released to the community as a way to automate sensor deployment to kubernetes clusters. The upstream repository for this project is [https://github.com/CrowdStrike/falcon-helm](https://github.com/CrowdStrike/falcon-helm).
 
+### Sensor uninstall and maintenance protection
+Important notes for Kubernetes and other container deployments of the Falcon sensor.
+- **Falcon Node sensor for Linux with sensor version 7.33 and earlier:** We do not recommend enabling the **Uninstall and maintenance protection** policy setting for DaemonSet deployments. This setting can cause operational issues that require manual intervention.
+- **Falcon Node sensor for Linux with sensors version 7.34 and later:** DaemonSet deployments do not support the **Uninstall and maintenance protection** policy setting and automatically ignores it.
+- **Falcon Container sensor for Linux:** Deployed as a sidecar container within application pods. This sensor does not support the **Uninstall and maintenance protection** policy setting and automatically ignores it.
+
 ### Pod Security Standards
 
 Starting with Kubernetes 1.25, Pod Security Standards will be enforced. Setting the appropriate Pod Security Standards policy needs to be performed by adding a label to the namespace. Run the following command replacing `my-existing-namespace` with the namespace that you have installed the falcon sensors e.g. `falcon-system`..
@@ -356,6 +362,14 @@ helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
 ```
 
 ### Uninstall Helm Chart
+
+> [!NOTE]
+> DaemonSet deployments of sensor versions 7.33 and earlier of the Falcon sensor for Linux are blocked from updates and
+> uninstallation if their sensor update policy has the **Uninstall and maintenance protection** setting enabled. Before
+> upgrading or uninstalling these versions of the sensor, move the sensors to a new sensor update policy with this
+> policy setting turned off. For more info, see [Sensor update and uninstallation for DaemonSet sensor versions 7.33
+> and lower](https://falcon.crowdstrike.com/documentation/anchor/sc632f2e).
+
 To uninstall, run the following command:
 ```
 helm uninstall falcon-helm

@@ -305,6 +305,12 @@
                 "enabled"
             ],
             "properties": {
+                "extraVolumeMounts": {
+                  "type": "array"
+                },
+                "extraVolumes": {
+                  "type": "array"
+                },
                 "tolerations": {
                     "type": "array"
                 },
@@ -507,6 +513,10 @@
                             "iam.gke.io/gcp-service-account": "my-service-account@my-project.iam.gserviceaccount.com"
                         }
                     ]
+                },
+                "automountServiceAccountToken": {
+                  "type": "boolean",
+                  "default": "false"
                 }
             }
         },

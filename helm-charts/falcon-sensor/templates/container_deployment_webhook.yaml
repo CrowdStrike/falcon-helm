@@ -143,8 +143,10 @@ spec:
         command: ["injector"]
         securityContext:
           allowPrivilegeEscalation: false
+          {{- if (include "falcon-sensor.openshiftEnabled" . | eq "false") }}
           runAsUser: 1234
           runAsGroup: 1234
+          {{- end }}
         envFrom:
         - configMapRef:
             name: {{ include "falcon-sensor.configMapName" . }}

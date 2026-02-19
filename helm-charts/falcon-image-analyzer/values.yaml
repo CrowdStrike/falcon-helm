@@ -16,7 +16,7 @@ watcher:
 # Do not override anywhere in values - Always 1 for Deployment. NA for daemonset
 replicaCount: 1
 image:
-  repository: registry.crowdstrike.com/falcon-imageanalyzer/us-1/release/falcon-imageanalyzer
+  repository: registry.crowdstrike.com/falcon-imageanalyzer/release/falcon-imageanalyzer
   # Overrides the image tag. In general, tags should not be used (including semver tags or `latest`). This variable is provided for those
   # who have yet to move off of using tags. The sha256 digest should be used in place of tags for increased security and image immutability.
   tag:
@@ -60,6 +60,9 @@ securityContext: {}
 
 nodeSelector: {}
 
+
+# Memory Request 2Gi and Limit 6Gi
+# CPU Request 500m and Limit 1000m
 resources: {}
 
 tolerations: []
@@ -181,6 +184,7 @@ iarAgentService:
 
 kac:
   namespace : "falcon-kac"
+
 
 crowdstrikeConfig:
   # optional. if not provided agent will try to auto-discover

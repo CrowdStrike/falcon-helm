@@ -390,6 +390,11 @@
                     "minimum": 1024,
                     "maximum": 32767
                 },
+                "reinvocationPolicy": {
+                    "type": "string",
+                    "default": "Never",
+                    "pattern": "^(Never|IfNeeded)$"
+                },                
                 "disableNSInjection": {
                     "type": "boolean",
                     "default": "false"

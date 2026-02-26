@@ -152,6 +152,17 @@ questions:
     label: Update the webhook on upgrade
     group: "Falcon Container settings"
 
+  - variable: container.reinvocationPolicy
+    description: "Container injector webhook reinvocation policy. Options are [Never|IfNeeded]."
+    required: false
+    type: enum
+    options:
+      - Never
+      - IfNeeded
+    default: Never
+    label: Webhook reinvocation policy
+    group: "Falcon Container settings"
+
   - variable: container.azure.enabled
     description: "Enable for AKS without the pulltoken option"
     required: false

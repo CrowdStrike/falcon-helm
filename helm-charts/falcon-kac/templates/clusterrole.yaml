@@ -14,7 +14,6 @@ rules:
   - replicationcontrollers
   - secrets
   - services
-  - secrets
   - configmaps
   - serviceaccounts
   verbs:

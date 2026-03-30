@@ -27,6 +27,7 @@ more.
     - [Registry Exclusion](#registry)
     - [Namespace Exclusion](#namespace)
     - [Pod Exclusions](#pod-exclusions-via-podspec)
+  - [GKE Autopilot Volume Settings](#gke-autopilot-volume-settings)
 - [Uninstalling IAR](#uninstall-helm-chart)
 
 
@@ -558,7 +559,7 @@ spec:
       .....
 ```
 
-### GKE Autopilot / Volume Settings 
+### GKE Autopilot Volume Settings
 For GKE Autopilot the warden restricts the allocation of emptyDir to max of `10Gi`. The required min for IAR is `20Gi`.
 If the customer is using GKE Autopilot and the `10Gi` is not enough for the IAR to run, the option is to Create a PVC ( `PersistentVolumeClaim`) or use one if already created,  by running the steps below.
 

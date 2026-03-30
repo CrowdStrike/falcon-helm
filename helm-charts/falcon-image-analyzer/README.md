@@ -94,7 +94,7 @@ The following tables list the Falcon sensor configurable parameters and their de
 | `image.registryConfigJSON`        optional                                                                                                         | iar private registry secret in docker config format                                                                                                            | None                                                                                                       |
 | `azure.enabled`         optional                                                                                                                   | Set to `true` if cluster is Azure AKS or self-managed on Azure nodes.                                                                                          | false                                                                                                      |
 | `azure.azureConfig`          optional                                                                                                              | Azure  config file path                                                                                                                                        | `/etc/kubernetes/azure.json`                                                                               |
-| `gcp.enabled`                  optional                                                                                                            | Set to `true` if cluster is Gogle GKE or self-managed on Google Cloud GCP nodes.                                                                               | false                                                                                                      |
+| `gcp.enabled`                  optional                                                                                                            | Set to `true` if cluster is Google GKE or self-managed on Google Cloud GCP nodes.                                                                              | false                                                                                                      |
 | `exclusions.namespace`                  optional   ( available in falcon-imageanalyzer >= 1.0.8 and Helm Chart v >= 1.1.3)                         | Set the value as a comma separate list of namespaces to be excluded. all pods in that namespace(s) will be excluded                                            | ""                                                                                                         |
 | `exclusions.registry`                  optional   ( available in falcon-imageanalyzer >= 1.0.8 and Helm Chart v >= 1.1.3)                          | Set the value as a comma separate list of registries to be excluded. all images in that registry(s) will be excluded                                           | ""                                                                                                         |
 | `exclusions.imageName`                  optional   ( available in falcon-imageanalyzer >= 1.0.23 and Helm Chart v >= 1.1.19)                       | Set the value as a comma separate list of fully qualified image names.                                                                                         | ""                                                                                                         |
@@ -556,6 +556,60 @@ spec:
     spec:
       containers:
       .....
+```
+
+### GKE Autopilot / Volume Settings 
+For GKE Autopilot the warden restricts the allocation of emptyDir to max of `10Gi`. The required min for IAR is `20Gi`.
+If the customer is using GKE Autopilot and the `10Gi` is not enough for the IAR to run, the option is to Create a PVC ( `PersistentVolumeClaim`) or use one if already created,  by running the steps below.
+
+1. **Create PVC Manually** .
+Using the below spec as sample create the PVC by running the `kubectl create -f /path/to/below/spec`
+```
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: autopilot-pvc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: premium-rwo # Use 'standard-rwo' for HDD
+  resources:
+    requests:
+      storage: 20Gi
+```
+
+**SKIP the above step if there is already a PVC Created**.
+
+2. **Use the PVC Volume** .
+Once the PVC is created, use the pvc in the `values.yaml` of the iar helm .
+In the `values.yaml` of the iar helm, replace the below section
+```
+# 1 REPLACE THIS
+volumes:
+  - name: tmp-volume
+    emptyDir:
+      sizeLimit: 20Gi
+
+# 2 REPLACE THIS
+ volumeMounts:
+  - mountPath: /tmp
+    name: tmp-volume
+```
+
+**WITH**
+
+```
+# 1 NEW PVC VOLUME
+volumes:
+  - name: new-pvc-volume
+    persistentVolumeClaim:
+      claimName: autopilot-pvc
+
+# 2 NEW PVC VOLUME MOUNT
+volumeMounts:
+  - mountPath: /tmp
+    name: new-pvc-volume
+
 ```
 
 ## Uninstall Helm chart

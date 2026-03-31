@@ -253,6 +253,7 @@ webhooks:
       - v1beta1
     {{- end }}
     sideEffects: None
+    reinvocationPolicy: {{ .Values.container.reinvocationPolicy | default "Never" }}
     namespaceSelector:
       matchExpressions:
       - key: {{ .Values.container.namespaceLabelKey }}

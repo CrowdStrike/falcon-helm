@@ -166,6 +166,9 @@ container:
   # Configure the Injector Port
   injectorPort: 4433
 
+  # Reinvocation policy for the mutating webhook (Never or IfNeeded)
+  reinvocationPolicy: Never  
+
   # https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
   # Allow setting additional node selections e.g. processor type
   # nodeAffinity:

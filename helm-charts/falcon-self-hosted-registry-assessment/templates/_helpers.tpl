@@ -59,6 +59,8 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- if .Values.executor.labels }}
 {{ .Values.executor.labels }}
 {{- end }}
+crowdstrike.com/provider: crowdstrike
+crowdstrike.com/name: ra-self-hosted-executor
 {{- end }}
 
 {{- define "ra-self-hosted-job-controller.labels" -}}
@@ -71,6 +73,8 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- if .Values.jobController.labels }}
 {{ .Values.jobController.labels }}
 {{- end }}
+crowdstrike.com/provider: crowdstrike
+crowdstrike.com/name: ra-self-hosted-job-controller
 {{- end }}
 
 {{- define "ra-self-hosted.labels" -}}
@@ -83,6 +87,8 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- if .Values.jobController.labels }}
 {{ .Values.jobController.labels }}
 {{- end }}
+crowdstrike.com/provider: crowdstrike
+crowdstrike.com/name: ra-self-hosted
 {{- end }}
 
 {{/*

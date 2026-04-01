@@ -300,7 +300,7 @@ spec:
           name: crowdstrike-falcon-vol2
       nodeSelector:
         kubernetes.io/os: linux
-      priorityClassName: system-cluster-critical
+      priorityClassName: {{ .Values.priorityClassName }}
       securityContext:
         seccompProfile:
           type: RuntimeDefault

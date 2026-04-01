@@ -13,4 +13,4 @@ spec:
     - operator: In
       scopeName: PriorityClass
       values:
-      - system-cluster-critical
+      - {{ .Values.priorityClassName }}

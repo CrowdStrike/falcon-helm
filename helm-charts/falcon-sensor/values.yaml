@@ -17,6 +17,9 @@ node:
     # deployAllowListVersion: ""
     # cleanupAllowListVersion: ""
 
+  openshift:
+    enabled: false
+
   daemonset:
     # Annotations to apply to the daemonset
     annotations: {}

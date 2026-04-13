@@ -236,3 +236,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- .Values.tls.existingSecret -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "ra-self-hosted.postgresql.fullname" -}}
+{{- printf "%s-%s" .Release.Name "postgresql" | trunc 63 | trimSuffix "-" -}}
+{{- end -}}

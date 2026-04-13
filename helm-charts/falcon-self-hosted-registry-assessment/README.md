@@ -25,6 +25,7 @@ These costs may or may not be offset by the savings for data egress costs incurr
   - [Configure your scanning schedules](#configure-your-scanning-schedules)
   - [Optional. Configure which repositories to scan](#optional-configure-which-repositories-to-scan)
   - [Configure persistent data storage](#configure-persistent-data-storage)
+  - [Optional. Configure the executor database engine](#optional-configure-the-executor-database-engine)
   - [Configure temporary storage](#configure-temporary-storage)
   - [Configure SHRA scaling](#configure-shra-scaling-to-meet-your-scanning-needs)
   - [Allow traffic to CrowdStrike servers](#allow-traffic-to-crowdstrike-servers)
@@ -115,7 +116,7 @@ The Falcon Self-hosted Registry Scanner Helm Chart has been tested to deploy on 
 * A x86_64 (AMD64) Kubernetes cluster.
 * [Helm](https://helm.sh/) 3.x is installed and supported by the Kubernetes provider.
 * A 1+ GiB persistent volume for a job controller SQLite database. 
-* A 1+ GiB persistent volume used by the executor for a registry assessment cache.
+* A 1+ GiB persistent volume used by the executor for a registry assessment cache (SQLite only; not required when using PostgreSQL — see [Configure the executor database engine](#optional-configure-the-executor-database-engine)).
 * A working volume to store and expand images for assessment.
 * Networking sufficient to communicate with CrowdStrike cloud services and your image registries.
 * Optional. [Cert Manager - Helm](https://cert-manager.io/docs/installation/helm/) if you wish to use TLS between the containers in this Chart. See [TLS Configuration](#optional-configure-grpc-over-tls).
@@ -251,7 +252,7 @@ crowdstrikeConfig:
 |:------------------------------------|-----------|:------------------------------------------------------------------------------------------------------|:----------|
 | `crowdstrikeConfig.clientID`        | required  | The client ID used to authenticate the self-hosted registry assessment service with CrowdStrike.      | ""        |
 | `crowdstrikeConfig.clientSecret`    | required  | The client secret used to authenticate the self-hosted registry assessment service with CrowdStrike.  | ""        |
-| `crowdstrikeConfig.clientSecretRef` | optional  | Reference to a secret which contains `CLIENT_ID` and `CLIENT_SECRET` data.  | ""
+| `crowdstrikeConfig.clientSecretRef` | optional  | Refernce to a secret which contains `clientID` (`CLIENT_ID`) and `clientSecret` (`CLIENT_SECRET`).  | ""
 
 
 #### Option 2. Configure your CrowdStrike credentials using Kubernetes secrets or configmaps
@@ -1278,6 +1279,129 @@ Add and adjust the following lines in your `values_override.yaml` file to config
 | `jobController.dbStorage.accessModes`        |         | Array of access modes for the job controller's database claim.                                                                                            | "- ReadWriteOnce"    |
 | `jobController.dbStorage.storageClass`       |required | Storage class to use when creating a persistent volume claim for the job controller database. Examples include "ebs-sc" in AKS and "standard" in GKE.     | ""                   |
 
+### Optional. Configure the executor database engine
+
+By default, the executor uses **SQLite** for its registry assessment cache. SQLite is sufficient for single-replica deployments and requires no extra configuration.
+
+For **multi-replica** or **shared-storage** deployments, we recommend **PostgreSQL**. PostgreSQL allows multiple executor pods to share a single database over the network, eliminating concurrency and shared-filesystem limitations.
+
+You have 3 options:
+
+#### Option 1: SQLite (Default)
+
+No extra configuration is needed. The executor automatically creates a SQLite database in its persistent volume.
+
+```yaml
+# SQLite is the default — these lines are optional
+executor:
+  storageEngine: "sqlite"
+```
+
+> [!NOTE]
+> SQLite supports only single-process access. It is **not suitable** for multi-replica deployments where executor pods share a `ReadWriteMany` PVC for the database. If you need multiple executor replicas, use PostgreSQL instead.
+
+#### Option 2: Bundled PostgreSQL
+
+Deploy a Bitnami PostgreSQL instance within your cluster, managed by this Helm chart. Set `postgresql.enabled` to `true` and configure authentication details.
+
+```yaml
+executor:
+  storageEngine: "postgres"
+
+postgresql:
+  enabled: true
+  auth:
+    username: rauser
+    password: "your-secure-password-here"
+    database: registry_assessment
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 1
+        memory: 1Gi
+```
+
+> [!TIP]
+> The bundled PostgreSQL is a good choice when your environment does not already have PostgreSQL infrastructure. The subchart handles deployment, persistence, and service creation automatically.
+
+#### Option 3: External PostgreSQL
+
+Connect to an existing PostgreSQL instance. Set `postgresql.enabled` to `false` and provide connection details through the `externalPostgresql` block.
+
+**Provide credentials directly:**
+
+```yaml
+executor:
+  storageEngine: "postgres"
+
+postgresql:
+  enabled: false
+
+externalPostgresql:
+  host: "postgres.example.com"
+  port: 5432
+  database: "registry_assessment"
+  username: "rauser"
+  password: "your-secure-password"
+  sslmode: "require"
+```
+
+**Or reference an existing Kubernetes secret:**
+
+```yaml
+executor:
+  storageEngine: "postgres"
+
+postgresql:
+  enabled: false
+
+externalPostgresql:
+  existingSecret: "postgres-credentials"
+  existingSecretKeys:
+    host: "host"
+    port: "port"
+    database: "database"
+    username: "username"
+    password: "password"
+```
+
+The secret must contain keys matching the names specified in `existingSecretKeys`.
+
+> [!IMPORTANT]
+> When using `existingSecret`, the `password`, `host`, `port`, `database`, and `username` fields in `externalPostgresql` are ignored in favor of the secret values.
+
+#### Database engine parameters
+
+| Parameter                                    |         | Description                                                                                                                                           | Default                |
+|:---------------------------------------------|:--------|:------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------|
+| `executor.storageEngine`                     |         | Database backend for the executor. One of `sqlite` or `postgres`.                                                                                     | `"sqlite"`             |
+| `storageEngine`                              |         | Global database backend setting. `executor.storageEngine` takes precedence if set.                                                                    | `"sqlite"`             |
+| `postgresql.enabled`                  |         | Deploy a Bitnami PostgreSQL subchart within the cluster.                                                                                              | `false`                |
+| `postgresql.auth.username`            |         | Username for the bundled PostgreSQL instance.                                                                                                         | `"rauser"`             |
+| `postgresql.auth.password`            |         | Password for the bundled PostgreSQL instance.                                                                                                         | `""`                   |
+| `postgresql.auth.database`            |         | Database name for the bundled PostgreSQL instance.                                                                                                    | `"registry_assessment"`|
+| `externalPostgresql.host`                    |         | Hostname of the external PostgreSQL server.                                                                                                           | `""`                   |
+| `externalPostgresql.port`                    |         | Port of the external PostgreSQL server.                                                                                                               | `5432`                 |
+| `externalPostgresql.database`                |         | Database name on the external PostgreSQL server.                                                                                                      | `"registry_assessment"`|
+| `externalPostgresql.username`                |         | Username for the external PostgreSQL server.                                                                                                          | `"rauser"`             |
+| `externalPostgresql.password`                |         | Password for the external PostgreSQL server.                                                                                                          | `""`                   |
+| `externalPostgresql.sslmode`                 |         | SSL mode for the external PostgreSQL connection. One of `disable`, `require`, `verify-ca`, `verify-full`.                                             | `"disable"`            |
+| `externalPostgresql.existingSecret`          |         | Name of an existing Kubernetes secret containing PostgreSQL credentials. Takes precedence over individual fields.                                      | `""`                   |
+| `externalPostgresql.existingSecretKeys.host` |         | Key in the existing secret for the PostgreSQL host.                                                                                                   | `"host"`               |
+| `externalPostgresql.existingSecretKeys.port` |         | Key in the existing secret for the PostgreSQL port.                                                                                                   | `"port"`               |
+| `externalPostgresql.existingSecretKeys.database` |     | Key in the existing secret for the database name.                                                                                                     | `"database"`           |
+| `externalPostgresql.existingSecretKeys.username` |     | Key in the existing secret for the PostgreSQL username.                                                                                                | `"username"`           |
+| `externalPostgresql.existingSecretKeys.password` |     | Key in the existing secret for the PostgreSQL password.                                                                                                | `"password"`           |
+
+> [!NOTE]
+> The job controller does not use PostgreSQL. It uses SQLite or in-memory storage only. The `storageEngine` and `executor.storageEngine` settings apply to the executor database.
+
 #### Storage driver considerations when sharing a PVC for the Executor Database
 
 The primary focus of the Executor Database is to act as a local cache.
@@ -1290,7 +1414,10 @@ By default, the `executor.dbStorage.accessModes` field is set to `ReadWriteOnce`
 To share an executor database across your executor pods:
 
 1. Confirm that your storageClass supports the `ReadWriteMany` mode.
-2. Set  `executor.dbStorage.accessModes` to `ReadWriteMany`. 
+2. Set  `executor.dbStorage.accessModes` to `ReadWriteMany`.
+
+> [!NOTE]
+> These shared-PVC considerations apply only when using **SQLite** as the executor database engine. When using **PostgreSQL**, executor pods connect to the database over the network, so `ReadWriteMany` access is not required for the database PVC. See [Configure the executor database engine](#optional-configure-the-executor-database-engine).
 
 #### Change persistent storage retention
 
@@ -1863,6 +1990,10 @@ Job Controller Database:
 kubectl -n <namespace-where-shra-is-installed> cp <pod-name>:/db/jobcontroller.db <local path where you want to copy the file to>
 ```
 The databases use the SQLite format. Once you're retrieved the files, use a tool with SQLite support to view them.
+
+> [!NOTE]
+> The `kubectl cp` instructions above apply to **SQLite** deployments. If you are using **PostgreSQL** as the executor database engine, use standard PostgreSQL client tools (`psql`, `pg_dump`) to inspect or export the database instead.
+
 Each record in the database has an accompanying status value from 0 to 6:
 
 * **0 - Ready:** the job is ready to be started again after a cancellation.
@@ -1979,3 +2110,16 @@ The Chart's `values.yaml` file includes more comments and descriptions in-line f
 | `proxyConfig.HTTP_PROXY`                                                       |                                           | Proxy URL for HTTP requests unless overridden by NO_PROXY.                                                                                                                                                                                                                                                                                                                                                                                                | ""                                  |
 | `proxyConfig.HTTPS_PROXY`                                                      |                                           | Proxy URL for HTTPS requests unless overridden by NO_PROXY.                                                                                                                                                                                                                                                                                                                                                                                               | ""                                  |
 | `proxyConfig.NO_PROXY`                                                         |                                           | Hosts to exclude from proxying. Provide as a string of comma-separated values.                                                                                                                                                                                                                                                                                                                                                                            | ""                                  |
+| `storageEngine`                                                                |                                           | Global database backend for the executor. One of `sqlite` or `postgres`. Can be overridden by `executor.storageEngine`.                                                                                                                                                                                                                                                                                                                                   | "sqlite"                            |
+| `executor.storageEngine`                                                       |                                           | Database backend for the executor. One of `sqlite` or `postgres`. Takes precedence over `storageEngine`.                                                                                                                                                                                                                                                                                                                                                  | "sqlite"                            |
+| `postgresql.enabled`                                                    |                                           | Deploy a Bitnami PostgreSQL subchart within the cluster. Set to `true` to use the bundled PostgreSQL deployment.                                                                                                                                                                                                                                                                                                                                          | false                               |
+| `postgresql.auth.username`                                              |                                           | Username for the bundled PostgreSQL instance.                                                                                                                                                                                                                                                                                                                                                                                                             | "rauser"                            |
+| `postgresql.auth.password`                                              |                                           | Password for the bundled PostgreSQL instance. Required when `postgresql.enabled` is `true`.                                                                                                                                                                                                                                                                                                                                                        | ""                                  |
+| `postgresql.auth.database`                                              |                                           | Database name for the bundled PostgreSQL instance.                                                                                                                                                                                                                                                                                                                                                                                                        | "registry_assessment"               |
+| `externalPostgresql.host`                                                      |                                           | Hostname of the external PostgreSQL server. Used when `postgresql.enabled` is `false` and `storageEngine` is `postgres`.                                                                                                                                                                                                                                                                                                                           | ""                                  |
+| `externalPostgresql.port`                                                      |                                           | Port of the external PostgreSQL server.                                                                                                                                                                                                                                                                                                                                                                                                                   | 5432                                |
+| `externalPostgresql.database`                                                  |                                           | Database name on the external PostgreSQL server.                                                                                                                                                                                                                                                                                                                                                                                                          | "registry_assessment"               |
+| `externalPostgresql.username`                                                  |                                           | Username for the external PostgreSQL server.                                                                                                                                                                                                                                                                                                                                                                                                              | "rauser"                            |
+| `externalPostgresql.password`                                                  |                                           | Password for the external PostgreSQL server. Ignored if `externalPostgresql.existingSecret` is set.                                                                                                                                                                                                                                                                                                                                                       | ""                                  |
+| `externalPostgresql.sslmode`                                                   |                                           | SSL mode for the external PostgreSQL connection. One of `disable`, `require`, `verify-ca`, `verify-full`.                                                                                                                                                                                                                                                                                                                                                 | "disable"                           |
+| `externalPostgresql.existingSecret`                                            |                                           | Name of an existing Kubernetes secret containing PostgreSQL credentials. Takes precedence over individual `externalPostgresql` fields.                                                                                                                                                                                                                                                                                                                    | ""                                  |

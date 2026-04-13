@@ -59,7 +59,70 @@ spec:
             {{- end }}
             {{- end }}
             - name: "STORAGE_ENGINE"
-              value: "sqlite"
+              value: {{ .Values.executor.storageEngine | default .Values.storageEngine | quote }}
+            {{- if eq (.Values.executor.storageEngine | default .Values.storageEngine) "postgres" }}
+            {{- if .Values.postgresql.enabled }}
+            - name: "POSTGRES_HOST"
+              value: {{ include "ra-self-hosted.postgresql.fullname" . }}
+            - name: "POSTGRES_PORT"
+              value: {{ .Values.postgresql.primary.service.ports.postgresql | default 5432 | quote }}
+            - name: "POSTGRES_DATABASE"
+              value: {{ .Values.postgresql.auth.database }}
+            - name: "POSTGRES_USERNAME"
+              value: {{ .Values.postgresql.auth.username }}
+            - name: "POSTGRES_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ra-self-hosted.postgresql.fullname" . }}
+                  key: password
+            - name: "POSTGRES_SSLMODE"
+              value: "disable"
+            {{- else }}
+            {{- if .Values.externalPostgresql.existingSecret }}
+            - name: "POSTGRES_HOST"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalPostgresql.existingSecret }}
+                  key: {{ .Values.externalPostgresql.existingSecretKeys.host }}
+            - name: "POSTGRES_PORT"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalPostgresql.existingSecret }}
+                  key: {{ .Values.externalPostgresql.existingSecretKeys.port }}
+            - name: "POSTGRES_DATABASE"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalPostgresql.existingSecret }}
+                  key: {{ .Values.externalPostgresql.existingSecretKeys.database }}
+            - name: "POSTGRES_USERNAME"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalPostgresql.existingSecret }}
+                  key: {{ .Values.externalPostgresql.existingSecretKeys.username }}
+            - name: "POSTGRES_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalPostgresql.existingSecret }}
+                  key: {{ .Values.externalPostgresql.existingSecretKeys.password }}
+            {{- else }}
+            - name: "POSTGRES_HOST"
+              value: {{ .Values.externalPostgresql.host | quote }}
+            - name: "POSTGRES_PORT"
+              value: {{ .Values.externalPostgresql.port | quote }}
+            - name: "POSTGRES_DATABASE"
+              value: {{ .Values.externalPostgresql.database | quote }}
+            - name: "POSTGRES_USERNAME"
+              value: {{ .Values.externalPostgresql.username | quote }}
+            - name: "POSTGRES_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ra-self-hosted-executor.fullname" . }}-external-postgres
+                  key: password
+            {{- end }}
+            - name: "POSTGRES_SSLMODE"
+              value: {{ .Values.externalPostgresql.sslmode | quote }}
+            {{- end }}
+            {{- end }}
             - name: "AGENT_RUN_MODE"
               value: "init"
             - name: "LOG_LEVEL"
@@ -130,7 +193,70 @@ spec:
             {{- end }}
             {{- end }}
             - name: "STORAGE_ENGINE"
-              value: "sqlite"
+              value: {{ .Values.executor.storageEngine | default .Values.storageEngine | quote }}
+            {{- if eq (.Values.executor.storageEngine | default .Values.storageEngine) "postgres" }}
+            {{- if .Values.postgresql.enabled }}
+            - name: "POSTGRES_HOST"
+              value: {{ include "ra-self-hosted.postgresql.fullname" . }}
+            - name: "POSTGRES_PORT"
+              value: {{ .Values.postgresql.primary.service.ports.postgresql | default 5432 | quote }}
+            - name: "POSTGRES_DATABASE"
+              value: {{ .Values.postgresql.auth.database }}
+            - name: "POSTGRES_USERNAME"
+              value: {{ .Values.postgresql.auth.username }}
+            - name: "POSTGRES_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ra-self-hosted.postgresql.fullname" . }}
+                  key: password
+            - name: "POSTGRES_SSLMODE"
+              value: "disable"
+            {{- else }}
+            {{- if .Values.externalPostgresql.existingSecret }}
+            - name: "POSTGRES_HOST"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalPostgresql.existingSecret }}
+                  key: {{ .Values.externalPostgresql.existingSecretKeys.host }}
+            - name: "POSTGRES_PORT"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalPostgresql.existingSecret }}
+                  key: {{ .Values.externalPostgresql.existingSecretKeys.port }}
+            - name: "POSTGRES_DATABASE"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalPostgresql.existingSecret }}
+                  key: {{ .Values.externalPostgresql.existingSecretKeys.database }}
+            - name: "POSTGRES_USERNAME"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalPostgresql.existingSecret }}
+                  key: {{ .Values.externalPostgresql.existingSecretKeys.username }}
+            - name: "POSTGRES_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalPostgresql.existingSecret }}
+                  key: {{ .Values.externalPostgresql.existingSecretKeys.password }}
+            {{- else }}
+            - name: "POSTGRES_HOST"
+              value: {{ .Values.externalPostgresql.host | quote }}
+            - name: "POSTGRES_PORT"
+              value: {{ .Values.externalPostgresql.port | quote }}
+            - name: "POSTGRES_DATABASE"
+              value: {{ .Values.externalPostgresql.database | quote }}
+            - name: "POSTGRES_USERNAME"
+              value: {{ .Values.externalPostgresql.username | quote }}
+            - name: "POSTGRES_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ra-self-hosted-executor.fullname" . }}-external-postgres
+                  key: password
+            {{- end }}
+            - name: "POSTGRES_SSLMODE"
+              value: {{ .Values.externalPostgresql.sslmode | quote }}
+            {{- end }}
+            {{- end }}
             - name: "LOG_LEVEL"
               value: {{ .Values.executor.logLevel | quote }}
             - name: "CATALOG_PER_PAGE_RATE"

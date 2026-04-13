@@ -43,7 +43,7 @@ spec:
             - name: "SQLITE_DBDIR"
               value: "/db"
             - name: "STORAGE_ENGINE"
-              value: "sqlite"
+              value: {{ .Values.jobController.storageEngine | default "sqlite" | quote }}
             - name: "LOG_LEVEL"
               value: {{ .Values.jobController.logLevel | quote }}
             {{- if .Values.tls.enable }}
@@ -96,7 +96,7 @@ spec:
             - name: "SQLITE_DBDIR"
               value: "/db"
             - name: "STORAGE_ENGINE"
-              value: "sqlite"
+              value: {{ .Values.jobController.storageEngine | default "sqlite" | quote }}
             - name: "AGENT_HELM_VERSION"
               value: {{ .Chart.Version | quote }}
             - name: "LOG_LEVEL"

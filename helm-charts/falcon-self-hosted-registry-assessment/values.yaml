@@ -26,13 +26,14 @@ securityContext:
 
 executor:
   replicaCount: 1
+  storageEngine: "sqlite"  # sqlite or postgres
   image:
     registry:
     repository: "registryassessmentexecutor"
     # Overrides the image tag. In general, tags should not be used (including semver tags or `latest`).
     # This variable is provided for those who have yet to move off of using tags. The sha256 digest
     # should be used in place of tags for increased security and image immutability.
-    tag: "1.6.0"
+    tag: "1.7.0"
     # Setting a digest will override any tag and should be used instead of tags.
     #
     # Example digest variable configuration:
@@ -67,7 +68,7 @@ executor:
       accessModes:
         - ReadWriteOnce
 
-  # Use to override the global podSecurityContext        
+  # Use to override the global podSecurityContext
   # podSecurityContext:
   #   runAsUser: 1001
   #   runAsGroup: 2001
@@ -137,12 +138,13 @@ executor:
 #      optional: false
 
 jobController:
+  storageEngine: "sqlite"  # sqlite or memory
   image:
     registry:
     repository: "jobcontroller"
     # Overrides the image tag. In general, tags should not be used (including semver tags or `latest`). This variable is provided for those
     # who have yet to move off of using tags. The sha256 digest should be used in place of tags for increased security and image immutability.
-    tag: "1.6.0"
+    tag: "1.7.0"
     # Setting a digest will override any tag and should be used instead of tags.
     #
     # Example digest variable configuration:
@@ -211,7 +213,7 @@ jobController:
 
   additionalSecretEnvFrom: []
 
-  # Use to override the global podSecurityContext        
+  # Use to override the global podSecurityContext
   # podSecurityContext:
   #   runAsUser: 1001
   #   runAsGroup: 2001
@@ -219,7 +221,7 @@ jobController:
   #   runAsNonRoot: true
   #   seccompProfile:
   #     type: RuntimeDefault
-  
+
   # Use to override the global securityContext
   # securityContext:
   #   runAsUser: 1001
@@ -273,3 +275,63 @@ proxyConfig:
   HTTP_PROXY: ""
   HTTPS_PROXY: ""
   NO_PROXY: ""
+
+# Bundled PostgreSQL configuration (Bitnami subchart)
+# Deploys a PostgreSQL instance managed by this Helm chart
+# Set enabled=true to use the bundled PostgreSQL deployment
+postgresql:
+  enabled: false
+  auth:
+    username: rauser
+    password: ""
+    database: registry_assessment
+  primary:
+    service:
+      ports:
+        postgresql: 5432
+    persistence:
+      enabled: true
+      size: 8Gi
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 1
+        memory: 1Gi
+  readReplicas:
+    replicaCount: 0
+
+# External PostgreSQL configuration
+# Used when postgresql.enabled=false and executor.storageEngine=postgres
+# Connect to a customer-provided or separately deployed PostgreSQL instance
+externalPostgresql:
+  # Host of the external PostgreSQL server
+  host: ""
+  # Port of the external PostgreSQL server (default: 5432)
+  port: 5432
+  # Database name
+  database: "registry_assessment"
+  # PostgreSQL username
+  username: "rauser"
+  # PostgreSQL password - can be provided directly or via existingSecret
+  password: ""
+  # SSL mode for PostgreSQL connection (disable, require, verify-ca, verify-full)
+  sslmode: "disable"
+  # Name of an existing secret containing PostgreSQL credentials
+  # If provided, this takes precedence over password field
+  # Secret should contain keys: username, password, host, port, database
+  existingSecret: ""
+  # Key names in the existing secret (only used if existingSecret is set)
+  existingSecretKeys:
+    username: "username"
+    password: "password"
+    host: "host"
+    port: "port"
+    database: "database"
+
+# Storage engine configuration
+# executor.storageEngine: Database backend for executor (sqlite or postgres)
+# jobController.storageEngine: Database backend for job-controller (sqlite or memory)
+storageEngine: "sqlite"
+

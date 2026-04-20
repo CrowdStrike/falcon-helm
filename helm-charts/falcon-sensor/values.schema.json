@@ -66,6 +66,15 @@
                         }
                     }
                 },
+                "openshift": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": "false"
+                        }
+                    }
+                },
                 "daemonset": {
                     "type": "object",
                     "required": [

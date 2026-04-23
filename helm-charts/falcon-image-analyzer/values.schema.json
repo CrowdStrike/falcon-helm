@@ -98,6 +98,11 @@
             "type": "object",
             "default": {}
         },
+        "podLabels": {
+            "type": "object",
+            "default": {},
+            "description": "Additional labels to add to pod metadata. Use to set azure.workload.identity/use: 'true' when using Azure Key Vault."
+        },
         "podSecurityContext": {
             "type": "object",
             "default": {}
@@ -129,6 +134,42 @@
         },
         "volumes": {
             "type": "array"
+        },
+        "azure": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Mount azure.json from the node for AKS image pull authentication"
+                },
+                "azureConfig": {
+                    "type": "string",
+                    "default": "/etc/kubernetes/azure.json"
+                },
+                "keyVault": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": false,
+                            "description": "Enable Azure Key Vault provider for Secrets Store CSI Driver"
+                        },
+                        "vaultName": {
+                            "type": "string",
+                            "description": "Azure Key Vault name"
+                        },
+                        "tenantID": {
+                            "type": "string",
+                            "description": "Azure tenant ID"
+                        },
+                        "clientID": {
+                            "type": "string",
+                            "description": "Azure Workload Identity client ID (optional, overrides pod-level identity)"
+                        }
+                    }
+                }
+            }
         },
         "crowdstrikeConfig": {
             "type": "object",
@@ -177,7 +218,6 @@
                         "string"
                     ],
                     "description": "CrowdStrike CID",
-                    "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$",
                     "example": [
                         "1234567890ABCDEF1234567890ABCDEF-12"
                     ]
@@ -233,6 +273,20 @@
                                 "string"
                             ],
                             "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$"
+                        }
+                    }
+                },
+                "azure": {
+                    "type": "object",
+                    "properties": {
+                        "keyVault": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": { "type": "boolean" },
+                                "vaultName": { "type": "string" },
+                                "tenantID": { "type": "string" },
+                                "clientID": { "type": "string" }
+                            }
                         }
                     }
                 }
@@ -317,6 +371,28 @@
                                         "const": null
                                     }
                                 }
+                            },
+                            "azure": {
+                                "properties": {
+                                    "keyVault": {
+                                        "properties": {
+                                            "enabled": {
+                                                "const": false
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "azure": {
+                        "properties": {
+                            "keyVault": {
+                                "properties": {
+                                    "enabled": {
+                                        "const": false
+                                    }
+                                }
                             }
                         }
                     }
@@ -341,10 +417,75 @@
                 "properties": {
                     "global": {
                         "properties": {
+                            "azure": {
+                                "properties": {
+                                    "keyVault": {
+                                        "properties": {
+                                            "enabled": {
+                                                "const": false
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "azure": {
+                        "properties": {
+                            "keyVault": {
+                                "properties": {
+                                    "enabled": {
+                                        "const": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "crowdstrikeConfig": {
+                        "properties": {
+                            "cid": {
+                                "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "global": {
+                        "properties": {
                             "falconSecret": {
                                 "properties": {
                                     "secretName": {
                                         "const": ""
+                                    }
+                                }
+                            },
+                            "azure": {
+                                "properties": {
+                                    "keyVault": {
+                                        "properties": {
+                                            "enabled": {
+                                                "const": false
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "azure": {
+                        "properties": {
+                            "keyVault": {
+                                "properties": {
+                                    "enabled": {
+                                        "const": false
                                     }
                                 }
                             }

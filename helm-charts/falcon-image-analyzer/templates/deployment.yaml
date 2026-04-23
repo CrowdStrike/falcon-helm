@@ -56,7 +56,8 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
       labels:
-    {{- include "falcon-image-analyzer.labels" . | nindent 8 }}
+        {{- /* podLabels includes all standard chart labels plus optional user-supplied podLabels values */ -}}
+    {{- include "falcon-image-analyzer.podLabels" . | nindent 8 }}
     spec:
       {{- if or $imagePullSecret $registryConfigJson (.Values.crowdstrikeConfig.dockerAPIToken) }}
       imagePullSecrets:
@@ -153,6 +154,11 @@ spec:
             - name: azure-config
               mountPath: /etc/kubernetes/azure.json
           {{- end }}
+          {{- if .Values.azure.keyVault.enabled }}
+            - name: akv-secrets
+              mountPath: /mnt/secrets-store
+              readOnly: true
+          {{- end }}
             - mountPath: /run/secrets/tls
               name: {{ include "falcon-image-analyzer.name" . }}-tls-certs
               readOnly: true
@@ -167,6 +173,14 @@ spec:
           hostPath:
             path: {{ .Values.azure.azureConfig }}
             type: File
+        {{- end }}
+        {{- if .Values.azure.keyVault.enabled }}
+        - name: akv-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ include "falcon-image-analyzer.fullname" . }}-akv
         {{- end }}
         - name: {{ include "falcon-image-analyzer.name" . }}-tls-certs
           secret:

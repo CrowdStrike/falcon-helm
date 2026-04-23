@@ -95,6 +95,11 @@ The following tables list the Falcon sensor configurable parameters and their de
 | `image.registryConfigJSON`        optional                                                                                                         | iar private registry secret in docker config format                                                                                                            | None                                                                                                       |
 | `azure.enabled`         optional                                                                                                                   | Set to `true` if cluster is Azure AKS or self-managed on Azure nodes.                                                                                          | false                                                                                                      |
 | `azure.azureConfig`          optional                                                                                                              | Azure  config file path                                                                                                                                        | `/etc/kubernetes/azure.json`                                                                               |
+| `azure.keyVault.enabled`     optional                                                                                                              | Enable Azure Key Vault provider for Secrets Store CSI Driver. Mutually exclusive with `crowdstrikeConfig.clientID`/`clientSecret` and `crowdstrikeConfig.existingSecret`. See [Azure Key Vault Integration](#azure-key-vault-integration). | `false` |
+| `azure.keyVault.vaultName`   optional                                                                                                              | Azure Key Vault name                                                                                                                                           | None                                                                                                       |
+| `azure.keyVault.tenantID`    optional                                                                                                              | Azure Tenant ID                                                                                                                                                | None                                                                                                       |
+| `azure.keyVault.clientID`    optional                                                                                                              | Azure Workload Identity client ID. Only required if multiple managed identities are assigned to the node.                                                      | None                                                                                                       |
+| `podLabels`                  optional                                                                                                              | Additional labels to add to pod metadata. Use to set `azure.workload.identity/use: "true"` for Azure Workload Identity.                                       | `{}`                                                                                                       |
 | `gcp.enabled`                  optional                                                                                                            | Set to `true` if cluster is Google GKE or self-managed on Google Cloud GCP nodes.                                                                              | false                                                                                                      |
 | `exclusions.namespace`                  optional   ( available in falcon-imageanalyzer >= 1.0.8 and Helm Chart v >= 1.1.3)                         | Set the value as a comma separate list of namespaces to be excluded. all pods in that namespace(s) will be excluded                                            | ""                                                                                                         |
 | `exclusions.registry`                  optional   ( available in falcon-imageanalyzer >= 1.0.8 and Helm Chart v >= 1.1.3)                          | Set the value as a comma separate list of registries to be excluded. all images in that registry(s) will be excluded                                           | ""                                                                                                         |
@@ -108,7 +113,7 @@ The following tables list the Falcon sensor configurable parameters and their de
 | `crowdstrikeConfig.enableKlogs`   optional                                                                                                         | Set to `true` for kubernetes api log verbosity.                                                                                                                | false                                                                                                      |
 | `crowdstrikeConfig.clientID`    required                                                                                                           | CrowdStrike Falcon OAuth API Client ID                                                                                                                         | None                                                                                                       |
 | `crowdstrikeConfig.clientSecret`     required                                                                                                      | CrowdStrike Falcon OAuth API Client secret                                                                                                                     | None                                                                                                       |
-| `crowdstrikeConfig.cid`         required                                                                                                           | Customer ID (CID)                                                                                                                                              | None                                                                                                       |
+| `crowdstrikeConfig.cid`         required unless `azure.keyVault.enabled` is true and `falcon-cid` is stored in AKV                                | Customer ID (CID)                                                                                                                                              | None                                                                                                       |
 | `crowdstrikeConfig.dockerAPIToken`  optional                                                                                                       | Crowdstrike Artifactory Image Pull Token for pulling IAR image directly from  `[CROWDSTRIKE_IMAGE_REGISTRY] described below`                                   | None                                                                                                       |
 | `crowdstrikeConfig.existingSecret`      optional                                                                                                   | Existing secret ref name of the customer Kubernetes cluster                                                                                                    | None                                                                                                       |
 | `crowdstrikeConfig.agentRegion`      required                                                                                                      | Region of the CrowdStrike API to connect to value should be one of `us-1/us-2/eu-1/gov1/gov2`                                                                  | None                                                                                                       |
@@ -405,6 +410,57 @@ and a trust-relationship as
 ```
 
 Here `falcon-image-analyzer` is the namespace of IAR and `imageanalyzer-falcon-image-analyzer` is the name of the iar Service Account
+
+### Azure Key Vault Integration
+
+The chart supports sourcing `AGENT_CLIENT_ID` and `AGENT_CLIENT_SECRET` from [Azure Key Vault](https://azure.microsoft.com/en-us/products/key-vault) via the [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/) and the [Azure Key Vault provider](https://azure.github.io/secrets-store-csi-driver-provider-azure/). This avoids storing sensitive values in Helm values or Kubernetes Secrets directly.
+
+#### Prerequisites
+
+The following must be installed and configured on your AKS cluster before enabling this feature:
+
+- [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/getting-started/installation)
+- [Azure Key Vault Provider for Secrets Store CSI Driver](https://azure.github.io/secrets-store-csi-driver-provider-azure/docs/getting-started/installation/)
+- [Azure Workload Identity](https://azure.github.io/azure-workload-identity/docs/installation.html) webhook installed on the cluster
+- AKS cluster with OIDC issuer enabled (`az aks update --enable-oidc-issuer --name <cluster> --resource-group <rg>`)
+- A user-assigned managed identity with `Key Vault Secrets User` role on the vault
+- A federated credential binding the managed identity to the chart's ServiceAccount in the `falcon-image-analyzer` namespace
+
+#### Required secrets in Azure Key Vault
+
+Create the following secrets in your Azure Key Vault before enabling the integration:
+
+| Secret name             | Required | Value                                    |
+|:------------------------|:---------|:-----------------------------------------|
+| `falcon-client-id`      | Yes      | CrowdStrike Falcon OAuth API Client ID   |
+| `falcon-client-secret`  | Yes      | CrowdStrike Falcon OAuth API Client Secret |
+| `falcon-cid`            | Only if `crowdstrikeConfig.cid` and `global.falcon.cid` are not set | CrowdStrike Customer ID (CID) |
+
+The `falcon-client-id` and `falcon-client-secret` secret names are fixed. `falcon-cid` is only fetched from AKV when CID is not supplied via `crowdstrikeConfig.cid` or `global.falcon.cid` — if either is set, `AGENT_CID` is sourced from the ConfigMap instead and `falcon-cid` does not need to exist in the vault.
+
+#### Configuration
+
+```yaml
+azure:
+  keyVault:
+    enabled: true
+    vaultName: "my-keyvault"
+    tenantID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    # clientID is optional - only required if multiple managed identities are assigned
+    clientID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+serviceAccount:
+  annotations:
+    azure.workload.identity/client-id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# Add the Workload Identity label to the pod
+podLabels:
+  azure.workload.identity/use: "true"
+```
+
+> [!NOTE]
+> `azure.keyVault.enabled` cannot be combined with `crowdstrikeConfig.clientID`/`clientSecret` or `crowdstrikeConfig.existingSecret`. These are mutually exclusive secret sources for credentials.
+> CID can still be supplied via `crowdstrikeConfig.cid` or `global.falcon.cid` alongside AKV — if either is set, `falcon-cid` is not fetched from the vault.
 
 ### Authentication for Private Registries
 - If you are using ECR or cloud based Private Registries then assigning the IAM role to the iar service-account in `falcon-image-analyzer` namespace should be enough

@@ -187,6 +187,11 @@ spec:
           name: crowdstrike-falcon-vol0
         - mountPath: /var/private
           name: crowdstrike-falcon-vol1
+        {{- if .Values.azure.keyVault.enabled }}
+        - name: akv-secrets
+          mountPath: /mnt/secrets-store
+          readOnly: true
+        {{- end }}
       - name: falcon-watcher
         args:
         - "client"
@@ -333,6 +338,14 @@ spec:
       - name: crowdstrike-falcon-vol2
         emptyDir:
           sizeLimit: 64Mi
+      {{- if .Values.azure.keyVault.enabled }}
+      - name: akv-secrets
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: {{ include "falcon-kac.fullname" . }}-akv
+      {{- end }}
 ---
 {{- if .Values.admissionControl.enabled }}
 apiVersion: admissionregistration.k8s.io/v1

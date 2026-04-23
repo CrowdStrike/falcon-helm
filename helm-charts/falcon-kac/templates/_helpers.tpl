@@ -176,21 +176,61 @@ Get Falcon CID from global value if it exists
 {{- end -}}
 
 {{/*
-Check if Falcon secret is enabled from global value if it exists
+Check if Falcon secret is enabled from global value if it exists.
+Returns true when Azure Key Vault is enabled, as AKV manages the secret.
 */}}
 {{- define "falcon-kac.falconSecretEnabled" -}}
+{{- if (include "falcon-kac.akvEnabled" .) | eq "true" -}}
+true
+{{- else -}}
 {{- or .Values.global.falconSecret.enabled .Values.falconSecret.enabled -}}
+{{- end -}}
 {{- end -}}
 
 {{/*
-Get Falcon secret name from global value if it exists
+Get Falcon secret name from global value if it exists.
+When Azure Key Vault is enabled, returns the name of the secret that
+SecretProviderClass.secretObjects will sync from AKV, so that the
+existing envFrom/secretRef wiring picks it up unchanged.
 */}}
 {{- define "falcon-kac.falconSecretName" -}}
-{{- if and .Values.global.falconSecret.secretName (not .Values.falconSecret.secretName) -}}
+{{- if (include "falcon-kac.akvEnabled" .) | eq "true" -}}
+{{- printf "%s-akv" (include "falcon-kac.fullname" .) -}}
+{{- else if and .Values.global.falconSecret.secretName (not .Values.falconSecret.secretName) -}}
 {{- .Values.global.falconSecret.secretName -}}
 {{- else -}}
 {{- .Values.falconSecret.secretName | default "" -}}
 {{- end -}}
+{{- end -}}
+
+{{/*
+Returns true when AKV is enabled locally or globally.
+*/}}
+{{- define "falcon-kac.akvEnabled" -}}
+{{- if or .Values.azure.keyVault.enabled .Values.global.azure.keyVault.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Returns the effective AKV vault name (local overrides global).
+*/}}
+{{- define "falcon-kac.akvVaultName" -}}
+{{- .Values.azure.keyVault.vaultName | default .Values.global.azure.keyVault.vaultName -}}
+{{- end -}}
+
+{{/*
+Returns the effective AKV tenant ID (local overrides global).
+*/}}
+{{- define "falcon-kac.akvTenantID" -}}
+{{- .Values.azure.keyVault.tenantID | default .Values.global.azure.keyVault.tenantID -}}
+{{- end -}}
+
+{{/*
+Returns the effective AKV workload identity client ID (local overrides global).
+*/}}
+{{- define "falcon-kac.akvClientID" -}}
+{{- .Values.azure.keyVault.clientID | default .Values.global.azure.keyVault.clientID -}}
 {{- end -}}
 
 {{/*

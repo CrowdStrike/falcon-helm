@@ -92,6 +92,18 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+Pod template labels — standard chart labels plus any user-supplied podLabels.
+Use instead of falcon-image-analyzer.labels in pod template metadata.
+Example use: azure.workload.identity/use: "true" for Azure Workload Identity.
+*/}}
+{{- define "falcon-image-analyzer.podLabels" -}}
+{{- include "falcon-image-analyzer.labels" . }}
+{{- with .Values.podLabels }}
+{{ toYaml . }}
+{{- end }}
+{{- end }}
+
+{{/*
 Create the name of the service account to use
 */}}
 {{- define "falcon-image-analyzer.serviceAccountName" -}}
@@ -234,14 +246,49 @@ Get Falcon CID from global value if it exists
 {{- end -}}
 
 {{/*
-Get Falcon secret name from global value if it exists
+Get Falcon secret name from global value if it exists.
+When Azure Key Vault is enabled, returns the name of the secret that
+SecretProviderClass.secretObjects will sync from AKV, so that the
+existing envFrom/secretRef wiring picks it up unchanged.
 */}}
 {{- define "falcon-image-analyzer.falconSecretName" -}}
-{{- if and .Values.global.falconSecret.secretName (not .Values.crowdstrikeConfig.existingSecret) -}}
+{{- if (include "falcon-image-analyzer.akvEnabled" .) | eq "true" -}}
+{{- printf "%s-akv" (include "falcon-image-analyzer.fullname" .) -}}
+{{- else if and .Values.global.falconSecret.secretName (not .Values.crowdstrikeConfig.existingSecret) -}}
 {{- .Values.global.falconSecret.secretName -}}
 {{- else -}}
 {{- .Values.crowdstrikeConfig.existingSecret -}}
 {{- end -}}
+{{- end -}}
+
+{{/*
+Returns true when AKV is enabled locally or globally.
+*/}}
+{{- define "falcon-image-analyzer.akvEnabled" -}}
+{{- if or .Values.azure.keyVault.enabled .Values.global.azure.keyVault.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Returns the effective AKV vault name (local overrides global).
+*/}}
+{{- define "falcon-image-analyzer.akvVaultName" -}}
+{{- .Values.azure.keyVault.vaultName | default .Values.global.azure.keyVault.vaultName -}}
+{{- end -}}
+
+{{/*
+Returns the effective AKV tenant ID (local overrides global).
+*/}}
+{{- define "falcon-image-analyzer.akvTenantID" -}}
+{{- .Values.azure.keyVault.tenantID | default .Values.global.azure.keyVault.tenantID -}}
+{{- end -}}
+
+{{/*
+Returns the effective AKV workload identity client ID (local overrides global).
+*/}}
+{{- define "falcon-image-analyzer.akvClientID" -}}
+{{- .Values.azure.keyVault.clientID | default .Values.global.azure.keyVault.clientID -}}
 {{- end -}}
 
 {{/*

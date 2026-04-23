@@ -37,6 +37,18 @@ global:
     # $ cat ~/.docker/config.json | base64 -
     configJSON: ""
 
+  # Azure Key Vault integration - configure once to apply to all components.
+  # Shared values (vaultName, tenantID, clientID) are set here; per-component secret names
+  # are set under each component section (e.g. falcon-sensor.azure.keyVault.provisioningTokenSecretName).
+  # Individual component values take precedence over these globals when both are set.
+  # Requires secrets-store-csi-driver and secrets-store-csi-driver-provider-azure on the cluster.
+  azure:
+    keyVault:
+      enabled: false
+      # vaultName: "my-keyvault"
+      # tenantID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      # clientID: ""  # Optional: workload identity client ID when multiple managed identities are assigned
+
 # Enable/disable individual components
 # Set enabled: true to deploy, enabled: false to skip
 
@@ -45,12 +57,20 @@ global:
 falcon-sensor:
   enabled: true
   namespaceOverride: falcon-system
+  # AKV provisioning token (optional; shared vault config comes from global.azure.keyVault above):
+  # azure:
+  #   keyVault:
+  #     provisioningTokenSecretName: "falcon-provisioning-token"
 
 # Falcon Kubernetes Admission Controller - Policy enforcement
 # Override specific values for falcon-kac
 falcon-kac:
   enabled: true
   namespaceOverride: falcon-kac
+  # AKV provisioning token (optional; shared vault config comes from global.azure.keyVault above):
+  # azure:
+  #   keyVault:
+  #     provisioningTokenSecretName: "falcon-provisioning-token"
 
 # Falcon Image Analyzer - Container image security scanning
 # Override specific values for falcon-image-analyzer

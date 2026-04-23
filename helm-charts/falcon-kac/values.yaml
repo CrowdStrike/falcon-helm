@@ -72,6 +72,36 @@ falconSecret:
   enabled: false
   secretName: ""
 
+# Azure Key Vault provider for Secrets Store CSI Driver.
+# Requires secrets-store-csi-driver and secrets-store-csi-driver-provider-azure
+# to be installed on the cluster, along with Azure Workload Identity.
+# When enabled, FALCONCTL_OPT_CID (and optionally FALCONCTL_OPT_PROVISIONING_TOKEN)
+# are sourced from Azure Key Vault rather than falcon.cid or falconSecret.
+# To enable Azure Workload Identity on the pod, add the required label via the
+# existing labels value:
+#   labels:
+#     azure.workload.identity/use: "true"
+azure:
+  keyVault:
+    enabled: false
+
+    # Azure Key Vault name (e.g. "my-keyvault")
+    vaultName: ""
+
+    # Azure Tenant ID
+    tenantID: ""
+
+    # Azure Workload Identity client ID (optional).
+    # Only required when multiple managed identities are assigned to the node.
+    # When set, also annotate the ServiceAccount:
+    #   serviceAccount.annotations:
+    #     azure.workload.identity/client-id: "<client-id>"
+    clientID: ""
+
+    # Name of the AKV secret containing the provisioning token (FALCONCTL_OPT_PROVISIONING_TOKEN).
+    # Leave empty to omit the provisioning token from AKV.
+    provisioningTokenSecretName: ""
+
 # These variables can be used to customize the way KAC provides visibility into
 # resources on your Kubernetes cluster. The variables are initially set to the
 # default values which will be used if they are commented out.
@@ -203,3 +233,9 @@ global:
   containerRegistry:
     pullSecret: ""
     configJSON: ""
+  azure:
+    keyVault:
+      enabled: false
+      vaultName: ""
+      tenantID: ""
+      clientID: ""

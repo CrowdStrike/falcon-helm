@@ -218,5 +218,60 @@ The following tables lists the Falcon KAC configurable parameters and their defa
 | `admissionControl.enabled`                     | Enable Admission Control                                                                                                           | `true`                                                        |
 | `falconSecret.enabled`                         | Enable k8s secrets to inject sensitive Falcon values                                                                               | false      (Must be true if falcon.cid is not set)            |
 | `falconSecret.secretName`                      | Existing k8s secret name to inject sensitive Falcon values.<br> The secret must be under the same namespace as the KAC deployment. | None       (Existing secret must include `FALCONCTL_OPT_CID`) |
+| `azure.keyVault.enabled`                       | Enable Azure Key Vault provider for Secrets Store CSI Driver. Mutually exclusive with `falcon.cid` and `falconSecret.enabled`. See [Azure Key Vault Integration](#azure-key-vault-integration). | `false` |
+| `azure.keyVault.vaultName`                     | Azure Key Vault name                                                                                                               | None                                                          |
+| `azure.keyVault.tenantID`                      | Azure Tenant ID                                                                                                                    | None                                                          |
+| `azure.keyVault.clientID`                      | Azure Workload Identity client ID. Only required if multiple managed identities are assigned to the node.                         | None                                                          |
+| `azure.keyVault.provisioningTokenSecretName`   | Name of the AKV secret containing `FALCONCTL_OPT_PROVISIONING_TOKEN`. Leave empty to omit.                                       | None                                                          |
 | `clusterName`                                  | Manually set cluster name for self-hosted Kubernetes clusters where auto-discovery fails (e.g., MicroK8s). Displayed as hostname in Host Management UI. | None (auto-discovery used) |
 | `falconImageAnalyzerNamespace`                 | Falcon Image Analyzer namespace | falcon-image-analyzer |
+
+## Azure Key Vault Integration
+
+The chart supports sourcing `FALCONCTL_OPT_CID` (and optionally `FALCONCTL_OPT_PROVISIONING_TOKEN`) from [Azure Key Vault](https://azure.microsoft.com/en-us/products/key-vault) via the [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/) and the [Azure Key Vault provider](https://azure.github.io/secrets-store-csi-driver-provider-azure/).
+
+### Prerequisites
+
+The following must be installed and configured on your AKS cluster before enabling this feature:
+
+- [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/getting-started/installation)
+- [Azure Key Vault Provider for Secrets Store CSI Driver](https://azure.github.io/secrets-store-csi-driver-provider-azure/docs/getting-started/installation/)
+- [Azure Workload Identity](https://azure.github.io/azure-workload-identity/docs/installation.html) webhook installed on the cluster
+- AKS cluster with OIDC issuer enabled (`az aks update --enable-oidc-issuer --name <cluster> --resource-group <rg>`)
+- A user-assigned managed identity with `Key Vault Secrets User` role on the vault
+- A federated credential binding the managed identity to the chart's ServiceAccount in the KAC namespace
+
+### Required secrets in Azure Key Vault
+
+Create the following secrets in your Azure Key Vault before enabling the integration:
+
+| Secret name (default)       | Required | Value                          |
+|:----------------------------|:---------|:-------------------------------|
+| `falcon-cid`                | Yes      | CrowdStrike Customer ID (CID)  |
+| `falcon-provisioning-token` | No       | Provisioning token             |
+
+The CID secret must be named `falcon-cid` in AKV. The provisioning token secret name is configurable via `azure.keyVault.provisioningTokenSecretName`.
+
+### Configuration
+
+```yaml
+azure:
+  keyVault:
+    enabled: true
+    vaultName: "my-keyvault"
+    tenantID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    # clientID is optional - only required if multiple managed identities are assigned
+    clientID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    provisioningTokenSecretName: ""  # leave empty to omit
+
+serviceAccount:
+  annotations:
+    azure.workload.identity/client-id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# Add the Workload Identity label to KAC pods
+labels:
+  azure.workload.identity/use: "true"
+```
+
+> [!NOTE]
+> `azure.keyVault.enabled` cannot be combined with `falcon.cid` or `falconSecret.enabled`. These are mutually exclusive secret sources.

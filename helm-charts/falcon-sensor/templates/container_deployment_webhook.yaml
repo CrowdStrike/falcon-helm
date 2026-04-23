@@ -169,6 +169,11 @@ spec:
           mountPath: /tmp/CrowdStrike
           readOnly: true
         {{- end }}
+        {{- if .Values.azure.keyVault.enabled }}
+        - name: akv-secrets
+          mountPath: /mnt/secrets-store
+          readOnly: true
+        {{- end }}
         readinessProbe:
           httpGet:
             path: /live
@@ -211,6 +216,14 @@ spec:
         hostPath:
           path: {{ .Values.container.azure.azureConfig }}
           type: File
+      {{- end }}
+      {{- if .Values.azure.keyVault.enabled }}
+      - name: akv-secrets
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: {{ include "falcon-sensor.fullname" . }}-akv
       {{- end }}
       serviceAccountName: {{ .Values.serviceAccount.name }}
 ---

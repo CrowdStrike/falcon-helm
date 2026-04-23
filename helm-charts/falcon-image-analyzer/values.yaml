@@ -54,6 +54,8 @@ volumeMounts:
 
 podAnnotations: {}
 
+podLabels: {}
+
 podSecurityContext: {}
 
 securityContext: {}
@@ -85,6 +87,25 @@ azure:
 
   # Path to the Kubernetes Azure config file on worker nodes
   azureConfig: /etc/kubernetes/azure.json
+
+  # Azure Key Vault provider for Secrets Store CSI Driver
+  # Requires the secrets-store-csi-driver and secrets-store-csi-driver-provider-azure
+  # to be installed on the cluster, along with Azure Workload Identity.
+  keyVault:
+    enabled: false
+
+    # Azure Key Vault name (e.g. "my-keyvault")
+    vaultName: ""
+
+    # Azure Tenant ID
+    tenantID: ""
+
+    # Azure Workload Identity client ID (managed identity or app registration).
+    # Optional: only required when multiple managed identities are assigned to the node.
+    # When set, also annotate the ServiceAccount:
+    #   serviceAccount.annotations:
+    #     azure.workload.identity/client-id: "<client-id>"
+    clientID: ""
 
 # GCP GKE workload identity init container
 gcp:
@@ -230,3 +251,9 @@ global:
   containerRegistry:
     pullSecret: ""
     configJSON: ""
+  azure:
+    keyVault:
+      enabled: false
+      vaultName: ""
+      tenantID: ""
+      clientID: ""

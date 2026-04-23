@@ -427,6 +427,37 @@
         "falconImageAnalyzerNamespace": {
             "type": "string",
             "default": "falcon-image-analyzer"
+        },
+        "azure": {
+            "type": "object",
+            "properties": {
+                "keyVault": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": false,
+                            "description": "Enable Azure Key Vault provider for Secrets Store CSI Driver"
+                        },
+                        "vaultName": {
+                            "type": "string",
+                            "description": "Azure Key Vault name"
+                        },
+                        "tenantID": {
+                            "type": "string",
+                            "description": "Azure Tenant ID"
+                        },
+                        "clientID": {
+                            "type": "string",
+                            "description": "Azure Workload Identity client ID (optional)"
+                        },
+                        "provisioningTokenSecretName": {
+                            "type": "string",
+                            "description": "Name of the AKV secret containing FALCONCTL_OPT_PROVISIONING_TOKEN (optional)"
+                        }
+                    }
+                }
+            }
         }
     }
 }

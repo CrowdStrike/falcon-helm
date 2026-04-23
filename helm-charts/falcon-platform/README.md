@@ -237,6 +237,10 @@ Global settings apply to all components unless component specific values are set
 | global.falconSecret.secretName      | ""      | Name of existing Kubernetes secret with sensitive data necessary for Falcon component installation |
 | global.containerRegistry.configJSON | ""      | Your container registry config json as a base64 encoded string                                     |
 | global.containerRegistry.pullSecret | ""      | Name of existing container registry pull secret as an alternative to `registryConfigJSON`          |
+| global.azure.keyVault.enabled       | false   | Enable Azure Key Vault as the secret source for all components. See [Azure Key Vault Integration](#azure-key-vault-integration). |
+| global.azure.keyVault.vaultName     | ""      | Azure Key Vault name shared across all components                                                  |
+| global.azure.keyVault.tenantID      | ""      | Azure Tenant ID shared across all components                                                       |
+| global.azure.keyVault.clientID      | ""      | Azure Workload Identity client ID (optional; required only when multiple managed identities are assigned) |
 
 > [!NOTE]
 Any existing secrets for `falconSecret` or `containerRegistry.pullSecret` must exist in the namespace dedicated to the respective Falcon component before installing the Helm chart. For example, you must already have an existing secret matching `global.falconSecret.secretName` in the `falcon-sensor` default namespace, or custom namespace you choose for your `falcon-sensor.namespaceOverride`.
@@ -299,6 +303,11 @@ The following falcon-sensor parameters apply to both Node and Container sensors
 | `falcon-sensor.falcon.cid`              | Overrides global.falcon.cid              |
 | `falcon-sensor.falconSecret.enabled`    | Overrides global.falconSecret.enabled    |
 | `falcon-sensor.falconSecret.secretName` | Overrides global.falconSecret.secretName |
+| `falcon-sensor.azure.keyVault.enabled`                     | Overrides global.azure.keyVault.enabled for this component. See [Azure Key Vault Integration](#azure-key-vault-integration). |
+| `falcon-sensor.azure.keyVault.vaultName`                   | Overrides global.azure.keyVault.vaultName for this component |
+| `falcon-sensor.azure.keyVault.tenantID`                    | Overrides global.azure.keyVault.tenantID for this component |
+| `falcon-sensor.azure.keyVault.clientID`                    | Overrides global.azure.keyVault.clientID for this component |
+| `falcon-sensor.azure.keyVault.provisioningTokenSecretName` | AKV secret name for `FALCONCTL_OPT_PROVISIONING_TOKEN` (optional) |
 
 #### Falcon KAC
 Falcon KAC specific configurations must be prefixed with `falcon-kac`. For comprehensive configuration options please see the linked documentation below.
@@ -323,6 +332,11 @@ Falcon KAC specific configurations must be prefixed with `falcon-kac`. For compr
 | `falcon-kac.falcon.cid`               | Overrides global.falcon.cid                                           |
 | `falcon-kac.falconSecret.enabled`     | Overrides global.falconSecret.enabled                                 |
 | `falcon-kac.falconSecret.secretName`  | Overrides global.falconSecret.secretName                              |
+| `falcon-kac.azure.keyVault.enabled`                     | Overrides global.azure.keyVault.enabled for this component. See [Azure Key Vault Integration](#azure-key-vault-integration). |
+| `falcon-kac.azure.keyVault.vaultName`                   | Overrides global.azure.keyVault.vaultName for this component |
+| `falcon-kac.azure.keyVault.tenantID`                    | Overrides global.azure.keyVault.tenantID for this component |
+| `falcon-kac.azure.keyVault.clientID`                    | Overrides global.azure.keyVault.clientID for this component |
+| `falcon-kac.azure.keyVault.provisioningTokenSecretName` | AKV secret name for `FALCONCTL_OPT_PROVISIONING_TOKEN` (optional) |
 
 #### Falcon Image Analyzer
 Falcon Image Analyzer specific configurations must be prefixed with `falcon-image-analyzer`. For comprehensive configuration options please see the linked documentation below.
@@ -352,6 +366,10 @@ Falcon Image Analyzer specific configurations must be prefixed with `falcon-imag
 | `falcon-image-analyzer.image.registryConfigJSON`         | Overrides global.containerRegistry.configJSON                       |
 | `falcon-image-analyzer.crowdstrikeConfig.cid`            | Overrides global.falcon.cid                                         |
 | `falcon-image-analyzer.crowdstrikeConfig.existingSecret` | Overrides global.falconSecret.secretName                            |
+| `falcon-image-analyzer.azure.keyVault.enabled`                      | Overrides global.azure.keyVault.enabled for this component. See [Azure Key Vault Integration](#azure-key-vault-integration). |
+| `falcon-image-analyzer.azure.keyVault.vaultName`                    | Overrides global.azure.keyVault.vaultName for this component |
+| `falcon-image-analyzer.azure.keyVault.tenantID`                     | Overrides global.azure.keyVault.tenantID for this component |
+| `falcon-image-analyzer.azure.keyVault.clientID`                     | Overrides global.azure.keyVault.clientID for this component |
 
 
 ### Using Existing Kubernetes Secrets
@@ -408,6 +426,79 @@ helm install falcon-platform crowdstrike/falcon-platform --version 1.0.0 -n falc
   --set falcon-image-analyzer.crowdstrikeConfig.clusterName=$CLUSTER_NAME \
   --set falcon-image-analyzer.crowdstrikeConfig.cid=$FALCON_CID                   # IAR Falcon CID is not yet supported by existing secrets
 ```
+
+## Upgrade Strategy
+
+### Azure Key Vault Integration
+
+The Falcon Platform supports sourcing credentials from [Azure Key Vault](https://azure.microsoft.com/en-us/products/key-vault) via the [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/) and the [Azure Key Vault provider](https://azure.github.io/secrets-store-csi-driver-provider-azure/). The vault name, tenant ID, and optional workload identity client ID can be configured once under `global.azure.keyVault` and shared across all components. Per-component values override globals when both are set.
+
+> [!NOTE]
+> When AKV is enabled for `falcon-sensor` or `falcon-kac`, it is mutually exclusive with `falcon.cid`/`global.falcon.cid` and `falconSecret`. For `falcon-image-analyzer`, AKV is mutually exclusive with `crowdstrikeConfig.clientID`/`clientSecret` and `existingSecret`, but CID can still be supplied via `crowdstrikeConfig.cid` or `global.falcon.cid` alongside AKV — if either is set, `falcon-cid` is not fetched from the vault.
+
+#### Prerequisites (all components)
+
+- [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/getting-started/installation)
+- [Azure Key Vault Provider for Secrets Store CSI Driver](https://azure.github.io/secrets-store-csi-driver-provider-azure/docs/getting-started/installation/)
+- [Azure Workload Identity](https://azure.github.io/azure-workload-identity/docs/installation.html) webhook installed on the cluster
+- AKS cluster with OIDC issuer enabled
+- A user-assigned managed identity with `Key Vault Secrets User` role on the vault, with federated credentials bound to each component's ServiceAccount in its respective namespace
+
+#### Required secrets per component
+
+| Component              | Secret key (default)     | Env var mapped           |
+|:-----------------------|:-------------------------|:-------------------------|
+| falcon-sensor          | `falcon-cid`             | `FALCONCTL_OPT_CID`      |
+| falcon-sensor          | `falcon-provisioning-token` (optional, configurable) | `FALCONCTL_OPT_PROVISIONING_TOKEN` |
+| falcon-kac             | `falcon-cid`             | `FALCONCTL_OPT_CID`      |
+| falcon-kac             | `falcon-provisioning-token` (optional, configurable) | `FALCONCTL_OPT_PROVISIONING_TOKEN` |
+| falcon-image-analyzer  | `falcon-client-id`       | `AGENT_CLIENT_ID`        |
+| falcon-image-analyzer  | `falcon-client-secret`   | `AGENT_CLIENT_SECRET`    |
+| falcon-image-analyzer  | `falcon-cid` (only if `crowdstrikeConfig.cid` / `global.falcon.cid` not set) | `AGENT_CID` |
+
+#### Example configuration
+
+Use `global.azure.keyVault` to configure the shared vault once. Secret names are fixed per component (`falcon-cid`, `falcon-client-id`, `falcon-client-secret`) — only the Workload Identity `serviceAccount.annotations` and pod labels must be configured per component.
+
+> [!NOTE]
+> The global config populates vault connection details in each `SecretProviderClass`. It does **not** automatically set the per-component `serviceAccount.annotations` or pod labels required by Azure Workload Identity — those must still be configured per component as shown below.
+
+```yaml
+global:
+  azure:
+    keyVault:
+      enabled: true
+      vaultName: "my-keyvault"
+      tenantID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      # clientID: ""  # optional: required only when multiple managed identities are assigned
+
+falcon-sensor:
+  serviceAccount:
+    annotations:
+      azure.workload.identity/client-id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  node:
+    daemonset:
+      labels:
+        azure.workload.identity/use: "true"
+
+falcon-kac:
+  serviceAccount:
+    annotations:
+      azure.workload.identity/client-id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  labels:
+    azure.workload.identity/use: "true"
+
+falcon-image-analyzer:
+  serviceAccount:
+    annotations:
+      azure.workload.identity/client-id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  podLabels:
+    azure.workload.identity/use: "true"
+```
+
+To use a custom provisioning token secret name for `falcon-sensor` or `falcon-kac`, set `azure.keyVault.provisioningTokenSecretName`.
+
+Each component can still override `vaultName`, `tenantID`, or `clientID` individually if needed — per-component values take precedence over globals.
 
 ## Upgrade Strategy
 

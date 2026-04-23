@@ -190,10 +190,23 @@ spec:
         volumeMounts:
           - name: falconstore
             mountPath: /opt/CrowdStrike/falconstore
+          {{- if .Values.azure.keyVault.enabled }}
+          - name: akv-secrets
+            mountPath: /mnt/secrets-store
+            readOnly: true
+          {{- end }}
       volumes:
         - name: falconstore
           hostPath:
             path: /opt/CrowdStrike/falconstore
+        {{- if .Values.azure.keyVault.enabled }}
+        - name: akv-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ include "falcon-sensor.fullname" . }}-akv
+        {{- end }}
       serviceAccountName: {{ .Values.serviceAccount.name }}
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
     {{- if or .Values.node.daemonset.priorityClassName .Values.node.gke.autopilot }}

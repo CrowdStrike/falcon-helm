@@ -1,5 +1,6 @@
 {{- if not .Values.node.cleanupOnly }}
 {{- include "falcon-sensor.validateOneOfFalconCidOrFalconSecret" .}}
+{{- include "falcon-sensor.validateAitapConfig" .}}
 {{- $falconSecretKeys := list "cid" "provisioning_token" }}
 
 apiVersion: v1
@@ -59,6 +60,16 @@ data:
   {{- end }}
   {{- if .Values.container.sensorResources }}
   FALCON_RESOURCES: '{{ toJson .Values.container.sensorResources | b64enc }}'
+  {{- end }}
+  {{- if .Values.container.aitap.aidrCollectorBaseApiUrl }}
+  FALCON_AITAP_AIDR_COLLECTOR_BASE_API_URL: "{{ .Values.container.aitap.aidrCollectorBaseApiUrl }}"
+  {{- end }}
+  FALCON_AITAP_AIDR_SECRET_NAME: "{{ include "falcon-sensor.container.aitapAidrSecretName" . }}"
+  {{- if .Values.container.aitap.allNamespaces }}
+  FALCON_AITAP_ALL_NAMESPACES: "true"
+  {{- end }}
+  {{- if .Values.container.aitap.namespaces }}
+  FALCON_AITAP_NAMESPACES: "{{ .Values.container.aitap.namespaces }}"
   {{- end }}
   {{- end }}
 {{- end }}

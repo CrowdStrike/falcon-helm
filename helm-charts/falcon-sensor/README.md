@@ -361,6 +361,160 @@ helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
     --set container.sensorResources.requests.cpu="10m"
 ```
 
+### AITap
+AITap requires configuration of the AI-DR Collector, and enabling AITap for namespaces and/or pods. The
+following guide explains the different options for enabling AITap for your AI workloads.
+
+> [!NOTE]
+> AITap is only active for pods where the Falcon Container sensor is injected. Namespaces or pods not configured
+> for container sensor injection will not have AITap enabled regardless of the AITap configuration.
+
+| Parameter                                 | Description                                                                                                                                         | Default                               |
+|:------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------|
+| `container.aitap.namespaces`              | Comma-separated list of namespaces where AITap should be enabled. Example: "ns1,ns2,ns3"                                                            | None                                  |
+| `container.aitap.allNamespaces`           | Enable AITap in all namespaces. Reserved system namespaces are automatically excluded.                                                              | `false`                               |
+| `container.aitap.aidrCollectorBaseApiUrl` | AI-DR Collector Base API URL for the Application Collector                                                                                          | None       (Required to enable AITap) |
+| `container.aitap.aidrCollectorApiToken`   | AI-DR Collector API token for the Application Collector                                                                                             | None                                  |
+| `container.aitap.aidrSecretName`          | Custom AI-DR Kubernetes secret name                                                                                                                 | `<release-name>-aitap-aidr-secret`    |
+| `container.aitap.useExistingSecret`       | Use an existing AI-DR secret. When true, Helm does NOT create the AI-DR secret. When false (default), Helm propagates secrets to target namespaces. | `false`                               |
+
+#### Managing Your Own AI-DR Secret
+If you would like to manage your own AI-DR collector secret, you can use an existing secret with
+the `.collector-aidr-token` data key and your AI-DR collector token as the value.
+
+Example AI-DR secret:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: <YOUR_AIDR_SECRET_NAME>
+  namespace: ai-services
+type: Opaque
+stringData:
+  .collector-aidr-token: "<YOUR_COLLECTOR_API_TOKEN>"
+```
+
+In your helm values, your `container.aitap.aidrSecretName` must match the name of the secret you created.
+
+Helm AITap Values:
+```yaml
+container:
+  aitap:
+    useExistingSecret: true
+    aidrSecretName: <YOUR_AIDR_SECRET_NAME>
+    aidrCollectorBaseApiUrl: "<YOUR_COLLECTOR_API_BASE_URL>"
+```
+
+> [!NOTE]
+> When `useExistingSecret` is `true`, only `aidrCollectorBaseApiUrl` is required. When not managing your own secret,
+> `aidrCollectorBaseApiUrl` and `aidrCollectorApiToken` are both required.
+
+#### Enabling AITap
+AITap can be enabled for specific pods, specific namespaces, or in all namespaces.
+You can control this behavior with the following options.
+
+**Option 1: Specific Pods**
+
+If you prefer to have granular control of AITap, you can enable AITap for specific pods only.
+To enable AITap for specific pods, you must annotate the pod with `sensor.falcon-system.crowdstrike.com/enable-aitap-events: "true"`.
+You must also set `useExistingSecret: true` and `aidrSecretName: <YOUR_AIDR_SECRET_NAME>`,
+and create your own AI-DR secret in each applicable namespace.
+
+Deployment manifest example with annotations:
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-application
+  namespace: production
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-application
+  template:
+    metadata:
+      labels:
+        app: my-application
+      annotations:
+        sensor.falcon-system.crowdstrike.com/enable-aitap-events: "true"
+```
+
+Helm AITap Values:
+```yaml
+container:
+  aitap:
+    useExistingSecret: true
+    aidrSecretName: "<YOUR_AIDR_SECRET_NAME>"
+    aidrCollectorBaseApiUrl: "<YOUR_COLLECTOR_API_BASE_URL>"
+```
+
+With `container.aitap.allNamespaces: false` and `container.aitap.namespaces` not configured:
+- Falcon Container sensor does not enable AITap for any namespaces by default.
+- Helm does NOT create AI-DR secrets in any namespace.
+- You must create your own AI-DR secret with the `aidrSecretName` in each target namespace.
+
+**Option 2: Specific Namespaces**
+To enable AITap for specific namespaces only, use the `namespaces: "namespace-1,namespace-2"` option.
+
+```yaml
+container:
+  aitap:
+    namespaces: "namespace-1,namespace-2,namespace-3"  # Comma-separated list
+    aidrCollectorApiToken: "<YOUR_COLLECTOR_API_TOKEN>"
+    aidrCollectorBaseApiUrl: "<YOUR_COLLECTOR_API_BASE_URL>"
+```
+
+Once the falcon-sensor helm chart is deployed, you must run a helm upgrade with any additional namespaces you want
+AITap enabled for appended to `container.aitap.namespaces`.
+
+> [!NOTE]
+> Make sure all namespaces in `container.aitap.namespaces` already exist at the time of your helm install.
+> Your helm install will continue and result in a failed state, if it fails to find a namespace in the list of namespaces.
+>
+> When using the helm `--set` option, the commas must be escaped to prevent the helm CLI from incorrectly parsing
+> your command. For example:
+> `helm install falcon-sensor crowdstrike/falcon-sensor -n falcon-system --set container.aitap.namespaces="namespace-1\,namespace-2"`
+
+**Option 3: Combination of Namespaces and Pods**
+
+You can use a combination of `namespaces` and the `sensor.falcon-system.crowdstrike.com/enable-aitap-events: "true"` pod annotation to enabled AITap for specific namespaces, and individual pods not included in the list of namespaces.
+
+```yaml
+container:
+  aitap:
+    namespaces: "namespace-1,namespace-2"
+    # If namespace-3 has a 1 pod with `sensor.falcon-system.crowdstrike.com/enable-aitap-events: "true"`
+    # the aidrSecretName must match the existing AI-DR secret in namespace-3.
+    aidrSecretName: "<YOUR_AIDR_SECRET_NAME>"
+    aidrCollectorApiToken: "<YOUR_COLLECTOR_API_TOKEN>"
+    aidrCollectorBaseApiUrl: "<YOUR_COLLECTOR_API_BASE_URL>"
+```
+
+You must manage your own AI-DR secret with the same name as `aidrSecretName` in any namespace not included in the list of `namespaces`, which in this example would be 'namespace-3'.
+
+**Option 4: Enable AITap for your entire cluster**
+To enable AITap for all namespaces, use the `allNamespaces: true` option.
+
+```yaml
+container:
+  aitap:
+    allNamespaces: true
+    aidrCollectorApiToken: "<YOUR_COLLECTOR_API_TOKEN>"
+    aidrCollectorBaseApiUrl: "<YOUR_COLLECTOR_API_BASE_URL>"
+```
+
+AITap will be enabled in:
+- All other namespaces **except** reserved system namespaces
+
+The following namespaces are automatically excluded:
+- `kube-system`, `kube-public`, `kube-node-lease`
+- `falcon-system`, `falcon-kac`, `falcon-image-analyzer`
+- The deployment namespace
+
+Once the falcon-sensor helm chart is deployed, you must run a helm upgrade if you want AITap enabled for any
+new namespaces created after the initial helm install.
+
 ### Uninstall Helm Chart
 
 > [!NOTE]

@@ -306,3 +306,34 @@ Get sidecar container registry config json from global value if it exists
 {{- .Values.container.image.pullSecrets.registryConfigJSON | default "" -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Get the name of the AITap AI-DR secret.
+*/}}
+{{- define "falcon-sensor.container.aitapAidrSecretName" -}}
+{{- if .Values.container.aitap.aidrSecretName -}}
+{{- .Values.container.aitap.aidrSecretName -}}
+{{- else -}}
+{{- printf "%s-aitap-aidr-secret" (include "falcon-sensor.fullname" .) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Validate AITap configuration.
+*/}}
+{{- define "falcon-sensor.validateAitapConfig" -}}
+{{- if and .Values.container.aitap.namespaces .Values.container.aitap.allNamespaces -}}
+{{- fail "AITap: 'container.aitap.namespaces' and 'container.aitap.allNamespaces' cannot both be set. Use 'allNamespaces: true' to enable AITap in all namespaces, or list specific namespaces with 'namespaces'." -}}
+{{- end -}}
+{{- if or .Values.container.aitap.namespaces .Values.container.aitap.allNamespaces -}}
+{{- if not .Values.container.aitap.aidrCollectorBaseApiUrl -}}
+{{- fail "AITap: 'container.aitap.aidrCollectorBaseApiUrl' is required. Provide the base URL for the AI-DR collector API (e.g. https://your-collector-host)." -}}
+{{- end -}}
+{{- if not (or .Values.container.aitap.useExistingSecret .Values.container.aitap.aidrCollectorApiToken) -}}
+{{- fail "AITap: 'container.aitap.aidrCollectorApiToken' is required." -}}
+{{- end -}}
+{{- end -}}
+{{- if and .Values.container.aitap.useExistingSecret (not .Values.container.aitap.aidrSecretName) -}}
+{{- fail "AITap: 'container.aitap.aidrSecretName' is required when 'container.aitap.useExistingSecret' is true. Set this to the name of the existing secret that contains the AI-DR collector token." -}}
+{{- end -}}
+{{- end -}}

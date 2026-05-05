@@ -260,6 +260,28 @@ container:
       cpu: 10m
       memory: 20Mi
 
+  aitap:
+    # Configure the list of namespaces where AITap should be enabled.
+    # This is a comma separated list. For example:
+    #
+    # namespaces: "ns1,ns2,ns3"
+    namespaces: ""
+    # Set `allNamespaces` to true to enable AITap in all namespaces in the cluster.
+    # NOTE: ArgoCD does not support the Helm `lookup` function. If using ArgoCD,
+    # specify all target namespaces using the `namespaces` field instead.
+    allNamespaces: false
+    # AI-DR Collector Base API URL for the Application Collector
+    aidrCollectorBaseApiUrl:
+    # AI-DR Collector API token for the Application Collector
+    aidrCollectorApiToken:
+    # AI-DR Kubernetes secret name
+    aidrSecretName:
+    # Use existing secrets instead of Helm-managed secrets.
+    # When `useExistingSecret` is true, Helm will NOT create AI-DR secrets.
+    # When `useExistingSecret` is false, the AI-DR token (aidrCollectorApiToken) will be added
+    # as a Secret to each of the namespaces specified at the time of installation.
+    useExistingSecret: false
+
 serviceAccount:
   name: crowdstrike-falcon-sa
   annotations: {}

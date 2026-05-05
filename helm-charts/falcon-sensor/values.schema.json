@@ -305,6 +305,15 @@
                 "enabled"
             ],
             "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "default": "false"
+                },
+                "replicas": {
+                    "type": "integer",
+                    "default": 2,
+                    "minimum": 1
+                },
                 "tolerations": {
                     "type": "array"
                 },
@@ -470,6 +479,43 @@
                     "type": "integer",
                     "default": 2,
                     "minimum": 1
+                },
+                "aitap": {
+                    "type": "object",
+                    "properties": {
+                        "namespaces": {
+                            "type": [
+                                "null",
+                                "string"
+                            ]
+                        },
+                        "allNamespaces": {
+                            "type": "boolean",
+                            "default": false
+                        },
+                        "aidrCollectorBaseApiUrl": {
+                            "type": [
+                                "null",
+                                "string"
+                            ]
+                        },
+                        "aidrCollectorApiToken": {
+                            "type": [
+                                "null",
+                                "string"
+                            ]
+                        },
+                        "aidrSecretName": {
+                            "type": [
+                                "null",
+                                "string"
+                            ]
+                        },
+                        "useExistingSecret": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    }
                 },
                 "topologySpreadConstraints": {
                     "type": "array"

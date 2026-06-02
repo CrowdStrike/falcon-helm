@@ -12,6 +12,16 @@ generate an alert, or prevent the object from being deployed.
 Together, the Falcon KAC and the admission control policies provide continuous visibility and protection across your
 Kubernetes cluster.
 
+## Table of Contents
+- [Getting Started](#getting-started)
+  - [Helm Chart Support for Falcon Admission Controller Versions](#helm-chart-support-for-falcon-admission-controller-versions)
+- [Falcon Kubernetes Admission Controller Architecture Overview](#falcon-kubernetes-admission-controller-architecture-overview)
+- [Install Falcon Kubernetes Admission Controller](#install-falcon-kubernetes-admission-controller)
+  - [Install Falcon KAC Helm Chart](#install-falcon-kac-helm-chart)
+  - [Update Falcon KAC](#update-falcon-kac)
+  - [Uninstall Falcon KAC](#uninstall-falcon-kac)
+- [Falcon Configuration Options](#falcon-configuration-options)
+
 # Getting Started
 
 To install and deploy the Falcon Kubernetes Admission Controller, your cluster environment must meet these requirements:
@@ -29,10 +39,12 @@ The Falcon Kubernetes Admission Controller has been deployed and tested on these
 
 ## Helm Chart Support for Falcon Admission Controller Versions
 
-| Helm chart Version | Falcon Admission Controller Version |
-|:-------------------|:------------------------------------|
-| `< 1.2.x`          | `< 7.20.x`                          |
-| `>= 1.2.x`         | `>= 7.20.x`                         |
+| Helm Chart Version | Falcon Admission Controller Version | Notes                                                                                                                                                                                   |
+|:-------------------|:------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `1.6.1`            | `>= 7.33`                           | —                                                                                                                                                                                       |
+| `1.6.0`            | `>= 7.33`                           | Added KAC extended resource monitoring capabilities which require additional RBAC permissions.<br/>falcon-kac images now use a non-regionalized unified image repo, starting with 7.33. |
+| `1.5.2`            | `<= 7.32`                           | Added `falconImageAnalyzerNamespace` param to support communication with Falcon Image Analyzer.                                                                                         |
+| `1.5.1`            | `<= 7.32`                           | —                                                                                                                                                                                       |
 
 > [!IMPORTANT]
 > Falcon KAC will have multi-arch images starting with version `7.26.x`. Falcon KAC helm chart versions 1.4.x+ adds

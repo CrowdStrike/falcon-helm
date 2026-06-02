@@ -7,6 +7,7 @@ more.
 
 ## Table of Contents
 - [Kubernetes Cluster Compatibility](#kubernetes-cluster-compatibility)
+- [Helm Chart Support for Falcon Image Analyzer Versions](#helm-chart-support-for-falcon-image-analyzer-versions)
 - [New Updates in the Current Version](#new-updates-in-current-release)
 - [Dependencies](#dependencies)
 - [Helm Repo Setup](#helm-repo-setup)
@@ -40,6 +41,16 @@ The Falcon Image Analyzer Helm chart has been tested to deploy on the following 
 * Google Kubernetes Engine (GKE)
 * SUSE Rancher K3s
 * Red Hat OpenShift Kubernetes
+
+
+## Helm Chart Support for Falcon Image Analyzer Versions
+
+| Helm Chart Version | Falcon Image Analyzer Version | Notes                                                                                            |
+|:-------------------|:------------------------------|:-------------------------------------------------------------------------------------------------|
+| `1.1.20`           | `>= 1.0.24`                   | falcon-imageanalyzer images now use a non-regionalized unified image repo, starting with 1.0.24. |
+| `1.1.19`           | `>= 1.0.21`                   | —                                                                                                |
+| `1.1.18`           | `>= 1.0.21`                   | —                                                                                                |
+| `1.1.17`           | `>= 1.0.21`                   | Added Image Analyzer Agent service to allow Falcon KAC to request image scan data.               |
 
 
 ## New updates in current release

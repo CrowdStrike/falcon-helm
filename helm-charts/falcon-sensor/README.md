@@ -5,6 +5,29 @@ platform purpose-built to stop breaches via a unified set of cloud-delivered
 technologies that prevent all types of attacks — including malware and much
 more.
 
+## Table of Contents
+- [Kubernetes Cluster Compatibility](#kubernetes-cluster-compatability)
+- [Dependencies](#dependencies)
+  - [Helm Chart Support for Falcon Sensor Versions](#helm-chart-support-for-falcon-sensor-versions)
+    - [Helm (falcon-sensor) × Falcon Node Sensor](#helm-falcon-sensor--falcon-node-sensor)
+    - [Helm (falcon-sensor) × Falcon Container Sensor](#helm-falcon-sensor--falcon-container-sensor)
+- [Installation](#installation)
+- [Falcon Configuration Options](#falcon-configuration-options)
+- [Installing on Kubernetes Cluster Nodes](#installing-on-kubernetes-cluster-nodes)
+  - [Deployment Considerations](#deployment-considerations)
+  - [Sensor Uninstall and Maintenance Protection](#sensor-uninstall-and-maintenance-protection)
+  - [Pod Security Standards](#pod-security-standards)
+  - [Install CrowdStrike Falcon Helm Chart on Kubernetes Nodes](#install-crowdstrike-falcon-helm-chart-on-kubernetes-nodes)
+  - [Node Configuration](#node-configuration)
+  - [GKE Autopilot Configuration](#gke-autopilot-configuration)
+- [Installing in Kubernetes Cluster as a Sidecar](#installing-in-kubernetes-cluster-as-a-sidecar)
+  - [Deployment Considerations](#deployment-considerations-1)
+  - [Install CrowdStrike Falcon Helm Chart in Kubernetes Cluster as a Sidecar](#install-crowdstrike-falcon-helm-chart-in-kubernetes-cluster-as-a-sidecar)
+  - [Container Sensor Configuration](#container-sensor-configuration)
+  - [AITap](#aitap)
+  - [Uninstall Helm Chart](#uninstall-helm-chart)
+  - [Troubleshooting](#troubleshooting)
+
 # Kubernetes Cluster Compatability
 
 The Falcon Helm chart has been tested to deploy on the following Kubernetes distributions:
@@ -26,10 +49,25 @@ The Falcon Helm chart has been tested to deploy on the following Kubernetes dist
 
 ## Helm Chart Support for Falcon Sensor Versions
 
-| Helm chart Version      | Falcon Sensor Version             |
-|:------------------------|:----------------------------------|
-| `<= 1.26.x`             | `< 7.05.x`                        |
-| `>= 1.27.x`             | `>= 7.06.x`                       |
+### Helm (falcon-sensor) × Falcon Node Sensor
+
+| Helm Chart Version | Falcon Sensor Version | Notes                                                                                   |
+|:-------------------|:----------------------|:----------------------------------------------------------------------------------------|
+| `1.36.0`           | `>= 7.35`             | —                                                                                       |
+| `1.35.0`           | `>= 7.35`             | Added Falcon Data Protection for Cloud support for self-managed Kubernetes clusters.    |
+| `1.34.2`           | `>= 7.31`             | —                                                                                       |
+| `1.34.1`           | `>= 7.31`             | falcon-sensor images now use a non-regionalized unified image repo, starting with 7.31. |
+
+### Helm (falcon-sensor) × Falcon Container Sensor
+
+> The `falcon-sensor` chart manages both node DaemonSet and container sensor sidecar deployments.
+
+| Helm Chart Version | Falcon Container Sensor Version | Notes                                                                                      |
+|:-------------------|:--------------------------------|:-------------------------------------------------------------------------------------------|
+| `1.36.0`           | `>= 7.37`                       | Added AI-DR support.                                                                       |
+| `1.35.0`           | `>= 7.31`                       | —                                                                                          |
+| `1.34.2`           | `>= 7.31`                       | falcon-container images now use a non-regionalized unified image repo, starting with 7.33. |
+| `1.34.1`           | `>= 7.31`                       | —                                                                                          |
 
 # Installation
 

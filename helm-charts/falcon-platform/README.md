@@ -3,6 +3,39 @@ The Falcon Platform Helm Chart deploys the complete CrowdStrike Falcon Kubernete
 platform. This umbrella chart manages all individual Falcon components as dependencies, providing
 unified deployment and configuration.
 
+## Table of Contents
+- [Overview](#overview)
+  - [Components](#components)
+  - [Falcon Platform Support for Falcon Component Subcharts](#falcon-platform-support-for-falcon-component-subcharts)
+  - [Namespace Isolation Strategy](#namespace-isolation-strategy)
+  - [Sensor Uninstall and Maintenance Protection](#sensor-uninstall-and-maintenance-protection)
+- [Prerequisites](#prerequisites)
+  - [Minimum Requirements](#minimum-requirements)
+- [Deploy the Falcon Platform](#deploy-the-falcon-platform)
+- [Verify Falcon Platform Deployment](#verify-falcon-platform-deployment)
+  - [Check Installation Status](#check-installation-status)
+  - [Verify Individual Component Health](#verify-individual-component-health)
+- [Configure Falcon Platform](#configure-falcon-platform)
+  - [Configuration Priority](#configuration-priority)
+  - [Component-Specific Requirements](#component-specific-requirements)
+  - [Falcon Platform Configuration](#falcon-platform-configuration)
+  - [Global Configuration](#global-configuration)
+  - [Component-Specific Configuration](#component-specific-configuration)
+  - [Using Existing Kubernetes Secrets](#using-existing-kubernetes-secrets)
+- [Upgrade Strategy](#upgrade-strategy)
+  - [Install/Reinstall a Single Component](#installreinstall-a-single-component)
+  - [Upgrade the Falcon Platform Helm Chart Version](#upgrade-the-falcon-platform-helm-chart-version)
+  - [Individual Component Updates](#individual-component-updates)
+- [Uninstall](#uninstall)
+  - [Uninstall a Single Component](#uninstall-a-single-component)
+  - [Uninstall the Falcon Platform Helm Chart](#uninstall-the-falcon-platform-helm-chart)
+- [Migrating from Individual Component Helm Charts](#migrating-from-individual-component-helm-charts)
+- [Troubleshooting](#troubleshooting)
+  - [Partial Falcon Platform Installation - Release Failure](#partial-falcon-platform-installation---release-failure)
+  - [Falcon Sensor Troubleshooting Guides](#falcon-sensor-troubleshooting-guides)
+  - [Falcon Image Analyzer Troubleshooting Guides](#falcon-image-analyzer-troubleshooting-guides)
+  - [Component Logs](#component-logs)
+
 ## Overview
 
 The Falcon Platform Helm chart allows you to deploy and manage the entire CrowdStrike Falcon
@@ -27,14 +60,76 @@ Each component is declared as a dependency in the umbrella chart's [Chart.yaml](
 file with specific version constraints. Helm automatically downloads and manages the specified
 versions of each component chart during installation.
 
-Below is a table of subchart versions locked to the latest falcon-platform release.
+The table below shows the subchart versions bundled with each falcon-platform release.
 
-| Helm Chart Name       | Helm Chart Version |
-|:----------------------|:-------------------|
-| falcon-platform       | `1.2.0`            |
-| falcon-sensor         | `1.34.2`           |
-| falcon-kac            | `1.6.0`            |
-| falcon-image-analyzer | `1.1.18`           |
+| falcon-platform | falcon-sensor | falcon-kac | falcon-image-analyzer |
+|:----------------|:--------------|:-----------|:----------------------|
+| `1.4.0`         | `1.36.0`      | `1.6.0`    | `1.1.20`              |
+| `1.3.0`         | `1.35.0`      | `1.6.0`    | `1.1.20`              |
+| `1.2.0`         | `1.34.2`      | `1.6.0`    | `1.1.18`              |
+| `1.1.0`         | `1.34.1`      | `1.5.2`    | `1.1.17`              |
+| `1.0.0`         | `1.34.1`      | `1.5.1`    | `1.1.16`              |
+
+
+<details>
+<summary><b>falcon-platform 1.4.0</b></summary>
+
+| Component | Helm Version | Sensor Version | Notes |
+|:----------|:--------|:---------------|:------|
+| falcon-sensor (node) | `1.36.0` | `>= 7.35` | — |
+| falcon-sensor (container) | `1.36.0` | `>= 7.37` | Added AI-DR support. |
+| falcon-kac | `1.6.0` | `>= 7.33` | — |
+| falcon-image-analyzer | `1.1.20` | `>= 1.0.24` | — |
+
+</details>
+
+<details>
+<summary><b>falcon-platform 1.3.0</b></summary>
+
+| Component | Helm Version | Sensor Version | Notes |
+|:----------|:--------|:---------------|:------|
+| falcon-sensor (node) | `1.35.0` | `>= 7.35` | Added Falcon Data Protection for Cloud support for self-managed Kubernetes clusters. |
+| falcon-sensor (container) | `1.35.0` | `>= 7.31` | — |
+| falcon-kac | `1.6.0` | `>= 7.33` | — |
+| falcon-image-analyzer | `1.1.20` | `>= 1.0.24` | falcon-imageanalyzer images now use a non-regionalized unified image repo, starting with 1.0.24. |
+
+</details>
+
+<details>
+<summary><b>falcon-platform 1.2.0</b></summary>
+
+| Component | Helm Version | Sensor Version | Notes |
+|:----------|:--------|:---------------|:------|
+| falcon-sensor (node) | `1.34.2` | `>= 7.31` | — |
+| falcon-sensor (container) | `1.34.2` | `>= 7.31` | falcon-container images now use a non-regionalized unified image repo, starting with 7.33. |
+| falcon-kac | `1.6.0` | `>= 7.33` | Added KAC extended resource monitoring capabilities which require additional RBAC permissions.<br/>falcon-kac images now use a non-regionalized unified image repo, starting with 7.33. |
+| falcon-image-analyzer | `1.1.18` | `>= 1.0.21` | — |
+
+</details>
+
+<details>
+<summary><b>falcon-platform 1.1.0</b></summary>
+
+| Component | Helm Version | Sensor Version | Notes |
+|:----------|:--------|:---------------|:------|
+| falcon-sensor (node) | `1.34.1` | `>= 7.31` | — |
+| falcon-sensor (container) | `1.34.1` | `>= 7.31` | — |
+| falcon-kac | `1.5.2` | `<= 7.32` | Added `falconImageAnalyzerNamespace` param to support communication with Falcon Image Analyzer. |
+| falcon-image-analyzer | `1.1.17` | `>= 1.0.21` | Added Image Analyzer Agent service to allow Falcon KAC to request image scan data. |
+
+</details>
+
+<details>
+<summary><b>falcon-platform 1.0.0</b></summary>
+
+| Component | Version | Sensor Version | Notes |
+|:----------|:--------|:---------------|:------|
+| falcon-sensor (node) | `1.34.1` | `>= 7.31` | falcon-sensor images now use a non-regionalized unified image repo, starting with 7.31. |
+| falcon-sensor (container) | `1.34.1` | `>= 7.31` | — |
+| falcon-kac | `1.5.1` | `<= 7.32` | — |
+| falcon-image-analyzer | `1.1.16` | — | — |
+
+</details>
 
 ### Namespace Isolation Strategy
 Each Falcon component operates in its own dedicated namespace.
@@ -70,6 +165,7 @@ Important notes for Kubernetes and other container deployments of the Falcon sen
     - Falcon Container CLI: Write
     - Falcon Container Image: Read/Write
     - Falcon Images Download: Read
+    - Sensor Download: Read
 
 ## Deploy the Falcon Platform
 

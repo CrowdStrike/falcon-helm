@@ -1,0 +1,166 @@
+{{- if .Values.testing.enabled -}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "falcon-kac.fullname" . }}-test-kac-running"
+  namespace: {{ include "falcon-kac.namespace" . }}
+  labels:
+    {{- include "falcon-kac.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: kubectl
+      image: docker.io/bitnami/kubectl
+      command:
+      - /bin/sh
+      - -c
+      - |
+        FAILED=0
+
+        echo "--- Waiting for pods to initialize ---"
+        sleep 10
+
+        echo "--- Checking all KAC pods are running ---"
+        # Exclude test pods by filtering out pods with helm.sh/hook annotation
+        KUBECMD=$(kubectl get pods -n "{{ include "falcon-kac.namespace" . }}" -l "app={{ include "falcon-kac.name" . }}" --field-selector=status.phase!=Running --no-headers 2>&1 | grep -v "test-kac-running" || echo "No resources found")
+        if ! echo "${KUBECMD}" | grep -q "No resources found"; then
+            echo "[FAIL]: Not all KAC pods are running"
+            echo "${KUBECMD}"
+            FAILED=1
+        else
+            echo "[OK]: KAC pods are running"
+        fi
+
+        echo "--- Checking ConfigMap ---"
+        CM_NAME="{{ include "falcon-kac.name" . }}-config"
+        if ! kubectl get configmap "${CM_NAME}" -n "{{ include "falcon-kac.namespace" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: ConfigMap '${CM_NAME}' not found"
+            FAILED=1
+        else
+            echo "[OK]: ConfigMap '${CM_NAME}' exists"
+        fi
+
+        echo "--- Checking Deployment configuration ---"
+        DEPLOY_NAME="{{ include "falcon-kac.name" . }}"
+        if ! kubectl get deployment "${DEPLOY_NAME}" -n "{{ include "falcon-kac.namespace" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: Deployment '${DEPLOY_NAME}' not found"
+            FAILED=1
+        else
+            echo "[OK]: Deployment '${DEPLOY_NAME}' exists"
+
+            {{- if .Values.hostNetwork }}
+            # Check hostNetwork
+            HOST_NETWORK=$(kubectl get deployment "${DEPLOY_NAME}" -n "{{ include "falcon-kac.namespace" . }}" \
+              -o jsonpath="{.spec.template.spec.hostNetwork}")
+            if [ "${HOST_NETWORK}" != "true" ]; then
+                echo "[FAIL]: hostNetwork is '${HOST_NETWORK}', expected 'true'"
+                FAILED=1
+            else
+                echo "[OK]: hostNetwork=true"
+            fi
+
+            # Check dnsPolicy
+            DNS_POLICY=$(kubectl get deployment "${DEPLOY_NAME}" -n "{{ include "falcon-kac.namespace" . }}" \
+              -o jsonpath="{.spec.template.spec.dnsPolicy}")
+            if [ "${DNS_POLICY}" != "ClusterFirstWithHostNet" ]; then
+                echo "[FAIL]: dnsPolicy is '${DNS_POLICY}', expected 'ClusterFirstWithHostNet'"
+                FAILED=1
+            else
+                echo "[OK]: dnsPolicy=ClusterFirstWithHostNet"
+            fi
+            {{- end }}
+        fi
+
+        echo "--- Checking service account ---"
+        SA_NAME="{{ .Values.serviceAccount.name }}"
+        if ! kubectl get serviceaccount "${SA_NAME}" -n "{{ include "falcon-kac.namespace" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: ServiceAccount '${SA_NAME}' not found"
+            FAILED=1
+        else
+            echo "[OK]: ServiceAccount '${SA_NAME}' exists"
+        fi
+
+        # Check ClusterRole exists
+        if ! kubectl get clusterrole "{{ include "falcon-kac.fullname" . }}-resource-reader" > /dev/null 2>&1; then
+            echo "[FAIL]: ClusterRole '{{ include "falcon-kac.fullname" . }}-resource-reader' not found"
+            FAILED=1
+        else
+            echo "[OK]: ClusterRole exists"
+        fi
+
+        # Check ClusterRoleBinding exists
+        if ! kubectl get clusterrolebinding "{{ include "falcon-kac.fullname" . }}-security-crb" > /dev/null 2>&1; then
+            echo "[FAIL]: ClusterRoleBinding '{{ include "falcon-kac.fullname" . }}-security-crb' not found"
+            FAILED=1
+        else
+            echo "[OK]: ClusterRoleBinding exists"
+        fi
+
+        echo "--- Checking pod annotations ---"
+        # Exclude test pods by filtering out pods with helm.sh/hook annotation
+        PODS=$(kubectl get pods -n "{{ include "falcon-kac.namespace" . }}" \
+          -l "app={{ include "falcon-kac.name" . }}" \
+          -o json 2>&1 | jq -r '.items[] | select(.metadata.annotations["helm.sh/hook"] == null) | .metadata.name')
+        if [ -z "${PODS}" ]; then
+            echo "[FAIL]: No KAC pods found"
+            FAILED=1
+        else
+            for POD in ${PODS}; do
+                INJECTION_ANNOTATION=$(kubectl get pod "${POD}" \
+                  -n "{{ include "falcon-kac.namespace" . }}" \
+                  -o jsonpath="{.metadata.annotations.sensor\.falcon-system\.crowdstrike\.com/injection}" 2>&1)
+                if [ "${INJECTION_ANNOTATION}" != "disabled" ]; then
+                    echo "[FAIL]: Pod '${POD}' injection annotation is '${INJECTION_ANNOTATION}', expected 'disabled'"
+                    FAILED=1
+                else
+                    echo "[OK]: Pod '${POD}' has injection=disabled annotation"
+                fi
+
+                CHECKSUM_ANNOTATION=$(kubectl get pod "${POD}" \
+                  -n "{{ include "falcon-kac.namespace" . }}" \
+                  -o jsonpath="{.metadata.annotations.checksum/configmap}" 2>&1)
+                if [ -z "${CHECKSUM_ANNOTATION}" ]; then
+                    echo "[FAIL]: Pod '${POD}' is missing checksum/configmap annotation"
+                    FAILED=1
+                else
+                    echo "[OK]: Pod '${POD}' has checksum/configmap annotation"
+                fi
+            done
+        fi
+
+        echo "--- Checking webhook service ---"
+        SVC_NAME="webhook"
+        if ! kubectl get service "${SVC_NAME}" -n "{{ include "falcon-kac.namespace" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: Service '${SVC_NAME}' not found"
+            FAILED=1
+        else
+            echo "[OK]: Service '${SVC_NAME}' exists"
+        fi
+
+        echo "--- Checking ValidatingWebhookConfiguration ---"
+        WEBHOOK_CONFIG="validating.{{ include "falcon-kac.name" . }}.crowdstrike.com"
+        if ! kubectl get validatingwebhookconfiguration "${WEBHOOK_CONFIG}" > /dev/null 2>&1; then
+            echo "[FAIL]: ValidatingWebhookConfiguration '${WEBHOOK_CONFIG}' not found"
+            FAILED=1
+        else
+            echo "[OK]: ValidatingWebhookConfiguration '${WEBHOOK_CONFIG}' exists"
+        fi
+
+        if [ "${FAILED}" -eq 1 ]; then
+            exit 1
+        fi
+        exit 0
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        seccompProfile:
+          type: RuntimeDefault
+        capabilities:
+          drop:
+            - ALL
+  serviceAccountName: {{ include "falcon-kac.fullname" . }}-test-sa
+  restartPolicy: Never
+{{- end -}}

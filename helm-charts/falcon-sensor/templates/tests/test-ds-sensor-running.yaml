@@ -17,23 +17,136 @@ spec:
       - /bin/sh
       - -c
       - |
-        echo "Waiting 10 seconds to allow pod time to initialize before running test"
+        FAILED=0
+
+        echo "--- Waiting for pods to initialize ---"
         sleep 10
+
+        echo "--- Checking all sensor pods are running ---"
         KUBECMD=$(kubectl get pods -n "{{ include "falcon-sensor.namespace" . }}" -l "app.kubernetes.io/component=kernel_sensor" --field-selector=status.phase!=Running --no-headers 2>&1)
         if ! echo "${KUBECMD}" | grep -q "No resources found"; then
-            echo "[\033[0;31mFAIL\033[0m]: Not all sensor pods are running"
+            echo "[FAIL]: Not all sensor pods are running"
             echo "${KUBECMD}"
-            exit 1
+            FAILED=1
         else
-            echo "[\033[0;32mOK\033[0m]: Sensor pods are running"
-            exit 0
+            echo "[OK]: Sensor pods are running"
         fi
+
+        echo "--- Checking ConfigMap ---"
+        CM_NAME="{{ include "falcon-sensor.configMapName" . }}"
+        if ! kubectl get configmap "${CM_NAME}" -n "{{ include "falcon-sensor.namespace" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: ConfigMap '${CM_NAME}' not found"
+            FAILED=1
+        else
+            echo "[OK]: ConfigMap '${CM_NAME}' exists"
+        fi
+
+        echo "--- Checking DaemonSet configuration ---"
+        DS_NAME="{{ include "falcon-sensor.fullname" . }}"
+        if ! kubectl get daemonset "${DS_NAME}" -n "{{ include "falcon-sensor.namespace" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: DaemonSet '${DS_NAME}' not found"
+            FAILED=1
+        else
+            echo "[OK]: DaemonSet '${DS_NAME}' exists"
+        fi
+
+        echo "--- Checking service account ---"
+        SA_NAME="{{ .Values.serviceAccount.name }}"
+        if ! kubectl get serviceaccount "${SA_NAME}" -n "{{ include "falcon-sensor.namespace" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: ServiceAccount '${SA_NAME}' not found"
+            FAILED=1
+        else
+            echo "[OK]: ServiceAccount '${SA_NAME}' exists"
+        fi
+
+        echo "--- Checking RBAC resources ---"
+        # Check ClusterRole exists
+        if ! kubectl get clusterrole "{{ include "falcon-sensor.fullname" . }}-access-role" > /dev/null 2>&1; then
+            echo "[FAIL]: ClusterRole '{{ include "falcon-sensor.fullname" . }}-access-role' not found"
+            FAILED=1
+        else
+            echo "[OK]: ClusterRole exists"
+        fi
+
+        # Check ClusterRoleBinding exists
+        if ! kubectl get clusterrolebinding "{{ include "falcon-sensor.fullname" . }}-access-binding" > /dev/null 2>&1; then
+            echo "[FAIL]: ClusterRoleBinding '{{ include "falcon-sensor.fullname" . }}-access-binding' not found"
+            FAILED=1
+        else
+            echo "[OK]: ClusterRoleBinding exists"
+        fi
+
+        echo "--- Checking pod annotations ---"
+        PODS=$(kubectl get pods -n "{{ include "falcon-sensor.namespace" . }}" \
+          -l "app.kubernetes.io/component=kernel_sensor" \
+          -o jsonpath="{.items[*].metadata.name}" 2>&1)
+        if [ -z "${PODS}" ]; then
+            echo "[FAIL]: No sensor pods found"
+            FAILED=1
+        else
+            for POD in ${PODS}; do
+                # Check injection disabled annotation
+                INJECTION_ANNOTATION=$(kubectl get pod "${POD}" \
+                  -n "{{ include "falcon-sensor.namespace" . }}" \
+                  -o jsonpath="{.metadata.annotations.{{ .Values.node.daemonset.podAnnotationKey | replace "." "\\." }}}" 2>&1)
+                if [ "${INJECTION_ANNOTATION}" != "disabled" ]; then
+                    echo "[FAIL]: Pod '${POD}' injection annotation is '${INJECTION_ANNOTATION}', expected 'disabled'"
+                    FAILED=1
+                else
+                    echo "[OK]: Pod '${POD}' has injection=disabled annotation"
+                fi
+
+                # Check checksum/configmap annotation
+                CHECKSUM_ANNOTATION=$(kubectl get pod "${POD}" \
+                  -n "{{ include "falcon-sensor.namespace" . }}" \
+                  -o jsonpath="{.metadata.annotations.checksum/configmap}" 2>&1)
+                if [ -z "${CHECKSUM_ANNOTATION}" ]; then
+                    echo "[FAIL]: Pod '${POD}' is missing checksum/configmap annotation"
+                    FAILED=1
+                else
+                    echo "[OK]: Pod '${POD}' has checksum/configmap annotation"
+                fi
+            done
+        fi
+
+        echo "--- Checking pod labels ---"
+        for POD in ${PODS}; do
+            # Check component label
+            COMPONENT_LABEL=$(kubectl get pod "${POD}" \
+              -n "{{ include "falcon-sensor.namespace" . }}" \
+              -o jsonpath="{.metadata.labels.app\.kubernetes\.io/component}" 2>&1)
+            if [ "${COMPONENT_LABEL}" != "kernel_sensor" ]; then
+                echo "[FAIL]: Pod '${POD}' component label is '${COMPONENT_LABEL}', expected 'kernel_sensor'"
+                FAILED=1
+            else
+                echo "[OK]: Pod '${POD}' has correct component label"
+            fi
+
+            # Check provider label
+            PROVIDER_LABEL=$(kubectl get pod "${POD}" \
+              -n "{{ include "falcon-sensor.namespace" . }}" \
+              -o jsonpath="{.metadata.labels.crowdstrike\.com/provider}" 2>&1)
+            if [ "${PROVIDER_LABEL}" != "crowdstrike" ]; then
+                echo "[FAIL]: Pod '${POD}' provider label is '${PROVIDER_LABEL}', expected 'crowdstrike'"
+                FAILED=1
+            else
+                echo "[OK]: Pod '${POD}' has correct provider label"
+            fi
+        done
+
+        if [ "${FAILED}" -eq 1 ]; then
+            exit 1
+        fi
+        exit 0
       securityContext:
-        runAsUser: 0
-        privileged: true
-        readOnlyRootFilesystem: false
-        allowPrivilegeEscalation: true
-  serviceAccountName: {{ .Values.serviceAccount.name }}
+        runAsNonRoot: true
+        runAsUser: 1000
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+  serviceAccountName: {{ include "falcon-sensor.fullname" . }}-test-sa
   restartPolicy: Never
 {{- end -}}
 {{- end -}}

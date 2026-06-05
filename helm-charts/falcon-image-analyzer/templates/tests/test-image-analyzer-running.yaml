@@ -1,0 +1,186 @@
+{{- if .Values.testing.enabled -}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "falcon-image-analyzer.fullname" . }}-test-running"
+  namespace: {{ include "falcon-image-analyzer.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "falcon-image-analyzer.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/component: test
+    helm.sh/chart: {{ include "falcon-image-analyzer.chart" . }}
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: kubectl
+      image: docker.io/bitnami/kubectl
+      command:
+      - /bin/sh
+      - -c
+      - |
+        FAILED=0
+
+        echo "--- Waiting for pods to initialize ---"
+        sleep 10
+
+        echo "--- Checking all Image Analyzer pods are running ---"
+        KUBECMD=$(kubectl get pods -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+          -l "app.kubernetes.io/name={{ include "falcon-image-analyzer.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" \
+          --field-selector=status.phase!=Running --no-headers 2>&1 | grep -v "test-" || echo "No resources found")
+        if ! echo "${KUBECMD}" | grep -q "No resources found"; then
+            echo "[FAIL]: Not all Image Analyzer pods are running"
+            echo "${KUBECMD}"
+            FAILED=1
+        else
+            echo "[OK]: Image Analyzer pods are running"
+        fi
+
+        echo "--- Checking ConfigMap ---"
+        CM_NAME="{{ include "falcon-image-analyzer.fullname" . }}"
+        if ! kubectl get configmap "${CM_NAME}" -n "{{ include "falcon-image-analyzer.namespace" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: ConfigMap '${CM_NAME}' not found"
+            FAILED=1
+        else
+            echo "[OK]: ConfigMap '${CM_NAME}' exists"
+        fi
+
+        {{- if .Values.daemonset.enabled }}
+        echo "--- Checking DaemonSet configuration ---"
+        DS_NAME="{{ include "falcon-image-analyzer.fullname" . }}"
+        if ! kubectl get daemonset "${DS_NAME}" -n "{{ include "falcon-image-analyzer.namespace" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: DaemonSet '${DS_NAME}' not found"
+            FAILED=1
+        else
+            echo "[OK]: DaemonSet '${DS_NAME}' exists"
+
+            {{- if .Values.hostNetwork }}
+            # Check hostNetwork
+            HOST_NETWORK=$(kubectl get daemonset "${DS_NAME}" -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+              -o jsonpath="{.spec.template.spec.hostNetwork}")
+            if [ "${HOST_NETWORK}" != "true" ]; then
+                echo "[FAIL]: hostNetwork is '${HOST_NETWORK}', expected 'true'"
+                FAILED=1
+            else
+                echo "[OK]: hostNetwork=true"
+            fi
+
+            # Check dnsPolicy
+            DNS_POLICY=$(kubectl get daemonset "${DS_NAME}" -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+              -o jsonpath="{.spec.template.spec.dnsPolicy}")
+            if [ "${DNS_POLICY}" != "ClusterFirstWithHostNet" ]; then
+                echo "[FAIL]: dnsPolicy is '${DNS_POLICY}', expected 'ClusterFirstWithHostNet'"
+                FAILED=1
+            else
+                echo "[OK]: dnsPolicy=ClusterFirstWithHostNet"
+            fi
+            {{- end }}
+        fi
+        {{- end }}
+
+        {{- if .Values.deployment.enabled }}
+        echo "--- Checking Deployment configuration ---"
+        DEPLOY_NAME="{{ include "falcon-image-analyzer.fullname" . }}"
+        if ! kubectl get deployment "${DEPLOY_NAME}" -n "{{ include "falcon-image-analyzer.namespace" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: Deployment '${DEPLOY_NAME}' not found"
+            FAILED=1
+        else
+            echo "[OK]: Deployment '${DEPLOY_NAME}' exists"
+
+            {{- if .Values.hostNetwork }}
+            # Check hostNetwork
+            HOST_NETWORK=$(kubectl get deployment "${DEPLOY_NAME}" -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+              -o jsonpath="{.spec.template.spec.hostNetwork}")
+            if [ "${HOST_NETWORK}" != "true" ]; then
+                echo "[FAIL]: hostNetwork is '${HOST_NETWORK}', expected 'true'"
+                FAILED=1
+            else
+                echo "[OK]: hostNetwork=true"
+            fi
+
+            # Check dnsPolicy
+            DNS_POLICY=$(kubectl get deployment "${DEPLOY_NAME}" -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+              -o jsonpath="{.spec.template.spec.dnsPolicy}")
+            if [ "${DNS_POLICY}" != "ClusterFirstWithHostNet" ]; then
+                echo "[FAIL]: dnsPolicy is '${DNS_POLICY}', expected 'ClusterFirstWithHostNet'"
+                FAILED=1
+            else
+                echo "[OK]: dnsPolicy=ClusterFirstWithHostNet"
+            fi
+            {{- end }}
+        fi
+        {{- end }}
+
+        echo "--- Checking service account ---"
+        SA_NAME="{{ .Values.serviceAccount.name | default (include "falcon-image-analyzer.fullname" .) }}"
+        if ! kubectl get serviceaccount "${SA_NAME}" -n "{{ include "falcon-image-analyzer.namespace" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: ServiceAccount '${SA_NAME}' not found"
+            FAILED=1
+        else
+            echo "[OK]: ServiceAccount '${SA_NAME}' exists"
+        fi
+
+        echo "--- Checking RBAC resources ---"
+        # Check ClusterRole exists
+        if ! kubectl get clusterrole "{{ include "falcon-image-analyzer.fullname" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: ClusterRole '{{ include "falcon-image-analyzer.fullname" . }}' not found"
+            FAILED=1
+        else
+            echo "[OK]: ClusterRole exists"
+        fi
+
+        # Check ClusterRoleBinding exists
+        if ! kubectl get clusterrolebinding "{{ include "falcon-image-analyzer.fullname" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: ClusterRoleBinding '{{ include "falcon-image-analyzer.fullname" . }}' not found"
+            FAILED=1
+        else
+            echo "[OK]: ClusterRoleBinding exists"
+        fi
+
+        echo "--- Checking pod annotations ---"
+        PODS=$(kubectl get pods -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+          -l "app.kubernetes.io/name={{ include "falcon-image-analyzer.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" \
+          -o json 2>&1 | jq -r '.items[] | select(.metadata.annotations["helm.sh/hook"] == null) | .metadata.name')
+        if [ -z "${PODS}" ]; then
+            echo "[FAIL]: No Image Analyzer pods found"
+            FAILED=1
+        else
+            for POD in ${PODS}; do
+                INJECTION_ANNOTATION=$(kubectl get pod "${POD}" \
+                  -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+                  -o jsonpath="{.metadata.annotations.sensor\.falcon-system\.crowdstrike\.com/injection}" 2>&1)
+                if [ "${INJECTION_ANNOTATION}" != "disabled" ]; then
+                    echo "[FAIL]: Pod '${POD}' injection annotation is '${INJECTION_ANNOTATION}', expected 'disabled'"
+                    FAILED=1
+                else
+                    echo "[OK]: Pod '${POD}' has injection=disabled annotation"
+                fi
+            done
+        fi
+
+        echo "--- Checking service ---"
+        SVC_NAME="{{ include "falcon-image-analyzer.iarAgentService" . }}"
+        if ! kubectl get service "${SVC_NAME}" -n "{{ include "falcon-image-analyzer.namespace" . }}" > /dev/null 2>&1; then
+            echo "[WARN]: Service '${SVC_NAME}' not found (optional resource)"
+        else
+            echo "[OK]: Service '${SVC_NAME}' exists"
+        fi
+
+        if [ "${FAILED}" -eq 1 ]; then
+            exit 1
+        fi
+        exit 0
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        seccompProfile:
+          type: RuntimeDefault
+        capabilities:
+          drop:
+            - ALL
+  serviceAccountName: {{ include "falcon-image-analyzer.fullname" . }}-test-sa
+  restartPolicy: Never
+{{- end -}}

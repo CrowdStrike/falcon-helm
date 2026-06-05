@@ -5,7 +5,52 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: busybox
+{{- if .Values.container.image.pullSecrets.enable }}
+{{- $registryConfigJson := (include "falcon-sensor.container.registryConfigJson" .) }}
+{{- $imagePullSecretName := (include "falcon-sensor.container.imagePullSecretName" .) }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $imagePullSecretName | default (printf "%s-pull-secret" (include "falcon-sensor.fullname" .)) }}
   namespace: busybox
+data:
+  .dockerconfigjson: {{ $registryConfigJson }}
+type: kubernetes.io/dockerconfigjson
+{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "falcon-sensor.fullname" . }}-test-busybox-role
+  namespace: busybox
+  labels:
+    {{- include "falcon-sensor.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - create
+  - get
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "falcon-sensor.fullname" . }}-test-busybox-binding
+  namespace: busybox
+  labels:
+    {{- include "falcon-sensor.labels" . | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "falcon-sensor.fullname" . }}-test-sa
+  namespace: {{ include "falcon-sensor.namespace" . }}
+roleRef:
+  kind: Role
+  name: {{ include "falcon-sensor.fullname" . }}-test-busybox-role
+  apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: v1
 kind: Pod
@@ -24,38 +69,165 @@ spec:
       - /bin/sh
       - -c
       - |
-        echo "Waiting 10 seconds to allow pod time to initialize before running test"
+        FAILED=0
+
+        echo "--- Waiting for pods to initialize ---"
         sleep 10
+
+        echo "--- Checking all injector pods are running ---"
         KUBECMD=$(kubectl get pods -n "{{ include "falcon-sensor.namespace" . }}" -l "app.kubernetes.io/component=container_sensor" --field-selector=status.phase!=Running --no-headers 2>&1)
         if ! echo "${KUBECMD}" | grep -q "No resources found"; then
-            echo "[\033[0;31mFAIL\033[0m]: Injector pod is NOT running"
+            echo "[FAIL]: Not all injector pods are running"
             echo "${KUBECMD}"
-            exit 1
+            FAILED=1
+        else
+            echo "[OK]: Injector pods are running"
         fi
 
-        echo "[\033[0;32mOK\033[0m]: Injector pod is running"
+        echo "--- Checking ConfigMap ---"
+        CM_NAME="{{ include "falcon-sensor.configMapName" . }}"
+        if ! kubectl get configmap "${CM_NAME}" -n "{{ include "falcon-sensor.namespace" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: ConfigMap '${CM_NAME}' not found"
+            FAILED=1
+        else
+            echo "[OK]: ConfigMap '${CM_NAME}' exists"
+        fi
 
+        echo "--- Checking Deployment configuration ---"
+        DEPLOY_NAME="{{ include "falcon-sensor.name" . }}-injector"
+        if ! kubectl get deployment "${DEPLOY_NAME}" -n "{{ include "falcon-sensor.namespace" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: Deployment '${DEPLOY_NAME}' not found"
+            FAILED=1
+        else
+            echo "[OK]: Deployment '${DEPLOY_NAME}' exists"
+        fi
+
+        echo "--- Checking service account ---"
+        SA_NAME="{{ .Values.serviceAccount.name }}"
+        if ! kubectl get serviceaccount "${SA_NAME}" -n "{{ include "falcon-sensor.namespace" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: ServiceAccount '${SA_NAME}' not found"
+            FAILED=1
+        else
+            echo "[OK]: ServiceAccount '${SA_NAME}' exists"
+        fi
+
+        echo "--- Checking RBAC resources ---"
+        # Check ClusterRole exists
+        if ! kubectl get clusterrole "{{ include "falcon-sensor.fullname" . }}-access-role" > /dev/null 2>&1; then
+            echo "[FAIL]: ClusterRole '{{ include "falcon-sensor.fullname" . }}-access-role' not found"
+            FAILED=1
+        else
+            echo "[OK]: ClusterRole exists"
+        fi
+
+        # Check ClusterRoleBinding exists
+        if ! kubectl get clusterrolebinding "{{ include "falcon-sensor.fullname" . }}-access-binding" > /dev/null 2>&1; then
+            echo "[FAIL]: ClusterRoleBinding '{{ include "falcon-sensor.fullname" . }}-access-binding' not found"
+            FAILED=1
+        else
+            echo "[OK]: ClusterRoleBinding exists"
+        fi
+
+        echo "--- Checking injector service ---"
+        SVC_NAME="{{ include "falcon-sensor.name" . }}-injector"
+        if ! kubectl get service "${SVC_NAME}" -n "{{ include "falcon-sensor.namespace" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: Service '${SVC_NAME}' not found"
+            FAILED=1
+        else
+            echo "[OK]: Service '${SVC_NAME}' exists"
+        fi
+
+        echo "--- Checking MutatingWebhookConfiguration ---"
+        WEBHOOK_CONFIG="{{ include "falcon-sensor.name" . }}-injector"
+        if ! kubectl get mutatingwebhookconfiguration "${WEBHOOK_CONFIG}" > /dev/null 2>&1; then
+            echo "[FAIL]: MutatingWebhookConfiguration '${WEBHOOK_CONFIG}' not found"
+            FAILED=1
+        else
+            echo "[OK]: MutatingWebhookConfiguration '${WEBHOOK_CONFIG}' exists"
+        fi
+
+        echo "--- Checking pod labels ---"
+        PODS=$(kubectl get pods -n "{{ include "falcon-sensor.namespace" . }}" \
+          -l "app.kubernetes.io/component=container_sensor" \
+          -o jsonpath="{.items[*].metadata.name}" 2>&1)
+        if [ -z "${PODS}" ]; then
+            echo "[FAIL]: No injector pods found"
+            FAILED=1
+        else
+            for POD in ${PODS}; do
+                # Check component label
+                COMPONENT_LABEL=$(kubectl get pod "${POD}" \
+                  -n "{{ include "falcon-sensor.namespace" . }}" \
+                  -o jsonpath="{.metadata.labels.crowdstrike\.com/component}" 2>&1)
+                if [ "${COMPONENT_LABEL}" != "crowdstrike-falcon-injector" ]; then
+                    echo "[FAIL]: Pod '${POD}' component label is '${COMPONENT_LABEL}', expected 'crowdstrike-falcon-injector'"
+                    FAILED=1
+                else
+                    echo "[OK]: Pod '${POD}' has correct component label"
+                fi
+
+                # Check provider label
+                PROVIDER_LABEL=$(kubectl get pod "${POD}" \
+                  -n "{{ include "falcon-sensor.namespace" . }}" \
+                  -o jsonpath="{.metadata.labels.crowdstrike\.com/provider}" 2>&1)
+                if [ "${PROVIDER_LABEL}" != "crowdstrike" ]; then
+                    echo "[FAIL]: Pod '${POD}' provider label is '${PROVIDER_LABEL}', expected 'crowdstrike'"
+                    FAILED=1
+                else
+                    echo "[OK]: Pod '${POD}' has correct provider label"
+                fi
+            done
+        fi
+
+        echo "--- Testing sidecar injection ---"
         echo "Running test pod to verify sidecar injection"
         kubectl run busybox -n busybox --image=busybox --restart=Never --command sleep 120
 
-        echo "Waiting 15 seconds to allow pod time to initialize before running test"
+        echo "Waiting 15 seconds to allow pod time to initialize"
         sleep 15
-        KUBECMD2=$(kubectl get pods -n busybox --field-selector=status.phase!=Running -o jsonpath="{.items[*].spec.containers[*].name}")
-        if echo "${KUBECMD2}" | grep -q "crowdstrike-falcon-container"; then
-            echo "[\033[0;31mFAIL\033[0m]: crowdstrike-falcon-container sidecar container is NOT injected"
-            echo "${KUBECMD2}"
-            exit 1
+
+        # Check if busybox pod exists
+        BUSYBOX_POD=$(kubectl get pod busybox -n busybox -o jsonpath="{.metadata.name}" 2>&1)
+        if [ -z "${BUSYBOX_POD}" ]; then
+            echo "[FAIL]: busybox pod not found"
+            FAILED=1
+        else
+            echo "[OK]: busybox pod '${BUSYBOX_POD}' found"
+
+            # Check if sidecar container is injected
+            CONTAINERS=$(kubectl get pod busybox -n busybox -o jsonpath="{.spec.containers[*].name}" 2>&1)
+            if ! echo "${CONTAINERS}" | grep -q "crowdstrike-falcon-container"; then
+                echo "[FAIL]: crowdstrike-falcon-container sidecar is NOT injected into busybox pod"
+                echo "Containers found: ${CONTAINERS}"
+                FAILED=1
+            else
+                echo "[OK]: crowdstrike-falcon-container sidecar is injected into busybox pod"
+            fi
+
+            # Verify pod is running
+            POD_STATUS=$(kubectl get pod busybox -n busybox -o jsonpath="{.status.phase}" 2>&1)
+            if [ "${POD_STATUS}" != "Running" ]; then
+                echo "[FAIL]: busybox pod is in '${POD_STATUS}' state, expected 'Running'"
+                FAILED=1
+            else
+                echo "[OK]: busybox pod is running"
+            fi
         fi
 
-        echo "[\033[0;32mOK\033[0m]: crowdstrike-falcon-container sidecar container is injected"
+        if [ "${FAILED}" -eq 1 ]; then
+            exit 1
+        fi
         exit 0
 
       securityContext:
-        runAsUser: 0
-        privileged: true
-        readOnlyRootFilesystem: false
-        allowPrivilegeEscalation: true
-  serviceAccountName: {{ .Values.serviceAccount.name }}
+        runAsNonRoot: true
+        runAsUser: 1000
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+  serviceAccountName: {{ include "falcon-sensor.fullname" . }}-test-sa
   restartPolicy: Never
 {{- end -}}
 {{- end -}}

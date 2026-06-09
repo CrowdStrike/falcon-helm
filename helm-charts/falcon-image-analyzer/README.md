@@ -300,17 +300,11 @@ For a successful deployment, you will want to ensure that:
 
 Starting with Kubernetes 1.25, Pod Security Standards (PSS) are enforced via the Pod Security Admission (PSA) controller. Falcon Image Analyzer requires `privileged` PSS labels on its namespace because it accesses the container runtime socket (DaemonSet mode) or runs as root (Deployment mode).
 
-Set `pss.manageNamespace: true` to have Helm apply the required labels automatically as part of install and upgrade:
-
-```
-helm upgrade --install imageanalyzer crowdstrike/falcon-image-analyzer \
-  --create-namespace -n falcon-image-analyzer \
-  --set pss.manageNamespace=true
-```
+Set `pss.manageNamespace: true` to have Helm apply the required labels automatically as part of install and upgrade.
 
 To apply the labels manually instead:
 ```
-kubectl label --overwrite ns falcon-image-analyzer \
+kubectl label --overwrite ns <namespace> \
   pod-security.kubernetes.io/enforce=privileged \
   pod-security.kubernetes.io/warn=privileged \
   pod-security.kubernetes.io/audit=privileged
@@ -334,6 +328,9 @@ The required privileges differ depending on which workload mode is enabled:
 Set `openshift.enabled: true` to have the chart create the appropriate SCC automatically. The SCC grants only the
 minimum permissions required for the active workload mode. The SCC is managed as a standard Helm release resource and
 will be created on install and removed on uninstall.
+
+**Helm User Permissions:** When `openshift.createSCC: true`, the user or service account running Helm must have
+permission to create, update, and delete `SecurityContextConstraints` resources at the cluster level.
 
 To manage the SCC outside of Helm, set `openshift.createSCC: false`, define `openshift.sccName` with the name of your
 SCC, and ensure the SCC is created prior to deployment. The SCC must grant the permissions described above to the IAR

@@ -157,9 +157,12 @@ satisfies the built-in `restricted-v2` SCC without any additional configuration.
 ### Security Context Constraints
 
 If `hostNetwork` must be enabled (required when a custom CNI prevents control plane nodes from communicating directly
-with pods), a custom SCC that permits host network access is required. The chart can create this SCC automatically:
+with pods), a custom SCC that permits host network access is required. The chart can create this SCC automatically.
 
 The SCC is managed as a standard Helm release resource and will be created on install and removed on uninstall.
+
+**Helm User Permissions:** When `openshift.createSCC: true`, the user or service account running Helm must have
+permission to create, update, and delete `SecurityContextConstraints` resources at the cluster level.
 
 To use an existing SCC instead, set `openshift.createSCC=false`, define `openshift.sccName` with the name of your SCC,
 and ensure the SCC is created prior to deployment. The SCC must be bound to the service account manually before

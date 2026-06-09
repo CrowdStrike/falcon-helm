@@ -1,4 +1,5 @@
 {{- if .Values.container.enabled }}
+{{- include "falcon-sensor.validateOpenshiftConfig" . }}
 {{- $namespace := (include "falcon-sensor.namespace" .) -}}
 {{- $name := (printf "%s-injector" (include "falcon-sensor.name" .)) -}}
 {{- $fullName := (printf "%s.%s.svc" $name $namespace) -}}

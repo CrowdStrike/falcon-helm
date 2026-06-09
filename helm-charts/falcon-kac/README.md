@@ -148,7 +148,7 @@ CID checksum, and then click **Copy your Customer ID checksum to the clipboard**
 ## OpenShift Compatibility
 
 > **Note:** OpenShift is **not a recommended** configuration for this Helm chart. The
-> [official Red Hat certified CrowdStrike Falcon Operator](https://catalog.redhat.com/software/operators/detail/5e7e24f99fca9b7637249d4d)
+> [official Red Hat certified CrowdStrike Falcon Operator](https://catalog.redhat.com/en/software/container-stacks/detail/62f2d38f76d039249424703d)
 > is the recommended installation method for OpenShift clusters.
 
 In the default configuration, all containers run as non-root with no privilege escalation and no host access, which

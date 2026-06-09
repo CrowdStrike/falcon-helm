@@ -113,7 +113,7 @@ node:
 
   # OpenShift configuration.
   # NOTE: OpenShift is NOT A RECOMMENDED configuration. The official Red Hat certified operator
-  # (https://catalog.redhat.com/software/operators/detail/5e7e24f99fca9b7637249d4d) is the
+  # (https://catalog.redhat.com/en/software/container-stacks/detail/62f2d38f76d039249424703d) is the
   # recommended installation method for OpenShift clusters.
   # These settings apply only to the node DaemonSet and have no effect on the container sensor.
   openshift:

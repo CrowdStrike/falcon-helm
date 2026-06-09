@@ -646,6 +646,17 @@ kubectl label namespace falcon-system \
 | `node.openshift.createSCC`     | Create a `SecurityContextConstraints` resource granting the DaemonSet service account the required privileges | `true`                                    |
 | `node.openshift.sccName`       | Name of the SCC to create or use. If empty, defaults to `<release-name>-falcon-sensor-node-sensor`           | `""` (auto-generated from release name)   |
 
+### Global OpenShift Override (falcon-platform only)
+
+When deploying via the `falcon-platform` umbrella chart, the `global.openshift` values enable OpenShift compatibility for all components from a single location:
+
+| Parameter                    | Description                                                                          | Default |
+|:-----------------------------|:-------------------------------------------------------------------------------------|:--------|
+| `global.openshift.enabled`   | Enable OpenShift compatibility mode for all Falcon components                        | `false` |
+| `global.openshift.createSCC` | Create SCCs for all components. Set to `false` to manage SCCs outside of Helm        | `true`  |
+
+Chart-level `node.openshift.*` values take precedence and can override the global values for per-component control.
+
 ### Pod Security Standards (PSS) Namespace Labeling
 
 Kubernetes 1.23+ enforces Pod Security Standards (PSS) which can block privileged pods like the Falcon node sensor. Apply the required `privileged` PSS labels to the install namespace before installing:
@@ -656,6 +667,8 @@ kubectl label namespace <namespace> \
   pod-security.kubernetes.io/warn=privileged \
   pod-security.kubernetes.io/audit=privileged
 ```
+
+In automated testing environments, set `testing.labelNamespace: true` to apply these labels automatically via a pre-install Job. This requires outbound access to `docker.io` and is not suitable for air-gapped or registry-restricted environments.
 
 ### Installing on OpenShift
 

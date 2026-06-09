@@ -176,6 +176,17 @@ installing.
 | `openshift.createSCC`  | Create a `SecurityContextConstraints` resource granting the Deployment service account host network access          | `true`                         |
 | `openshift.sccName`    | Name of the SCC to create or use. If empty, defaults to the release fullname                                        | `""` (auto-generated)          |
 
+### Global OpenShift Override (falcon-platform only)
+
+When deploying via the `falcon-platform` umbrella chart, the `global.openshift` values enable OpenShift compatibility for all components from a single location:
+
+| Parameter                    | Description                                                                          | Default |
+|:-----------------------------|:-------------------------------------------------------------------------------------|:--------|
+| `global.openshift.enabled`   | Enable OpenShift compatibility mode for all Falcon components                        | `false` |
+| `global.openshift.createSCC` | Create SCCs for all components. Set to `false` to manage SCCs outside of Helm        | `true`  |
+
+Chart-level `openshift.*` values take precedence and can override the global values for per-component control.
+
 ## Update Falcon KAC
 
 When a new container image is available, you can update your Falcon KAC by passing the new container image to the Helm

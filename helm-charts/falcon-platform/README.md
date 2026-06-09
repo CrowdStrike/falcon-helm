@@ -333,6 +333,8 @@ Global settings apply to all components unless component specific values are set
 | global.falconSecret.secretName      | ""      | Name of existing Kubernetes secret with sensitive data necessary for Falcon component installation |
 | global.containerRegistry.configJSON | ""      | Your container registry config json as a base64 encoded string                                     |
 | global.containerRegistry.pullSecret | ""      | Name of existing container registry pull secret as an alternative to `registryConfigJSON`          |
+| global.openshift.enabled            | false   | Enable OpenShift compatibility mode for all Falcon components                                      |
+| global.openshift.createSCC          | true    | Create SecurityContextConstraints resources. Set to `false` to manage SCCs outside of Helm         |
 
 > [!NOTE]
 Any existing secrets for `falconSecret` or `containerRegistry.pullSecret` must exist in the namespace dedicated to the respective Falcon component before installing the Helm chart. For example, you must already have an existing secret matching `global.falconSecret.secretName` in the `falcon-sensor` default namespace, or custom namespace you choose for your `falcon-sensor.namespaceOverride`.

@@ -309,6 +309,8 @@ kubectl label --overwrite ns <namespace> \
   pod-security.kubernetes.io/audit=privileged
 ```
 
+In automated testing environments, set `testing.labelNamespace: true` to apply these labels automatically via a pre-install Job. This requires outbound access to `docker.io` and is not suitable for air-gapped or registry-restricted environments.
+
 ### OpenShift Compatibility
 
 > **Note:** OpenShift is **not a recommended** configuration for this Helm chart. The
@@ -342,6 +344,17 @@ service account.
 | `openshift.enabled`   | Enable OpenShift compatibility mode                                                                                        | `false`               |
 | `openshift.createSCC` | Create a `SecurityContextConstraints` resource granting the workload the required privileges for the active workload mode  | `true`                |
 | `openshift.sccName`   | Name of the SCC to create or use. If empty, defaults to the release fullname                                               | `""` (auto-generated) |
+
+### Global OpenShift Override (falcon-platform only)
+
+When deploying via the `falcon-platform` umbrella chart, the `global.openshift` values enable OpenShift compatibility for all components from a single location:
+
+| Parameter                    | Description                                                                          | Default |
+|:-----------------------------|:-------------------------------------------------------------------------------------|:--------|
+| `global.openshift.enabled`   | Enable OpenShift compatibility mode for all Falcon components                        | `false` |
+| `global.openshift.createSCC` | Create SCCs for all components. Set to `false` to manage SCCs outside of Helm        | `true`  |
+
+Chart-level `openshift.*` values take precedence and can override the global values for per-component control.
 
 ### Temp Volume Mount
 In order to perform image scan, IAR will pull the image and un-compress it for traversal through layers and image config and manifest.

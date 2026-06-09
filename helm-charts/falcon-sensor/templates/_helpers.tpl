@@ -368,6 +368,6 @@ Validate OpenShift configuration: container sensor is not supported in OpenShift
 */}}
 {{- define "falcon-sensor.validateOpenshiftConfig" -}}
 {{- if and (include "falcon-sensor.openshiftEnabled" .) .Values.container.enabled -}}
-{{- fail "OpenShift mode (node.openshift.enabled) is only supported with the node DaemonSet. The container sensor (container.enabled) is not supported on OpenShift. Use the official Red Hat certified operator instead." -}}
+{{- fail "OpenShift mode (node.openshift.enabled) is only supported with the node DaemonSet. The container sensor (container.enabled) is not fully supported on OpenShift." -}}
 {{- end -}}
 {{- end -}}

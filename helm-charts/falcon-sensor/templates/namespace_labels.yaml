@@ -1,0 +1,77 @@
+{{- if and .Values.node.pss.manageNamespace .Values.node.enabled }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "falcon-sensor.fullname" . }}-ns-labeler
+  namespace: {{ include "falcon-sensor.namespace" . }}
+  labels:
+    {{- include "falcon-sensor.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-10"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "falcon-sensor.fullname" . }}-ns-labeler
+  labels:
+    {{- include "falcon-sensor.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-10"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "falcon-sensor.fullname" . }}-ns-labeler
+  labels:
+    {{- include "falcon-sensor.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-10"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "falcon-sensor.fullname" . }}-ns-labeler
+    namespace: {{ include "falcon-sensor.namespace" . }}
+roleRef:
+  kind: ClusterRole
+  name: {{ include "falcon-sensor.fullname" . }}-ns-labeler
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "falcon-sensor.fullname" . }}-ns-labeler
+  namespace: {{ include "falcon-sensor.namespace" . }}
+  labels:
+    {{- include "falcon-sensor.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    spec:
+      serviceAccountName: {{ include "falcon-sensor.fullname" . }}-ns-labeler
+      restartPolicy: OnFailure
+      containers:
+        - name: kubectl
+          image: docker.io/bitnami/kubectl
+          command:
+            - kubectl
+            - label
+            - namespace
+            - {{ include "falcon-sensor.namespace" . }}
+            - "pod-security.kubernetes.io/enforce=privileged"
+            - "pod-security.kubernetes.io/warn=privileged"
+            - "pod-security.kubernetes.io/audit=privileged"
+            - "--overwrite"
+{{- end }}

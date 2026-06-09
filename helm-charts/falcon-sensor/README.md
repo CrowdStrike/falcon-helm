@@ -39,6 +39,12 @@ The Falcon Helm chart has been tested to deploy on the following Kubernetes dist
 * Google Kubernetes Engine (GKE)
 * Rancher K3s
 
+> **OpenShift:** OpenShift is **not a recommended** configuration for this Helm chart. The
+> [official Red Hat certified CrowdStrike Falcon Operator](https://catalog.redhat.com/software/operators/detail/5e7e24f99fca9b7637249d4d)
+> is the recommended installation method for OpenShift clusters. A best-effort
+> compatibility mode is available for the node DaemonSet only (see
+> [OpenShift Compatibility](#openshift-compatibility) below).
+
 # Dependencies
 
 1. Requires a x86_64 or ARM64 Kubernetes cluster
@@ -603,4 +609,120 @@ done
 After validating the removal of the `/opt/Crowdstrike` directory, the cleanup Daemonset should be deleted:
 ```bash
 helm uninstall falcon-helm -n <NAMESPACE>\
+```
+
+## OpenShift Compatibility
+
+> **Note:** OpenShift is **not a recommended** configuration for this Helm chart. The
+> [official Red Hat certified CrowdStrike Falcon Operator](https://catalog.redhat.com/software/operators/detail/5e7e24f99fca9b7637249d4d)
+> is the recommended installation method for OpenShift clusters.
+
+This chart provides a best-effort compatibility mode for deploying the Falcon node sensor as a DaemonSet on OpenShift clusters. **The container sensor (`container.enabled`) is not supported on OpenShift** and will produce an error if enabled alongside `node.openshift.enabled`.
+
+### Security Context Constraints
+
+OpenShift uses Security Context Constraints (SCC) to control pod privileges. Because the Falcon node sensor requires privileged host access (`hostPID`, `hostIPC`, `hostNetwork`, and a privileged container), the default `restricted` SCC is insufficient.
+
+When `node.openshift.enabled=true` and `node.openshift.createSCC=true`, the chart creates an SCC named `<release-name>-falcon-sensor-node-sensor` and binds it to the DaemonSet and cleanup DaemonSet service accounts. To use an existing SCC instead, set `node.openshift.createSCC=false` and bind the service accounts manually before installing.
+
+OpenShift runs Pod Security Admission in warn/audit mode alongside SCCs. To suppress PSA warnings for the install namespace, label it before installing:
+
+```bash
+kubectl label namespace falcon-system \
+  pod-security.kubernetes.io/enforce=privileged \
+  pod-security.kubernetes.io/warn=privileged \
+  pod-security.kubernetes.io/audit=privileged
+```
+
+### OpenShift Values
+
+| Parameter                      | Description                                                                                                   | Default                                   |
+|:-------------------------------|:--------------------------------------------------------------------------------------------------------------|:------------------------------------------|
+| `node.openshift.enabled`       | Enable OpenShift compatibility mode for the node DaemonSet                                                    | `false`                                   |
+| `node.openshift.createSCC`     | Create a `SecurityContextConstraints` resource granting the DaemonSet service account the required privileges | `true`                                    |
+| `node.openshift.sccName`       | Name of the SCC to create or use. If empty, defaults to `<release-name>-falcon-sensor-node-sensor`           | `""` (auto-generated from release name)   |
+| `node.pss.manageNamespace`     | Allow Helm to manage the install namespace and apply Pod Security Standard labels                             | `false`                                   |
+
+### Pod Security Standards (PSS) Namespace Labeling
+
+Kubernetes 1.23+ enforces Pod Security Standards (PSS) which can block privileged pods like the Falcon node sensor. When `node.pss.manageNamespace=true`, Helm will manage the install namespace and apply the required `privileged` PSS labels automatically.
+
+**Option 1: Let Helm manage the namespace (recommended for new installations)**
+
+```bash
+helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
+  -n falcon-system --create-namespace \
+  --set falcon.cid="<Your_CID>" \
+  --set node.image.repository="<Your_Registry>/falcon-node-sensor" \
+  --set node.pss.manageNamespace=true
+```
+
+**Option 2: Manually label the namespace before installation**
+
+If you prefer to manage the namespace yourself or are installing into an existing namespace:
+
+```bash
+kubectl label namespace falcon-system \
+  pod-security.kubernetes.io/enforce=privileged \
+  pod-security.kubernetes.io/warn=privileged \
+  pod-security.kubernetes.io/audit=privileged
+```
+
+Then install without `node.pss.manageNamespace`:
+
+```bash
+helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
+  -n falcon-system \
+  --set falcon.cid="<Your_CID>" \
+  --set node.image.repository="<Your_Registry>/falcon-node-sensor"
+```
+
+### Installing on OpenShift
+
+**Basic OpenShift installation with automatic SCC creation:**
+
+```bash
+helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
+  -n falcon-system --create-namespace \
+  --set falcon.cid="<Your_CID>" \
+  --set node.image.repository="<Your_Registry>/falcon-node-sensor" \
+  --set node.openshift.enabled=true
+```
+
+**With automatic PSS namespace labeling (suppresses PSA warnings):**
+
+```bash
+helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
+  -n falcon-system --create-namespace \
+  --set falcon.cid="<Your_CID>" \
+  --set node.image.repository="<Your_Registry>/falcon-node-sensor" \
+  --set node.openshift.enabled=true \
+  --set node.pss.manageNamespace=true
+```
+
+**Using an existing SCC:**
+
+Set `node.openshift.createSCC=false` and specify the SCC name, then bind the service accounts before installing:
+
+```bash
+helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
+  -n falcon-system --create-namespace \
+  --set falcon.cid="<Your_CID>" \
+  --set node.image.repository="<Your_Registry>/falcon-node-sensor" \
+  --set node.openshift.enabled=true \
+  --set node.openshift.createSCC=false \
+  --set node.openshift.sccName="my-existing-scc"
+```
+
+**Using a custom SCC name:**
+
+To create an SCC with a custom name instead of the default auto-generated name:
+
+```bash
+helm upgrade --install falcon-helm crowdstrike/falcon-sensor \
+  -n falcon-system --create-namespace \
+  --set falcon.cid="<Your_CID>" \
+  --set node.image.repository="<Your_Registry>/falcon-node-sensor" \
+  --set node.openshift.enabled=true \
+  --set node.openshift.sccName="crowdstrike-falcon-node"
 ```

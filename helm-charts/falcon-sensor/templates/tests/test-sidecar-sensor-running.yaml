@@ -65,6 +65,7 @@ spec:
   containers:
     - name: kubectl
       image: docker.io/bitnami/kubectl
+      imagePullPolicy: IfNotPresent
       command:
       - /bin/sh
       - -c
@@ -72,7 +73,11 @@ spec:
         FAILED=0
 
         echo "--- Waiting for pods to initialize ---"
-        sleep 10
+        kubectl wait deployment \
+          "{{ include "falcon-sensor.fullname" . }}" \
+          -n "{{ include "falcon-sensor.namespace" . }}" \
+          --for=condition=Available \
+          --timeout=300s
 
         echo "--- Checking all injector pods are running ---"
         KUBECMD=$(kubectl get pods -n "{{ include "falcon-sensor.namespace" . }}" -l "app.kubernetes.io/component=container_sensor" --field-selector=status.phase!=Running --no-headers 2>&1)

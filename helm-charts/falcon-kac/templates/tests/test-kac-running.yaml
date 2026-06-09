@@ -12,6 +12,7 @@ spec:
   containers:
     - name: kubectl
       image: docker.io/bitnami/kubectl
+      imagePullPolicy: IfNotPresent
       command:
       - /bin/sh
       - -c
@@ -19,7 +20,11 @@ spec:
         FAILED=0
 
         echo "--- Waiting for pods to initialize ---"
-        sleep 10
+        kubectl wait deployment \
+          "{{ include "falcon-kac.name" . }}" \
+          -n "{{ include "falcon-kac.namespace" . }}" \
+          --for=condition=Available \
+          --timeout=300s
 
         echo "--- Checking all KAC pods are running ---"
         # Exclude test pods by filtering out pods with helm.sh/hook annotation
@@ -33,7 +38,7 @@ spec:
         fi
 
         echo "--- Checking ConfigMap ---"
-        CM_NAME="{{ include "falcon-kac.name" . }}-config"
+        CM_NAME="{{ include "falcon-kac.fullname" . }}-config"
         if ! kubectl get configmap "${CM_NAME}" -n "{{ include "falcon-kac.namespace" . }}" > /dev/null 2>&1; then
             echo "[FAIL]: ConfigMap '${CM_NAME}' not found"
             FAILED=1
@@ -101,7 +106,7 @@ spec:
         # Exclude test pods by filtering out pods with helm.sh/hook annotation
         PODS=$(kubectl get pods -n "{{ include "falcon-kac.namespace" . }}" \
           -l "app={{ include "falcon-kac.name" . }}" \
-          -o json 2>&1 | jq -r '.items[] | select(.metadata.annotations["helm.sh/hook"] == null) | .metadata.name')
+          -o json 2>/dev/null | jq -r '.items[] | select(.metadata.annotations["helm.sh/hook"] == null) | .metadata.name')
         if [ -z "${PODS}" ]; then
             echo "[FAIL]: No KAC pods found"
             FAILED=1

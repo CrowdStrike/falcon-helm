@@ -337,3 +337,23 @@ Validate AITap configuration.
 {{- fail "AITap: 'container.aitap.aidrSecretName' is required when 'container.aitap.useExistingSecret' is true. Set this to the name of the existing secret that contains the AI-DR collector token." -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+OpenShift SCC name for the node DaemonSet.
+*/}}
+{{- define "falcon-sensor.sccName" -}}
+{{- if .Values.node.openshift.sccName -}}
+{{- .Values.node.openshift.sccName -}}
+{{- else -}}
+{{- printf "%s-node-sensor" (include "falcon-sensor.fullname" .) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Validate OpenShift configuration: container sensor is not supported in OpenShift mode.
+*/}}
+{{- define "falcon-sensor.validateOpenshiftConfig" -}}
+{{- if and .Values.node.openshift.enabled .Values.container.enabled -}}
+{{- fail "OpenShift mode (node.openshift.enabled) is only supported with the node DaemonSet. The container sensor (container.enabled) is not supported on OpenShift. Use the official Red Hat certified operator instead." -}}
+{{- end -}}
+{{- end -}}

@@ -1,0 +1,82 @@
+{{- if and .Values.testing.enabled .Values.openshift.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "falcon-kac.fullname" . }}-test-openshift"
+  namespace: {{ include "falcon-kac.namespace" . }}
+  labels:
+    {{- include "falcon-kac.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: kubectl
+      image: docker.io/bitnami/kubectl
+      imagePullPolicy: IfNotPresent
+      command:
+      - /bin/sh
+      - -c
+      - |
+        FAILED=0
+
+        {{- if and .Values.openshift.createSCC .Values.hostNetwork }}
+        echo "--- Checking SCC exists ---"
+        if ! kubectl get scc "{{ include "falcon-kac.sccName" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: SCC '{{ include "falcon-kac.sccName" . }}' not found"
+            FAILED=1
+        else
+            echo "[OK]: SCC '{{ include "falcon-kac.sccName" . }}' exists"
+        fi
+
+        echo "--- Checking service account is bound to SCC ---"
+        SA_ENTRY="system:serviceaccount:{{ include "falcon-kac.namespace" . }}:{{ .Values.serviceAccount.name }}"
+        SCC_USERS=$(kubectl get scc "{{ include "falcon-kac.sccName" . }}" -o jsonpath="{.users}" 2>&1)
+        if ! echo "${SCC_USERS}" | grep -q "${SA_ENTRY}"; then
+            echo "[FAIL]: Service account '${SA_ENTRY}' is not bound to SCC"
+            echo "${SCC_USERS}"
+            FAILED=1
+        else
+            echo "[OK]: Service account is bound to SCC"
+        fi
+        {{- end }}
+
+        echo "--- Checking Deployment pods have openshift.io/scc annotation ---"
+        sleep 10
+        # Exclude test pods by filtering out pods with helm.sh/hook annotation
+        PODS=$(kubectl get pods -n "{{ include "falcon-kac.namespace" . }}" \
+          -l "app={{ include "falcon-kac.name" . }}" \
+          -o json 2>&1 | jq -r '.items[] | select(.metadata.annotations["helm.sh/hook"] == null) | .metadata.name')
+        if [ -z "${PODS}" ]; then
+            echo "[FAIL]: No KAC pods found"
+            FAILED=1
+        else
+            for POD in ${PODS}; do
+                SCC_ANNOTATION=$(kubectl get pod "${POD}" \
+                  -n "{{ include "falcon-kac.namespace" . }}" \
+                  -o jsonpath="{.metadata.annotations.openshift\.io/scc}" 2>&1)
+                if [ -z "${SCC_ANNOTATION}" ]; then
+                    echo "[FAIL]: Pod '${POD}' is missing openshift.io/scc annotation"
+                    FAILED=1
+                else
+                    echo "[OK]: Pod '${POD}' is using SCC '${SCC_ANNOTATION}'"
+                fi
+            done
+        fi
+
+        if [ "${FAILED}" -eq 1 ]; then
+            exit 1
+        fi
+        exit 0
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        seccompProfile:
+          type: RuntimeDefault
+        capabilities:
+          drop:
+            - ALL
+  serviceAccountName: {{ include "falcon-kac.fullname" . }}-test-sa
+  restartPolicy: Never
+{{- end }}

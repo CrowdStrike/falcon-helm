@@ -19,6 +19,7 @@ more.
   - [Installing using Helm Chart](#install-using-helm-chart)
   - [Deployment considerations](#deployment-considerations)
   - [Pod Security Standards](#pod-security-standards)
+  - [OpenShift Compatibility](#openshift-compatibility)
   - [Temp Mounts](#temp-volume-mount)
   - [IAM Roles](#aws-iam-roles-for-service-accounts)
   - [Authentication for Private Registries](#authentication-for-private-registries)
@@ -40,7 +41,6 @@ The Falcon Image Analyzer Helm chart has been tested to deploy on the following 
 * Azure Kubernetes Service (AKS)
 * Google Kubernetes Engine (GKE)
 * SUSE Rancher K3s
-* Red Hat OpenShift Kubernetes
 
 
 ## Helm Chart Support for Falcon Image Analyzer Versions
@@ -113,6 +113,10 @@ The following tables list the Falcon sensor configurable parameters and their de
 | `log.output`                  optional   ( available  Helm Chart v >= 1.1.7 & falcon-imageanalyzer >= 1.0.12)                                      | Set the value to for log output terminal. `2=stderr` and `1=stdout`                                                                                            | 2 ( stderr )                                                                                               |
 | `hostNetwork`                  optional   ( available  Helm Chart v >= 1.1.11)                                                                     | Set the value to `true` to use the hostNetwork instead of pod network                                                                                          | `false`                                                                                                    |
 | `dnsPolicy`                  optional   ( available  Helm Chart v >= 1.1.11)                                                                       | Set the value to any supported value from https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy                            | ``  no value implies `Default`                                                                             |
+| `openshift.enabled`           optional                                                                                                             | Enable OpenShift compatibility mode. Creates a SecurityContextConstraints resource sized to the active workload mode (DaemonSet or Deployment).                 | `false`                                                                                                    |
+| `openshift.createSCC`         optional                                                                                                             | Create the SCC resource. Set to `false` to manage the SCC outside of Helm.                                                                                     | `true`                                                                                                     |
+| `openshift.sccName`           optional                                                                                                             | Name of the SCC to create or use. If empty, defaults to the release fullname.                                                                                   | `""`                                                                                                       |
+| `pss.manageNamespace`         optional                                                                                                             | Allow Helm to manage the install namespace PSS labels (`privileged`). Independent of OpenShift — can be enabled on any cluster running Kubernetes 1.25+.       | `false`                                                                                                    |
 | ~~`scanStats.enabled`~~                 optional   (**Deprecated in 1.1.17+** . available  Helm Chart v >= 1.1.8 & falcon-imageanalyzer >= 1.0.13) | Set `enabled` to true for agent to send scan error and stats to cloud                                                                                          | `true`                                                                                                     |
 | `crowdstrikeConfig.clusterName`     optional                                                                                                       | Cluster name                                                                                                                                                   | None                                                                                                       |
 | `crowdstrikeConfig.enableDebug`   optional                                                                                                         | Set to `true` for debug level log verbosity.                                                                                                                   | false                                                                                                      |
@@ -298,17 +302,67 @@ For a successful deployment, you will want to ensure that:
 
 ### Pod Security Standards
 
-Starting with Kubernetes 1.25, Pod Security Standards will be enforced. Setting the appropriate Pod Security Standards policy needs to be performed by adding a label to the namespace. Run the following command, and replace `my-existing-namespace` with the namespace that you have installed the falcon sensors, for example: `falcon-image-analyzer`.
+Starting with Kubernetes 1.25, Pod Security Standards (PSS) are enforced via the Pod Security Admission (PSA) controller. Falcon Image Analyzer requires `privileged` PSS labels on its namespace because it accesses the container runtime socket (DaemonSet mode) or runs as root (Deployment mode).
+
+Set `pss.manageNamespace: true` to have Helm apply the required labels automatically as part of install and upgrade:
+
 ```
-kubectl label --overwrite ns my-existing-namespace \
-  pod-security.kubernetes.io/enforce=privileged
+helm upgrade --install imageanalyzer crowdstrike/falcon-image-analyzer \
+  --create-namespace -n falcon-image-analyzer \
+  --set pss.manageNamespace=true
 ```
 
-If you want to silence the warning and change the auditing level for the Pod Security Standard, add the following labels:
+To apply the labels manually instead:
 ```
-kubectl label ns --overwrite my-existing-namespace pod-security.kubernetes.io/audit=privileged
-kubectl label ns --overwrite my-existing-namespace pod-security.kubernetes.io/warn=privileged
+kubectl label --overwrite ns falcon-image-analyzer \
+  pod-security.kubernetes.io/enforce=privileged \
+  pod-security.kubernetes.io/warn=privileged \
+  pod-security.kubernetes.io/audit=privileged
 ```
+
+### OpenShift Compatibility
+
+> **Note:** OpenShift is **not a recommended** configuration for this Helm chart. The
+> [official Red Hat certified CrowdStrike Falcon Operator](https://catalog.redhat.com/software/operators/detail/5e7e24f99fca9b7637249d4d)
+> is the recommended installation method for OpenShift clusters.
+
+#### Security Context Constraints
+
+The required privileges differ depending on which workload mode is enabled:
+
+- **DaemonSet mode** (`daemonset.enabled: true`): Requires a privileged SCC to access the container runtime socket
+  (`/run/containerd/containerd.sock`, `/run/crio/crio.sock`, etc.) and, for CRI-O, additional hostPath mounts.
+- **Deployment mode** (`deployment.enabled: true`): Requires only permission to run as root (UID 0) with all
+  capabilities dropped. No host access is needed.
+
+Set `openshift.enabled: true` to have the chart create the appropriate SCC automatically. The SCC grants only the
+minimum permissions required for the active workload mode. The SCC is managed as a standard Helm release resource and
+will be created on install and removed on uninstall.
+
+**DaemonSet mode on OpenShift:**
+```
+helm upgrade --install -f /path/to/config_values.yaml \
+  --create-namespace -n falcon-image-analyzer imageanalyzer crowdstrike/falcon-image-analyzer \
+  --set openshift.enabled=true
+```
+
+**Deployment mode on OpenShift:**
+```
+helm upgrade --install -f /path/to/config_values.yaml \
+  --create-namespace -n falcon-image-analyzer imageanalyzer crowdstrike/falcon-image-analyzer \
+  --set openshift.enabled=true
+```
+
+To manage the SCC outside of Helm, set `openshift.createSCC: false` and apply a SCC that grants the permissions
+described above to the IAR service account.
+
+#### OpenShift Values
+
+| Parameter             | Description                                                                                                                | Default               |
+|:----------------------|:---------------------------------------------------------------------------------------------------------------------------|:----------------------|
+| `openshift.enabled`   | Enable OpenShift compatibility mode                                                                                        | `false`               |
+| `openshift.createSCC` | Create a `SecurityContextConstraints` resource granting the workload the required privileges for the active workload mode  | `true`                |
+| `openshift.sccName`   | Name of the SCC to create or use. If empty, defaults to the release fullname                                               | `""` (auto-generated) |
 
 ### Temp Volume Mount
 In order to perform image scan, IAR will pull the image and un-compress it for traversal through layers and image config and manifest.

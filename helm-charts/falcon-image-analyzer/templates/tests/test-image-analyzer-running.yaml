@@ -16,6 +16,7 @@ spec:
   containers:
     - name: kubectl
       image: docker.io/bitnami/kubectl
+      imagePullPolicy: IfNotPresent
       command:
       - /bin/sh
       - -c
@@ -23,7 +24,18 @@ spec:
         FAILED=0
 
         echo "--- Waiting for pods to initialize ---"
-        sleep 10
+        {{- if .Values.daemonset.enabled }}
+        kubectl rollout status daemonset \
+          "{{ include "falcon-image-analyzer.fullname" . }}" \
+          -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+          --timeout=300s
+        {{- else }}
+        kubectl wait deployment \
+          "{{ include "falcon-image-analyzer.fullname" . }}" \
+          -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+          --for=condition=Available \
+          --timeout=300s
+        {{- end }}
 
         echo "--- Checking all Image Analyzer pods are running ---"
         KUBECMD=$(kubectl get pods -n "{{ include "falcon-image-analyzer.namespace" . }}" \
@@ -141,7 +153,7 @@ spec:
         echo "--- Checking pod annotations ---"
         PODS=$(kubectl get pods -n "{{ include "falcon-image-analyzer.namespace" . }}" \
           -l "app.kubernetes.io/name={{ include "falcon-image-analyzer.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" \
-          -o json 2>&1 | jq -r '.items[] | select(.metadata.annotations["helm.sh/hook"] == null) | .metadata.name')
+          -o json 2>/dev/null | jq -r '.items[] | select(.metadata.annotations["helm.sh/hook"] == null) | .metadata.name')
         if [ -z "${PODS}" ]; then
             echo "[FAIL]: No Image Analyzer pods found"
             FAILED=1
@@ -158,6 +170,22 @@ spec:
                 fi
             done
         fi
+
+        {{- if .Values.pss.manageNamespace }}
+        echo "--- Checking PSS namespace labels ---"
+        NS_NAME="{{ include "falcon-image-analyzer.namespace" . }}"
+        for LABEL in "pod-security.kubernetes.io/enforce=privileged" "pod-security.kubernetes.io/warn=privileged" "pod-security.kubernetes.io/audit=privileged"; do
+            KEY="${LABEL%%=*}"
+            VALUE="${LABEL##*=}"
+            ACTUAL=$(kubectl get namespace "${NS_NAME}" -o json 2>&1 | jq -r --arg key "${KEY}" '.metadata.labels[$key] // ""')
+            if [ "${ACTUAL}" != "${VALUE}" ]; then
+                echo "[FAIL]: Namespace '${NS_NAME}' label '${KEY}' is '${ACTUAL}', expected '${VALUE}'"
+                FAILED=1
+            else
+                echo "[OK]: Namespace '${NS_NAME}' has label '${KEY}=${VALUE}'"
+            fi
+        done
+        {{- end }}
 
         echo "--- Checking service ---"
         SVC_NAME="{{ include "falcon-image-analyzer.iarAgentService" . }}"

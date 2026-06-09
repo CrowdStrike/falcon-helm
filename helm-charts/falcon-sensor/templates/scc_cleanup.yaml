@@ -1,0 +1,124 @@
+{{- if and .Values.node.enabled .Values.node.openshift.enabled .Values.node.openshift.createSCC .Values.node.hooks.postDelete.enabled }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "falcon-sensor.fullname" . }}-scc-cleanup
+  namespace: {{ include "falcon-sensor.namespace" . }}
+  labels:
+    {{- include "falcon-sensor.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "falcon-sensor.fullname" . }}-scc-cleanup
+  labels:
+    {{- include "falcon-sensor.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+rules:
+  - apiGroups: ["security.openshift.io"]
+    resources: ["securitycontextconstraints"]
+    verbs: ["delete"]
+    resourceNames:
+      - {{ include "falcon-sensor.sccName" . | quote }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "falcon-sensor.fullname" . }}-scc-cleanup
+  labels:
+    {{- include "falcon-sensor.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "falcon-sensor.fullname" . }}-scc-cleanup
+    namespace: {{ include "falcon-sensor.namespace" . }}
+roleRef:
+  kind: ClusterRole
+  name: {{ include "falcon-sensor.fullname" . }}-scc-cleanup
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "falcon-sensor.fullname" . }}-scc-cleanup
+  namespace: {{ include "falcon-sensor.namespace" . }}
+  labels:
+    {{- include "falcon-sensor.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "2"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    spec:
+      serviceAccountName: {{ include "falcon-sensor.fullname" . }}-scc-cleanup
+      restartPolicy: OnFailure
+      containers:
+        - name: kubectl
+          image: docker.io/bitnami/kubectl
+          command:
+            - kubectl
+            - delete
+            - scc
+            - {{ include "falcon-sensor.sccName" . | quote }}
+            - --ignore-not-found
+---
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: {{ include "falcon-sensor.sccName" . }}-cleanup
+  labels:
+    {{- include "falcon-sensor.labels" . | nindent 4 }}
+  annotations:
+    kubernetes.io/description: >-
+      Grants the Falcon node sensor cleanup DaemonSet the privileges required to
+      uninstall the sensor from cluster nodes. Created during helm uninstall and
+      deleted once the cleanup DaemonSet completes.
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+allowHostDirVolumePlugin: true
+allowHostIPC: true
+allowHostNetwork: true
+allowHostPID: true
+allowHostPorts: false
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: true
+allowedCapabilities:
+  - '*'
+defaultAddCapabilities: []
+fsGroup:
+  type: RunAsAny
+readOnlyRootFilesystem: false
+requiredDropCapabilities: []
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - '*'
+supplementalGroups:
+  type: RunAsAny
+users:
+  - system:serviceaccount:{{ include "falcon-sensor.namespace" . }}:{{ include "falcon-sensor.cleanupServiceAccountName" . }}
+groups: []
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - hostPath
+  - persistentVolumeClaim
+  - projected
+  - secret
+{{- end }}

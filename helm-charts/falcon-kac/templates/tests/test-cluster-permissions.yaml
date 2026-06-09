@@ -33,6 +33,7 @@ rules:
   verbs:
   - get
   - list
+  - watch
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
@@ -48,6 +49,22 @@ rules:
   verbs:
   - get
   - list
+{{- if .Values.openshift.enabled }}
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - get
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  resourceNames:
+  - {{ include "falcon-kac.sccName" . }}
+  verbs:
+  - use
+{{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

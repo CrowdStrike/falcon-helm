@@ -265,3 +265,14 @@ Get container registry config json from global value if it exists
 {{- .Values.image.registryConfigJSON | default "" -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+OpenShift SCC name. Uses openshift.sccName if set, otherwise defaults to the fullname.
+*/}}
+{{- define "falcon-image-analyzer.sccName" -}}
+{{- if .Values.openshift.sccName -}}
+{{- .Values.openshift.sccName -}}
+{{- else -}}
+{{- include "falcon-image-analyzer.fullname" . -}}
+{{- end -}}
+{{- end -}}

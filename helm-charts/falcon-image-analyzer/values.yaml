@@ -125,6 +125,29 @@ exclusions:
 # NOTE That setting this to true will also set the dnsPolicy: "ClusterFirstWithHostNet"
 hostNetwork: false
 
+# OpenShift configuration.
+# NOTE: OpenShift is NOT A RECOMMENDED configuration. The official Red Hat certified operator
+# (https://catalog.redhat.com/software/operators/detail/5e7e24f99fca9b7637249d4d) is the
+# recommended installation method for OpenShift clusters.
+openshift:
+  # Set to true to enable OpenShift compatibility mode.
+  enabled: false
+  # Set to true to create a SecurityContextConstraints (SCC) resource granting the
+  # workload the privileges it requires. In DaemonSet mode this includes privileged
+  # access and hostPath volumes; in Deployment mode only runAsUser:0 is required.
+  createSCC: true
+  # Name of the SCC to create or use. If empty, defaults to the release fullname.
+  # Set createSCC: false and provide a name here to reference an existing SCC.
+  sccName: ""
+
+# Pod Security Standards (PSS) namespace labeling.
+# PSS management is optional and independent of OpenShift. It can be enabled on any cluster.
+# When enabled, Helm manages the install namespace and applies the labels required for the
+# appropriate Pod Security Standard.
+pss:
+  # Set to true to allow Helm to manage the install namespace PSS labels.
+  manageNamespace: false
+
 # Define ImageAnalyzer POD DNS Policy, defaults to "ClusterFirstWithHostNet" when hostNetwork = true
 dnsPolicy:
 
@@ -230,3 +253,7 @@ global:
   containerRegistry:
     pullSecret: ""
     configJSON: ""
+
+# Deploys the test suite during install for testing purposes.
+testing:
+  enabled: false

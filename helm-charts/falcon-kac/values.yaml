@@ -186,6 +186,20 @@ webhook:
 # custom CNI is in use where control plane nodes cannot establish network communication with pods.
 hostNetwork: false
 
+# OpenShift configuration.
+# NOTE: OpenShift is NOT A RECOMMENDED configuration. The official Red Hat certified operator
+# (https://catalog.redhat.com/software/operators/detail/5e7e24f99fca9b7637249d4d) is the
+# recommended installation method for OpenShift clusters.
+openshift:
+  # Set to true to enable OpenShift compatibility mode.
+  enabled: false
+  # Set to true to create a SecurityContextConstraints (SCC) resource. Only applies when
+  # openshift.enabled and hostNetwork are also true; the default restricted-v2 SCC is sufficient otherwise.
+  createSCC: true
+  # Name of the SCC to create or use. If empty, defaults to the release fullname.
+  # Set createSCC: false and provide a name here to reference an existing SCC.
+  sccName: ""
+
 # Define Falcon KAC POD DNS Policy, follows cluster default when not set and sets "ClusterFirstWithHostNet" when hostNetwork = true unless overriden
 dnsPolicy:
 
@@ -203,3 +217,7 @@ global:
   containerRegistry:
     pullSecret: ""
     configJSON: ""
+
+# Deploys the test suite during install for testing purposes.
+testing:
+  enabled: false

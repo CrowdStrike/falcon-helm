@@ -1,0 +1,50 @@
+{{- if and .Values.openshift.enabled .Values.openshift.createSCC }}
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: {{ include "falcon-image-analyzer.sccName" . }}
+  labels:
+    {{- include "falcon-image-analyzer.labels" . | nindent 4 }}
+  annotations:
+    kubernetes.io/description: >-
+      {{- if .Values.daemonset.enabled }}
+      Grants the Falcon Image Analyzer DaemonSet the privileges required to
+      access the container runtime socket on each node for image scanning.
+      {{- else }}
+      Grants the Falcon Image Analyzer Deployment permission to run as root
+      (UID 0) for image analysis. No host access is granted.
+      {{- end }}
+allowHostDirVolumePlugin: {{ or .Values.daemonset.enabled .Values.azure.enabled }}
+allowHostIPC: false
+allowHostNetwork: {{ .Values.hostNetwork | default false }}
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: {{ .Values.daemonset.enabled }}
+allowPrivilegedContainer: {{ .Values.daemonset.enabled }}
+allowedCapabilities: []
+defaultAddCapabilities: []
+fsGroup:
+  type: RunAsAny
+readOnlyRootFilesystem: false
+requiredDropCapabilities: []
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - runtime/default
+supplementalGroups:
+  type: RunAsAny
+users:
+  - system:serviceaccount:{{ include "falcon-image-analyzer.namespace" . }}:{{ .Values.serviceAccount.name | default (include "falcon-image-analyzer.fullname" .) }}
+groups: []
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - projected
+  - secret
+  {{- if or .Values.daemonset.enabled .Values.azure.enabled }}
+  - hostPath
+  {{- end }}
+{{- end }}

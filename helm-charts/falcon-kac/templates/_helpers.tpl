@@ -231,3 +231,14 @@ Get container registry config json from global value if it exists
 {{- .Values.image.registryConfigJSON | default "" -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+OpenShift SCC name. Uses openshift.sccName if set, otherwise defaults to the fullname.
+*/}}
+{{- define "falcon-kac.sccName" -}}
+{{- if .Values.openshift.sccName -}}
+{{- .Values.openshift.sccName -}}
+{{- else -}}
+{{- include "falcon-kac.fullname" . -}}
+{{- end -}}
+{{- end -}}

@@ -41,6 +41,9 @@ spec:
     metadata:
       annotations:
         {{ .Values.node.daemonset.podAnnotationKey }}: disabled
+        {{- if .Values.node.openshift.enabled }}
+        openshift.io/scc: {{ include "falcon-sensor.sccName" . }}
+        {{- end }}
         {{- range $key, $value := .Values.node.podAnnotations }}
         {{ $key }}: {{ $value | quote }}
         {{- end }}

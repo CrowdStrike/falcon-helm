@@ -1,5 +1,6 @@
 {{- if and .Values.node.enabled (not .Values.node.cleanupOnly) }}
 {{- include "falcon-sensor.validateFalconSecretName" . }}
+{{- include "falcon-sensor.validateOpenshiftConfig" . }}
 {{- $imagePullSecretName := include "falcon-sensor.node.imagePullSecretName" . }}
 {{- $registryConfigJson := include "falcon-sensor.node.registryConfigJson" . }}
 apiVersion: apps/v1
@@ -43,6 +44,9 @@ spec:
     metadata:
       annotations:
         {{ .Values.node.daemonset.podAnnotationKey }}: disabled
+        {{- if .Values.node.openshift.enabled }}
+        openshift.io/scc: {{ include "falcon-sensor.sccName" . }}
+        {{- end }}
         {{- range $key, $value := .Values.node.podAnnotations }}
         {{ $key }}: {{ $value | quote }}
         {{- end }}

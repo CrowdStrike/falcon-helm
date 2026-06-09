@@ -1,0 +1,79 @@
+{{- if and .Values.testing.enabled .Values.node.enabled .Values.node.openshift.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "falcon-sensor.fullname" . }}-test-openshift"
+  namespace: {{ include "falcon-sensor.namespace" . }}
+  labels:
+    {{- include "falcon-sensor.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: kubectl
+      image: docker.io/bitnami/kubectl
+      imagePullPolicy: IfNotPresent
+      command:
+      - /bin/sh
+      - -c
+      - |
+        FAILED=0
+
+        {{- if .Values.node.openshift.createSCC }}
+        echo "--- Checking SCC exists ---"
+        if ! kubectl get scc "{{ include "falcon-sensor.sccName" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: SCC '{{ include "falcon-sensor.sccName" . }}' not found"
+            FAILED=1
+        else
+            echo "[OK]: SCC '{{ include "falcon-sensor.sccName" . }}' exists"
+        fi
+
+        echo "--- Checking service account is bound to SCC ---"
+        SA_ENTRY="system:serviceaccount:{{ include "falcon-sensor.namespace" . }}:{{ .Values.serviceAccount.name }}"
+        SCC_USERS=$(kubectl get scc "{{ include "falcon-sensor.sccName" . }}" -o jsonpath="{.users}" 2>&1)
+        if ! echo "${SCC_USERS}" | grep -q "${SA_ENTRY}"; then
+            echo "[FAIL]: Service account '${SA_ENTRY}' is not bound to SCC"
+            echo "${SCC_USERS}"
+            FAILED=1
+        else
+            echo "[OK]: Service account is bound to SCC"
+        fi
+        {{- end }}
+
+        echo "--- Checking DaemonSet pods have openshift.io/scc annotation ---"
+        sleep 10
+        PODS=$(kubectl get pods -n "{{ include "falcon-sensor.namespace" . }}" \
+          -l "app.kubernetes.io/component=kernel_sensor" \
+          -o jsonpath="{.items[*].metadata.name}" 2>&1)
+        if [ -z "${PODS}" ]; then
+            echo "[FAIL]: No DaemonSet sensor pods found"
+            FAILED=1
+        else
+            for POD in ${PODS}; do
+                SCC_ANNOTATION=$(kubectl get pod "${POD}" \
+                  -n "{{ include "falcon-sensor.namespace" . }}" \
+                  -o jsonpath="{.metadata.annotations.openshift\.io/scc}" 2>&1)
+                if [ -z "${SCC_ANNOTATION}" ]; then
+                    echo "[FAIL]: Pod '${POD}' is missing openshift.io/scc annotation"
+                    FAILED=1
+                else
+                    echo "[OK]: Pod '${POD}' is using SCC '${SCC_ANNOTATION}'"
+                fi
+            done
+        fi
+
+        if [ "${FAILED}" -eq 1 ]; then
+            exit 1
+        fi
+        exit 0
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+  serviceAccountName: {{ include "falcon-sensor.fullname" . }}-test-sa
+  restartPolicy: Never
+{{- end }}

@@ -39,6 +39,7 @@ supplementalGroups:
   type: RunAsAny
 users:
   - system:serviceaccount:{{ include "falcon-sensor.namespace" . }}:{{ .Values.serviceAccount.name }}
+  - system:serviceaccount:{{ include "falcon-sensor.namespace" . }}:{{ include "falcon-sensor.cleanupServiceAccountName" . }}
 groups: []
 volumes:
   - configMap

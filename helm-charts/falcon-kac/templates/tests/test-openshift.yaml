@@ -40,8 +40,10 @@ spec:
         fi
         {{- end }}
 
+        {{- if .Values.hostNetwork }}
         echo "--- Checking Deployment pods have openshift.io/scc annotation ---"
         sleep 10
+        EXPECTED_SCC="{{ include "falcon-kac.sccName" . }}"
         # Exclude test pods by filtering out pods with helm.sh/hook annotation
         PODS=$(kubectl get pods -n "{{ include "falcon-kac.namespace" . }}" \
           -l "app={{ include "falcon-kac.name" . }}" \
@@ -57,11 +59,17 @@ spec:
                 if [ -z "${SCC_ANNOTATION}" ]; then
                     echo "[FAIL]: Pod '${POD}' is missing openshift.io/scc annotation"
                     FAILED=1
+                elif [ "${SCC_ANNOTATION}" != "${EXPECTED_SCC}" ]; then
+                    echo "[FAIL]: Pod '${POD}' has SCC '${SCC_ANNOTATION}' but expected '${EXPECTED_SCC}'"
+                    FAILED=1
                 else
                     echo "[OK]: Pod '${POD}' is using SCC '${SCC_ANNOTATION}'"
                 fi
             done
         fi
+        {{- else }}
+        echo "--- Skipping SCC annotation check (hostNetwork is disabled) ---"
+        {{- end }}
 
         if [ "${FAILED}" -eq 1 ]; then
             exit 1

@@ -46,9 +46,11 @@ spec:
 
         echo "--- Checking {{ if .Values.daemonset.enabled }}DaemonSet{{ else }}Deployment{{ end }} pods have openshift.io/scc annotation ---"
         sleep 10
+        EXPECTED_SCC="{{ include "falcon-image-analyzer.sccName" . }}"
+        # Exclude test pods by filtering out pods with helm.sh/hook annotation
         PODS=$(kubectl get pods -n "{{ include "falcon-image-analyzer.namespace" . }}" \
           -l "app.kubernetes.io/name={{ include "falcon-image-analyzer.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" \
-          -o jsonpath="{.items[*].metadata.name}" 2>&1)
+          -o json 2>&1 | jq -r '.items[] | select(.metadata.annotations["helm.sh/hook"] == null) | .metadata.name')
         if [ -z "${PODS}" ]; then
             echo "[FAIL]: No image analyzer pods found"
             FAILED=1
@@ -59,6 +61,9 @@ spec:
                   -o jsonpath="{.metadata.annotations.openshift\.io/scc}" 2>&1)
                 if [ -z "${SCC_ANNOTATION}" ]; then
                     echo "[FAIL]: Pod '${POD}' is missing openshift.io/scc annotation"
+                    FAILED=1
+                elif [ "${SCC_ANNOTATION}" != "${EXPECTED_SCC}" ]; then
+                    echo "[FAIL]: Pod '${POD}' has SCC '${SCC_ANNOTATION}' but expected '${EXPECTED_SCC}'"
                     FAILED=1
                 else
                     echo "[OK]: Pod '${POD}' is using SCC '${SCC_ANNOTATION}'"

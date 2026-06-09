@@ -37,6 +37,17 @@ global:
     # $ cat ~/.docker/config.json | base64 -
     configJSON: ""
 
+  # OpenShift compatibility configuration.
+  # When enabled, each sub-chart will create the SecurityContextConstraints resource required
+  # for its workload. Chart-level openshift values take precedence over these globals.
+  # NOTE: OpenShift is not a recommended configuration. The official Red Hat certified
+  # CrowdStrike Falcon Operator is the recommended installation method for OpenShift clusters.
+  openshift:
+    # Set to true to enable OpenShift compatibility mode for all Falcon components.
+    enabled: false
+    # Set to false to manage SecurityContextConstraints resources outside of Helm.
+    createSCC: true
+
 # Enable/disable individual components
 # Set enabled: true to deploy, enabled: false to skip
 

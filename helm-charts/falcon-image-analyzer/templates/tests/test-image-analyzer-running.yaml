@@ -171,7 +171,7 @@ spec:
             done
         fi
 
-        {{- if .Values.openshift.enabled }}
+        {{- if .Values.testing.labelNamespace }}
         echo "--- Checking PSS namespace labels ---"
         NS_NAME="{{ include "falcon-image-analyzer.namespace" . }}"
         for LABEL in "pod-security.kubernetes.io/enforce=privileged" "pod-security.kubernetes.io/warn=privileged" "pod-security.kubernetes.io/audit=privileged"; do

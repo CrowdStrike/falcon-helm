@@ -1,4 +1,4 @@
-{{- if and .Values.node.enabled .Values.node.openshift.enabled .Values.node.openshift.createSCC }}
+{{- if and .Values.node.enabled (include "falcon-sensor.openshiftEnabled" . | eq "true") (include "falcon-sensor.openshiftCreateSCC" . | eq "true") }}
 # NOTE: OpenShift is NOT A RECOMMENDED configuration. The official Red Hat certified operator
 # (https://catalog.redhat.com/en/software/container-stacks/detail/62f2d38f76d039249424703d) is the
 # recommended installation method for OpenShift clusters.

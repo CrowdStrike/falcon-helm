@@ -17,7 +17,7 @@ rules:
     - get
     - watch
     - list
-{{- if and .Values.openshift.enabled (not .Values.openshift.createSCC) .Values.openshift.sccName }}
+{{- if and (include "falcon-image-analyzer.openshiftEnabled" . | eq "true") (not (include "falcon-image-analyzer.openshiftCreateSCC" . | eq "true")) .Values.openshift.sccName }}
   - apiGroups:
     - security.openshift.io
     resources:

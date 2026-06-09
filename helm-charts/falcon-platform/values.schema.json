@@ -59,6 +59,22 @@
               "description": "Base64 encoded docker config json for accessing private registries"
             }
           }
+        },
+        "openshift": {
+          "type": "object",
+          "description": "Global OpenShift compatibility configuration applied to all Falcon components",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable OpenShift compatibility mode for all components",
+              "default": false
+            },
+            "createSCC": {
+              "type": "boolean",
+              "description": "Create SecurityContextConstraints resources. Set to false to manage SCCs outside of Helm.",
+              "default": true
+            }
+          }
         }
       }
     },

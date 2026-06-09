@@ -303,6 +303,10 @@ serviceAccount:
 # Deploys the test suite during install for testing purposes.
 testing:
   enabled: false
+  # Set to true to apply privileged PSS labels to the install namespace as a
+  # pre-install hook. Requires outbound access to docker.io. Not suitable for
+  # air-gapped or registry-restricted environments.
+  labelNamespace: false
 
 # falcon.cid is required unless falconSecret.enabled is true and FALCONCTL_OPT_CID is already defined in an existing secret.
 falcon:
@@ -337,3 +341,6 @@ global:
   containerRegistry:
     pullSecret: ""
     configJSON: ""
+  openshift:
+    enabled: false
+    createSCC: true

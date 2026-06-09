@@ -50,7 +50,7 @@ spec:
     metadata:
       annotations:
         sensor.falcon-system.crowdstrike.com/injection: disabled
-        {{- if .Values.openshift.enabled }}
+        {{- if include "falcon-image-analyzer.openshiftEnabled" . | eq "true" }}
         openshift.io/scc: {{ include "falcon-image-analyzer.sccName" . }}
         {{- end }}
         {{- with .Values.podAnnotations }}

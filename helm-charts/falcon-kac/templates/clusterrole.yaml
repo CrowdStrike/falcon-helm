@@ -96,7 +96,7 @@ rules:
   - get
   - list
   - watch
-{{- if and .Values.openshift.enabled (not .Values.openshift.createSCC) .Values.openshift.sccName }}
+{{- if and (include "falcon-kac.openshiftEnabled" . | eq "true") (not (include "falcon-kac.openshiftCreateSCC" . | eq "true")) .Values.openshift.sccName }}
 - apiGroups:
   - security.openshift.io
   resources:

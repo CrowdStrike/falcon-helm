@@ -1,4 +1,4 @@
-{{- if and .Values.openshift.enabled .Values.openshift.createSCC .Values.hostNetwork }}
+{{- if and (include "falcon-kac.openshiftEnabled" . | eq "true") (include "falcon-kac.openshiftCreateSCC" . | eq "true") .Values.hostNetwork }}
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:

@@ -217,6 +217,9 @@ global:
   containerRegistry:
     pullSecret: ""
     configJSON: ""
+  openshift:
+    enabled: false
+    createSCC: true
 
 # Deploys the test suite during install for testing purposes.
 testing:

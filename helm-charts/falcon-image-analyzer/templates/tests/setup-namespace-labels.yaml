@@ -1,4 +1,4 @@
-{{- if .Values.testing.enabled }}
+{{- if .Values.testing.labelNamespace }}
 ---
 apiVersion: v1
 kind: ServiceAccount

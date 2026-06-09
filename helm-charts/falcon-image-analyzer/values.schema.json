@@ -261,6 +261,10 @@
                 "enabled": {
                     "type": "boolean",
                     "default": false
+                },
+                "labelNamespace": {
+                    "type": "boolean",
+                    "default": false
                 }
             }
         }

@@ -350,10 +350,24 @@ OpenShift SCC name for the node DaemonSet.
 {{- end -}}
 
 {{/*
+OpenShift mode enabled — true if either chart-level or global is true.
+*/}}
+{{- define "falcon-sensor.openshiftEnabled" -}}
+{{- or .Values.node.openshift.enabled (default false .Values.global.openshift.enabled) -}}
+{{- end -}}
+
+{{/*
+OpenShift createSCC — false if either chart-level or global disables it.
+*/}}
+{{- define "falcon-sensor.openshiftCreateSCC" -}}
+{{- and .Values.node.openshift.createSCC .Values.global.openshift.createSCC -}}
+{{- end -}}
+
+{{/*
 Validate OpenShift configuration: container sensor is not supported in OpenShift mode.
 */}}
 {{- define "falcon-sensor.validateOpenshiftConfig" -}}
-{{- if and .Values.node.openshift.enabled .Values.container.enabled -}}
+{{- if and (include "falcon-sensor.openshiftEnabled" .) .Values.container.enabled -}}
 {{- fail "OpenShift mode (node.openshift.enabled) is only supported with the node DaemonSet. The container sensor (container.enabled) is not supported on OpenShift. Use the official Red Hat certified operator instead." -}}
 {{- end -}}
 {{- end -}}

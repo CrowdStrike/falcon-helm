@@ -1,4 +1,4 @@
-{{- if and .Values.openshift.enabled .Values.openshift.createSCC }}
+{{- if and (include "falcon-image-analyzer.openshiftEnabled" . | eq "true") (include "falcon-image-analyzer.openshiftCreateSCC" . | eq "true") }}
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:

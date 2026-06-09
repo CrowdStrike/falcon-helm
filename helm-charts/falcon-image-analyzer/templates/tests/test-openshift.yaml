@@ -1,4 +1,4 @@
-{{- if and .Values.testing.enabled .Values.openshift.enabled }}
+{{- if and .Values.testing.enabled (include "falcon-image-analyzer.openshiftEnabled" . | eq "true") }}
 apiVersion: v1
 kind: Pod
 metadata:
@@ -23,7 +23,7 @@ spec:
       - |
         FAILED=0
 
-        {{- if .Values.openshift.createSCC }}
+        {{- if (include "falcon-image-analyzer.openshiftCreateSCC" . | eq "true") }}
         echo "--- Checking SCC exists ---"
         if ! kubectl get scc "{{ include "falcon-image-analyzer.sccName" . }}" > /dev/null 2>&1; then
             echo "[FAIL]: SCC '{{ include "falcon-image-analyzer.sccName" . }}' not found"

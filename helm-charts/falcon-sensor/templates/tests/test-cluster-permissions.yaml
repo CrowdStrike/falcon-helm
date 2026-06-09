@@ -51,7 +51,7 @@ rules:
   verbs:
   - get
   - list
-{{- if .Values.node.openshift.enabled }}
+{{- if (include "falcon-sensor.openshiftEnabled" . | eq "true") }}
 - apiGroups:
   - security.openshift.io
   resources:

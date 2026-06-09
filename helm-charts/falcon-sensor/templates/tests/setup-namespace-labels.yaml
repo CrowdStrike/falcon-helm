@@ -1,4 +1,4 @@
-{{- if and .Values.testing.enabled .Values.node.enabled }}
+{{- if and .Values.testing.labelNamespace .Values.node.enabled }}
 ---
 apiVersion: v1
 kind: ServiceAccount

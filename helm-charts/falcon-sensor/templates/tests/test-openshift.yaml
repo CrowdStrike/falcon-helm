@@ -1,4 +1,4 @@
-{{- if and .Values.testing.enabled .Values.node.enabled .Values.node.openshift.enabled }}
+{{- if and .Values.testing.enabled .Values.node.enabled (include "falcon-sensor.openshiftEnabled" . | eq "true") }}
 apiVersion: v1
 kind: Pod
 metadata:
@@ -19,7 +19,7 @@ spec:
       - |
         FAILED=0
 
-        {{- if .Values.node.openshift.createSCC }}
+        {{- if (include "falcon-sensor.openshiftCreateSCC" . | eq "true") }}
         echo "--- Checking SCC exists ---"
         if ! kubectl get scc "{{ include "falcon-sensor.sccName" . }}" > /dev/null 2>&1; then
             echo "[FAIL]: SCC '{{ include "falcon-sensor.sccName" . }}' not found"

@@ -39,7 +39,7 @@ rules:
   - watch
   - list
   {{- end }}
-{{- if and .Values.node.openshift.enabled (not .Values.node.openshift.createSCC) .Values.node.openshift.sccName }}
+{{- if and (include "falcon-sensor.openshiftEnabled" . | eq "true") (not (include "falcon-sensor.openshiftCreateSCC" . | eq "true")) .Values.node.openshift.sccName }}
 - apiGroups:
   - security.openshift.io
   resources:

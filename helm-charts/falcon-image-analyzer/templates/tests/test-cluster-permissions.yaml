@@ -43,7 +43,7 @@ rules:
   verbs:
   - get
   - list
-{{- if .Values.openshift.enabled }}
+{{- if (include "falcon-image-analyzer.openshiftEnabled" . | eq "true") }}
 - apiGroups:
   - security.openshift.io
   resources:

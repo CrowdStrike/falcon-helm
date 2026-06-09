@@ -125,14 +125,6 @@ node:
     # Name of the SCC to create or use. If empty, defaults to "<release-name>-falcon-sensor-node-sensor"
     sccName: ""
 
-  # Pod Security Standards (PSS) namespace labeling.
-  # When enabled, Helm manages the install namespace and applies the labels required
-  # for the privileged Pod Security Standard. This is required for Kubernetes 1.23+
-  # and suppresses PSA warnings on OpenShift.
-  pss:
-    # Set to true to allow Helm to manage the install namespace PSS labels.
-    manageNamespace: false
-
 container:
   # When enabled, Helm chart deploys the Falcon Container Sensor to Pods through Webhooks
   enabled: false

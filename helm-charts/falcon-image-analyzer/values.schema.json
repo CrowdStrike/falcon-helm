@@ -255,15 +255,6 @@
                 }
             }
         },
-        "pss": {
-            "type": "object",
-            "properties": {
-                "manageNamespace": {
-                    "type": "boolean",
-                    "default": false
-                }
-            }
-        },
         "testing": {
             "type": "object",
             "properties": {

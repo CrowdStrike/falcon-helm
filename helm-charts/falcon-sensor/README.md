@@ -645,19 +645,10 @@ kubectl label namespace falcon-system \
 | `node.openshift.enabled`       | Enable OpenShift compatibility mode for the node DaemonSet                                                    | `false`                                   |
 | `node.openshift.createSCC`     | Create a `SecurityContextConstraints` resource granting the DaemonSet service account the required privileges | `true`                                    |
 | `node.openshift.sccName`       | Name of the SCC to create or use. If empty, defaults to `<release-name>-falcon-sensor-node-sensor`           | `""` (auto-generated from release name)   |
-| `node.pss.manageNamespace`     | Allow Helm to manage the install namespace and apply Pod Security Standard labels                             | `false`                                   |
 
 ### Pod Security Standards (PSS) Namespace Labeling
 
-Kubernetes 1.23+ enforces Pod Security Standards (PSS) which can block privileged pods like the Falcon node sensor. When `node.pss.manageNamespace=true`, Helm will manage the install namespace and apply the required `privileged` PSS labels automatically.
-
-**Option 1: Let Helm manage the namespace (recommended for new installations)**
-
-Set `node.pss.manageNamespace=true` to have Helm apply the required labels automatically.
-
-**Option 2: Manually label the namespace before installation**
-
-If you prefer to manage the namespace yourself or are installing into an existing namespace:
+Kubernetes 1.23+ enforces Pod Security Standards (PSS) which can block privileged pods like the Falcon node sensor. Apply the required `privileged` PSS labels to the install namespace before installing:
 
 ```bash
 kubectl label namespace <namespace> \

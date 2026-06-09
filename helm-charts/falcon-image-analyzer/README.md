@@ -300,10 +300,9 @@ For a successful deployment, you will want to ensure that:
 
 Starting with Kubernetes 1.25, Pod Security Standards (PSS) are enforced via the Pod Security Admission (PSA) controller. Falcon Image Analyzer requires `privileged` PSS labels on its namespace because it accesses the container runtime socket (DaemonSet mode) or runs as root (Deployment mode).
 
-Set `pss.manageNamespace: true` to have Helm apply the required labels automatically as part of install and upgrade.
+Apply the required labels to the namespace before installing:
 
-To apply the labels manually instead:
-```
+```bash
 kubectl label --overwrite ns <namespace> \
   pod-security.kubernetes.io/enforce=privileged \
   pod-security.kubernetes.io/warn=privileged \

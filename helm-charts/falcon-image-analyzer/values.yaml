@@ -140,14 +140,6 @@ openshift:
   # Set createSCC: false and provide a name here to reference an existing SCC.
   sccName: ""
 
-# Pod Security Standards (PSS) namespace labeling.
-# PSS management is optional and independent of OpenShift. It can be enabled on any cluster.
-# When enabled, Helm manages the install namespace and applies the labels required for the
-# appropriate Pod Security Standard.
-pss:
-  # Set to true to allow Helm to manage the install namespace PSS labels.
-  manageNamespace: false
-
 # Define ImageAnalyzer POD DNS Policy, defaults to "ClusterFirstWithHostNet" when hostNetwork = true
 dnsPolicy:
 

@@ -313,15 +313,6 @@
                             "default": ""
                         }
                     }
-                },
-                "pss": {
-                    "type": "object",
-                    "properties": {
-                        "manageNamespace": {
-                            "type": "boolean",
-                            "default": false
-                        }
-                    }
                 }
             }
         },

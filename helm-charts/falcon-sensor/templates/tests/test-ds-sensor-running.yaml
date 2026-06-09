@@ -112,7 +112,7 @@ spec:
             done
         fi
 
-        {{- if .Values.node.pss.manageNamespace }}
+        {{- if .Values.node.openshift.enabled }}
         echo "--- Checking PSS namespace labels ---"
         NS_NAME="{{ include "falcon-sensor.namespace" . }}"
         for LABEL in "pod-security.kubernetes.io/enforce=privileged" "pod-security.kubernetes.io/warn=privileged" "pod-security.kubernetes.io/audit=privileged"; do

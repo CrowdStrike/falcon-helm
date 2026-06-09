@@ -623,7 +623,7 @@ This chart provides a best-effort compatibility mode for deploying the Falcon no
 
 OpenShift uses Security Context Constraints (SCC) to control pod privileges. Because the Falcon node sensor requires privileged host access (`hostPID`, `hostIPC`, `hostNetwork`, and a privileged container), the default `restricted` SCC is insufficient.
 
-When `node.openshift.enabled=true` and `node.openshift.createSCC=true`, the chart creates an SCC named `<release-name>-falcon-sensor-node-sensor` and binds it to the DaemonSet and cleanup DaemonSet service accounts. To use an existing SCC instead, set `node.openshift.createSCC=false` and bind the service accounts manually before installing.
+When `node.openshift.enabled=true` and `node.openshift.createSCC=true`, the chart creates an SCC named `<release-name>-falcon-sensor-node-sensor` and binds it to the DaemonSet and cleanup DaemonSet service accounts. To use an existing SCC instead, set `node.openshift.createSCC=false`, define `node.openshift.sccName` with the name of your SCC, and ensure the SCC is created prior to deployment. The SCC must be bound to the service accounts manually before installing.
 
 OpenShift runs Pod Security Admission in warn/audit mode alongside SCCs. To suppress PSA warnings for the install namespace, label it before installing:
 

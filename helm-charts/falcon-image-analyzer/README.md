@@ -113,10 +113,6 @@ The following tables list the Falcon sensor configurable parameters and their de
 | `log.output`                  optional   ( available  Helm Chart v >= 1.1.7 & falcon-imageanalyzer >= 1.0.12)                                      | Set the value to for log output terminal. `2=stderr` and `1=stdout`                                                                                            | 2 ( stderr )                                                                                               |
 | `hostNetwork`                  optional   ( available  Helm Chart v >= 1.1.11)                                                                     | Set the value to `true` to use the hostNetwork instead of pod network                                                                                          | `false`                                                                                                    |
 | `dnsPolicy`                  optional   ( available  Helm Chart v >= 1.1.11)                                                                       | Set the value to any supported value from https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy                            | ``  no value implies `Default`                                                                             |
-| `openshift.enabled`           optional                                                                                                             | Enable OpenShift compatibility mode. Creates a SecurityContextConstraints resource sized to the active workload mode (DaemonSet or Deployment).                 | `false`                                                                                                    |
-| `openshift.createSCC`         optional                                                                                                             | Create the SCC resource. Set to `false` to manage the SCC outside of Helm.                                                                                     | `true`                                                                                                     |
-| `openshift.sccName`           optional                                                                                                             | Name of the SCC to create or use. If empty, defaults to the release fullname.                                                                                   | `""`                                                                                                       |
-| `pss.manageNamespace`         optional                                                                                                             | Allow Helm to manage the install namespace PSS labels (`privileged`). Independent of OpenShift — can be enabled on any cluster running Kubernetes 1.25+.       | `false`                                                                                                    |
 | ~~`scanStats.enabled`~~                 optional   (**Deprecated in 1.1.17+** . available  Helm Chart v >= 1.1.8 & falcon-imageanalyzer >= 1.0.13) | Set `enabled` to true for agent to send scan error and stats to cloud                                                                                          | `true`                                                                                                     |
 | `crowdstrikeConfig.clusterName`     optional                                                                                                       | Cluster name                                                                                                                                                   | None                                                                                                       |
 | `crowdstrikeConfig.enableDebug`   optional                                                                                                         | Set to `true` for debug level log verbosity.                                                                                                                   | false                                                                                                      |
@@ -140,10 +136,10 @@ The `[CROWDSTRIKE_IMAGE_REGISTRY]` can be replaced with below registries based o
 
 
 
-| Region | ImageName                                                                                  | 
+| Region | ImageName                                                                                  |
 |:-------|:-------------------------------------------------------------------------------------------|
 | `us-1` | `registry.crowdstrike.com/falcon-imageanalyzer/release/falcon-imageanalyzer`               |
-| `us-2` | `registry.crowdstrike.com/falcon-imageanalyzer/release/falcon-imageanalyzer`               | 
+| `us-2` | `registry.crowdstrike.com/falcon-imageanalyzer/release/falcon-imageanalyzer`               |
 | `eu-1` | `registry.crowdstrike.com/falcon-imageanalyzer/release/falcon-imageanalyzer`               |
 | `gov1` | `registry.laggar.gcw.crowdstrike.com/falcon-imageanalyzer/release/falcon-imageanalyzer`    |
 | `gov2` | `registry.us-gov-2.crowdstrike.mil/falcon-imageanalyzer/release/falcon-imageanalyzer`      |
@@ -251,8 +247,8 @@ From IAR ver >-= 1.0.20 IAR will dynamically switch between PRIMARY and SECONDAR
 IAR requires internet access to your assigned CrowdStrike authentication API and upload servers.
 If your network requires it, configure your allowlists with your assigned CrowdStrike cloud servers.
 
-| Region | Authentication API |             PRIMARY Scan Upload Servers             | SECONDARY Scan Upload Servers          |   
-|:----:|:--:|:---------------------------------------------------:|----------------------------------------| 
+| Region | Authentication API |             PRIMARY Scan Upload Servers             | SECONDARY Scan Upload Servers          |
+|:----:|:--:|:---------------------------------------------------:|----------------------------------------|
 | US-1 | https://api.crowdstrike.com |    https://container-upload.us-1.crowdstrike.com    | https://api.crowdstrike.com            |
 | US-2 | https://api.us-2.crowdstrike.com |    https://container-upload.us-2.crowdstrike.com    | https://api.us-2.crowdstrike.com       |
 | EU-1 | https://api.eu-1.crowdstrike.com |    https://container-upload.eu-1.crowdstrike.com    | https://api.eu-1.crowdstrike.com       |
@@ -261,8 +257,8 @@ If your network requires it, configure your allowlists with your assigned CrowdS
 
 #### ***For IAR versions < 1.0.20 both Authtentication/Upload Servers point to the same
 
-| Region | Authentication API |          Scan Upload Servers           |   
-|:----:|:--:|:--------------------------------------:| 
+| Region | Authentication API |          Scan Upload Servers           |
+|:----:|:--:|:--------------------------------------:|
 | US-1 | https://api.crowdstrike.com |      https://api.crowdstrike.com       |
 | US-2 | https://api.us-2.crowdstrike.com |    https://api.us-2.crowdstrike.com    |
 | EU-1 | https://api.eu-1.crowdstrike.com |    https://api.eu-1.crowdstrike.com    |
@@ -339,22 +335,9 @@ Set `openshift.enabled: true` to have the chart create the appropriate SCC autom
 minimum permissions required for the active workload mode. The SCC is managed as a standard Helm release resource and
 will be created on install and removed on uninstall.
 
-**DaemonSet mode on OpenShift:**
-```
-helm upgrade --install -f /path/to/config_values.yaml \
-  --create-namespace -n falcon-image-analyzer imageanalyzer crowdstrike/falcon-image-analyzer \
-  --set openshift.enabled=true
-```
-
-**Deployment mode on OpenShift:**
-```
-helm upgrade --install -f /path/to/config_values.yaml \
-  --create-namespace -n falcon-image-analyzer imageanalyzer crowdstrike/falcon-image-analyzer \
-  --set openshift.enabled=true
-```
-
-To manage the SCC outside of Helm, set `openshift.createSCC: false` and apply a SCC that grants the permissions
-described above to the IAR service account.
+To manage the SCC outside of Helm, set `openshift.createSCC: false`, define `openshift.sccName` with the name of your
+SCC, and ensure the SCC is created prior to deployment. The SCC must grant the permissions described above to the IAR
+service account.
 
 #### OpenShift Values
 
@@ -371,7 +354,7 @@ By Default, this is set to `20Gi` but can be overridden by the customer by addin
 ```
 # This is a mandatory mount for both deployment and daemonset.
 # this is used as a tmp working space for image storage.
-# adjust this space to any comfortable value. the temp ssize limit should be equal to 
+# adjust this space to any comfortable value. the temp ssize limit should be equal to
 # 2 X to the largest image possible to run in the container.
 # for e.g. if the largest possible image is in the range of 4g put 8Gi as the value.
 volumes:
@@ -384,7 +367,7 @@ volumes:
 
 
 ### AWS IAM Roles for Service Accounts
-- **KIAM OR Kube2IAM.** 
+- **KIAM OR Kube2IAM.**
 For the IAR to detect cloud as AWS, it should be able to retrieve sts token to assume role to retrieve ECR Tokens.
   There are 2 options for  that . If your EKS cluster us using the **kiam** or **kube2iam** admission controller, add annotations
   for the IAR service account in the `config_values.yaml` as stated below, before installing. Make sure the roles have trust-relationship to allow
@@ -503,8 +486,8 @@ use the above secret as `"my-app-ns:regcred,my-app-ns:regcred2"`
 `autoDiscoverCredentials`
 if set to true, the IAR will try to discover the docker-registry secrets across all namespaces.
 if autoDiscoverCredentials is set to `true` then the provided credentials are ignored. Note that the secret
-should be existing of type docker-registry in ANY namespace on the cluster to be discovered. 
-IAR will NOT pick up any new secret added to the cluster after IAR is running. 
+should be existing of type docker-registry in ANY namespace on the cluster to be discovered.
+IAR will NOT pick up any new secret added to the cluster after IAR is running.
 For that a restart of IAR is needed.
 
 ### PROXY Usage
@@ -522,11 +505,11 @@ If a customer us using proxy settings. Please make sure to add the registry doma
 This is so that the IAR can connect to the registries without proxy and authenticate if needed using secrets provided or download the public free images.
 
 ***Note that some registries domains also have other urls based on the auth challenge that is sent by the registry service. Please make sure to add those as well to ```NO_PROXY```
-for e.g. for gitlab registries there exists the 
-- registry domain ```my-reg.gitlab.com``` 
+for e.g. for gitlab registries there exists the
+- registry domain ```my-reg.gitlab.com```
 - and the other ```www.gitlab.com```
 
-- The above is very registry provider specific. One needs to ensure nothing ie being blocked by Proxy 
+- The above is very registry provider specific. One needs to ensure nothing ie being blocked by Proxy
 
 ### Pod Eviction
 If for some reason pod evictions are observed in the Cluster due to exceeding ephemeral storage
@@ -574,7 +557,7 @@ metadata:
 #### Images
 Images can be excluded by adding the full image name in the below section of the `config_values.yaml`
 - Image without registries will be defaulted to `index.docker.io`
-- Images without tags will be defaulted to `latest` tag 
+- Images without tags will be defaulted to `latest` tag
 ```
   exclusions:
     imageName: "myregistry.io/mynamespace/myimage:tag1,myregistry.io/mynamespace/myimage@sha2561234678901209"
@@ -610,7 +593,7 @@ kind: Deployment / Daemonset
 metadata:
   name: myapp
   namespace: mynamespace
-  
+
 spec:
   replicas: 1
   template:

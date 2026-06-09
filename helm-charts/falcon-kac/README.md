@@ -159,19 +159,11 @@ satisfies the built-in `restricted-v2` SCC without any additional configuration.
 If `hostNetwork` must be enabled (required when a custom CNI prevents control plane nodes from communicating directly
 with pods), a custom SCC that permits host network access is required. The chart can create this SCC automatically:
 
-```
-helm install falcon-kac crowdstrike/falcon-kac \
-  -n falcon-kac --create-namespace \
-  --set falcon.cid=$FALCON_CID \
-  --set image.repository=$KAC_IMAGE_REPO \
-  --set image.tag=$KAC_IMAGE_TAG \
-  --set hostNetwork=true \
-  --set openshift.enabled=true
-```
-
 The SCC is managed as a standard Helm release resource and will be created on install and removed on uninstall.
 
-To use an existing SCC instead, set `openshift.createSCC=false` and bind the service account manually before installing.
+To use an existing SCC instead, set `openshift.createSCC=false`, define `openshift.sccName` with the name of your SCC,
+and ensure the SCC is created prior to deployment. The SCC must be bound to the service account manually before
+installing.
 
 ### OpenShift Values
 
@@ -251,6 +243,3 @@ The following tables lists the Falcon KAC configurable parameters and their defa
 | `clusterName`                                  | Manually set cluster name for self-hosted Kubernetes clusters where auto-discovery fails (e.g., MicroK8s). Displayed as hostname in Host Management UI. | None (auto-discovery used) |
 | `falconImageAnalyzerNamespace`                 | Falcon Image Analyzer namespace | falcon-image-analyzer |
 | `hostNetwork`                                  | Enable host network mode. Required when a custom CNI prevents control plane to pod communication. | `false` |
-| `openshift.enabled`                            | Enable OpenShift compatibility mode. When `hostNetwork` is also `true`, creates an SCC granting host network access. | `false` |
-| `openshift.createSCC`                          | Create a SecurityContextConstraints resource. Only has effect when `openshift.enabled` and `hostNetwork` are both `true`. | `true` |
-| `openshift.sccName`                            | Name of the SCC to create or use. If empty, defaults to the release fullname. | `""` |

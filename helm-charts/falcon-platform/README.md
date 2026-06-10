@@ -314,6 +314,7 @@ rather than the Falcon component subcharts.
 
 | Parameter                               | Default               | Description                                                                                |
 |-----------------------------------------|-----------------------|--------------------------------------------------------------------------------------------|
+| extraManifests                          | []                    | Additional Kubernetes manifests to render with this chart. Values are rendered with Helm templating. |
 | createComponentNamespaces               | false                 | Create namespaces for each Falcon component. Pre-install only, does not work for upgrades. |
 | falcon-sensor.namespaceOverride         | falcon-system         | Name of dedicated namespace for Falcon Linux Node or Container sensor.                     |
 | falcon-kac.namespaceOverride            | falcon-kac            | Name of dedicated namespace for Falcon Kubernetes Admission Controller.                    |

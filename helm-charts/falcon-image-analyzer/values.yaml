@@ -2,6 +2,9 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+# Additional Kubernetes manifests to render with this chart.
+extraManifests: []
+
 daemonset:
   enabled: false
 

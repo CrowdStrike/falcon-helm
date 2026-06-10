@@ -345,17 +345,6 @@ service account.
 | `openshift.createSCC` | Create a `SecurityContextConstraints` resource granting the workload the required privileges for the active workload mode  | `true`                |
 | `openshift.sccName`   | Name of the SCC to create or use. If empty, defaults to the release fullname                                               | `""` (auto-generated) |
 
-### Global OpenShift Override (falcon-platform only)
-
-When deploying via the `falcon-platform` umbrella chart, the `global.openshift` values enable OpenShift compatibility for all components from a single location:
-
-| Parameter                    | Description                                                                          | Default |
-|:-----------------------------|:-------------------------------------------------------------------------------------|:--------|
-| `global.openshift.enabled`   | Enable OpenShift compatibility mode for all Falcon components                        | `false` |
-| `global.openshift.createSCC` | Create SCCs for all components. Set to `false` to manage SCCs outside of Helm        | `true`  |
-
-Chart-level `openshift.*` values take precedence and can override the global values for per-component control.
-
 ### Temp Volume Mount
 In order to perform image scan, IAR will pull the image and un-compress it for traversal through layers and image config and manifest.
 For this, IAR will use a temp space that is added as a mount of type `emptyDir` . The idea of the storage here is to accommodate the max size image that one could run in the kubernetes.

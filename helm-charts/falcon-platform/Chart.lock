@@ -7,6 +7,6 @@ dependencies:
   version: 1.6.0
 - name: falcon-image-analyzer
   repository: file://../falcon-image-analyzer
-  version: 1.1.20
-digest: sha256:df5d3f9047c9ae430112c5c69860afc7f9a27771590ea9a872e85cd8ae27ae11
-generated: "2026-05-05T10:37:59.520948-04:00"
+  version: 1.1.21
+digest: sha256:03ecf92048161d9348dee071f7e64d8399140fb915a4d03738dac7a4a33f3cea
+generated: "2026-06-10T07:29:50.844508-05:00"

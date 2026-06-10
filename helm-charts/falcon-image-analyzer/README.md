@@ -326,7 +326,7 @@ The required privileges differ depending on which workload mode is enabled:
 - **Deployment mode** (`deployment.enabled: true`): Requires only permission to run as root (UID 0) with all
   capabilities dropped. No host access is needed.
 
-Set `openshift.enabled: true` to have the chart create the appropriate SCC automatically. The SCC grants only the
+Set `openshift.enabled: true` and `openshift.createSCC: true` to have the chart create the appropriate SCC automatically. The SCC grants only the
 minimum permissions required for the active workload mode. The SCC is managed as a standard Helm release resource and
 will be created on install and removed on uninstall.
 

@@ -138,6 +138,8 @@ executor:
 #      optional: false
 
 jobController:
+  serviceAccount:
+    create: false # true also deploys a Service Account for the job controller if it's required to have one by restrictions like Openshift Container Platform's Security Context Constraints
   storageEngine: "sqlite"  # sqlite or memory
   image:
     registry:

@@ -15,6 +15,7 @@ The following tables lists the Falcon Sensor configurable parameters and their d
 
 | Parameter                                              | Description                                            | Default                    |
 | :----------------------------------------------------- | :----------------------------------------------------- | :------------------------- |
+| `extraManifests`                                       | Additional Kubernetes manifests to render with this chart | `[]`                    |
 | `falcon.client_id`                                     | CrowdStrike API Client ID                              | None                       |
 | `falcon.client_secret`                                 | CrowdStrike API Client Secret                          | None                       |
 | `falcon.cloud_region`                                  | CrowdStrike Cloud Region (us-1, us-2, eu-1, us-gov-1)  | None       (Required)      |

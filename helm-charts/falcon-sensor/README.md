@@ -89,6 +89,7 @@ The following tables lists the Falcon Sensor configurable parameters and their d
 
 | Parameter                   | Description                                               | Default               |
 |:----------------------------|:----------------------------------------------------------|:----------------------|
+| `extraManifests`            | Additional Kubernetes manifests to render with this chart. Values are rendered with Helm templating. | []                    |
 | `falcon.cid`                | CrowdStrike Customer ID (CID)                             | None       (Required) |
 | `falcon.apd`                | App Proxy Disable (APD)                                   | None                  |
 | `falcon.aph`                | App Proxy Hostname (APH)                                  | None                  |

@@ -215,6 +215,7 @@ The following tables lists the Falcon KAC configurable parameters and their defa
 
 | Parameter                                      | Description                                                                                                                        | Default                                                       |
 |:-----------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------|
+| `extraManifests`                               | Additional Kubernetes manifests to render with this chart. Values are rendered with Helm templating.                                | []                                                            |
 | `falcon.cid`                                   | CrowdStrike Customer ID (CID)                                                                                                      | None       (Required if falconSecret.enabled is false)        |
 | `falcon.apd`                                   | App Proxy Disable (APD)                                                                                                            | None                                                          |
 | `falcon.aph`                                   | App Proxy Hostname (APH)                                                                                                           | None                                                          |

@@ -2,6 +2,14 @@
     "$schema": "http://json-schema.org/schema#",
     "type": "object",
     "properties": {
+        "extraManifests": {
+            "type": "array",
+            "description": "Additional Kubernetes manifests to render with this chart",
+            "default": [],
+            "items": {
+                "type": "object"
+            }
+        },
         "falcon": {
             "type": "object",
             "properties": {

@@ -5,6 +5,14 @@
   "description": "Schema for the falcon-platform umbrella chart configuration",
   "required": ["global"],
   "properties": {
+    "extraManifests": {
+      "type": "array",
+      "description": "Additional Kubernetes manifests to render with this chart",
+      "default": [],
+      "items": {
+        "type": "object"
+      }
+    },
     "createComponentNamespaces": {
       "type": "boolean",
       "description": "Enable automatic namespace creation - pre-install only",

@@ -1,3 +1,6 @@
+# Additional Kubernetes manifests to render with this chart.
+extraManifests: []
+
 image:
     address: ghcr.io/bionicstork/bionicstork/relay:latest
     pullPolicy: Always

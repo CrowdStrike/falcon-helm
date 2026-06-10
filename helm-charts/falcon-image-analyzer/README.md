@@ -19,6 +19,7 @@ more.
   - [Installing using Helm Chart](#install-using-helm-chart)
   - [Deployment considerations](#deployment-considerations)
   - [Pod Security Standards](#pod-security-standards)
+  - [OpenShift Compatibility](#openshift-compatibility)
   - [Temp Mounts](#temp-volume-mount)
   - [IAM Roles](#aws-iam-roles-for-service-accounts)
   - [Authentication for Private Registries](#authentication-for-private-registries)
@@ -40,7 +41,6 @@ The Falcon Image Analyzer Helm chart has been tested to deploy on the following 
 * Azure Kubernetes Service (AKS)
 * Google Kubernetes Engine (GKE)
 * SUSE Rancher K3s
-* Red Hat OpenShift Kubernetes
 
 
 ## Helm Chart Support for Falcon Image Analyzer Versions
@@ -136,10 +136,10 @@ The `[CROWDSTRIKE_IMAGE_REGISTRY]` can be replaced with below registries based o
 
 
 
-| Region | ImageName                                                                                  | 
+| Region | ImageName                                                                                  |
 |:-------|:-------------------------------------------------------------------------------------------|
 | `us-1` | `registry.crowdstrike.com/falcon-imageanalyzer/release/falcon-imageanalyzer`               |
-| `us-2` | `registry.crowdstrike.com/falcon-imageanalyzer/release/falcon-imageanalyzer`               | 
+| `us-2` | `registry.crowdstrike.com/falcon-imageanalyzer/release/falcon-imageanalyzer`               |
 | `eu-1` | `registry.crowdstrike.com/falcon-imageanalyzer/release/falcon-imageanalyzer`               |
 | `gov1` | `registry.laggar.gcw.crowdstrike.com/falcon-imageanalyzer/release/falcon-imageanalyzer`    |
 | `gov2` | `registry.us-gov-2.crowdstrike.mil/falcon-imageanalyzer/release/falcon-imageanalyzer`      |
@@ -247,8 +247,8 @@ From IAR ver >-= 1.0.20 IAR will dynamically switch between PRIMARY and SECONDAR
 IAR requires internet access to your assigned CrowdStrike authentication API and upload servers.
 If your network requires it, configure your allowlists with your assigned CrowdStrike cloud servers.
 
-| Region | Authentication API |             PRIMARY Scan Upload Servers             | SECONDARY Scan Upload Servers          |   
-|:----:|:--:|:---------------------------------------------------:|----------------------------------------| 
+| Region | Authentication API |             PRIMARY Scan Upload Servers             | SECONDARY Scan Upload Servers          |
+|:----:|:--:|:---------------------------------------------------:|----------------------------------------|
 | US-1 | https://api.crowdstrike.com |    https://container-upload.us-1.crowdstrike.com    | https://api.crowdstrike.com            |
 | US-2 | https://api.us-2.crowdstrike.com |    https://container-upload.us-2.crowdstrike.com    | https://api.us-2.crowdstrike.com       |
 | EU-1 | https://api.eu-1.crowdstrike.com |    https://container-upload.eu-1.crowdstrike.com    | https://api.eu-1.crowdstrike.com       |
@@ -257,8 +257,8 @@ If your network requires it, configure your allowlists with your assigned CrowdS
 
 #### ***For IAR versions < 1.0.20 both Authtentication/Upload Servers point to the same
 
-| Region | Authentication API |          Scan Upload Servers           |   
-|:----:|:--:|:--------------------------------------:| 
+| Region | Authentication API |          Scan Upload Servers           |
+|:----:|:--:|:--------------------------------------:|
 | US-1 | https://api.crowdstrike.com |      https://api.crowdstrike.com       |
 | US-2 | https://api.us-2.crowdstrike.com |    https://api.us-2.crowdstrike.com    |
 | EU-1 | https://api.eu-1.crowdstrike.com |    https://api.eu-1.crowdstrike.com    |
@@ -298,17 +298,52 @@ For a successful deployment, you will want to ensure that:
 
 ### Pod Security Standards
 
-Starting with Kubernetes 1.25, Pod Security Standards will be enforced. Setting the appropriate Pod Security Standards policy needs to be performed by adding a label to the namespace. Run the following command, and replace `my-existing-namespace` with the namespace that you have installed the falcon sensors, for example: `falcon-image-analyzer`.
-```
-kubectl label --overwrite ns my-existing-namespace \
-  pod-security.kubernetes.io/enforce=privileged
+Starting with Kubernetes 1.25, Pod Security Standards (PSS) are enforced via the Pod Security Admission (PSA) controller. Falcon Image Analyzer requires `privileged` PSS labels on its namespace because it accesses the container runtime socket (DaemonSet mode) or runs as root (Deployment mode).
+
+Apply the required labels to the namespace before installing:
+
+```bash
+kubectl label --overwrite ns <namespace> \
+  pod-security.kubernetes.io/enforce=privileged \
+  pod-security.kubernetes.io/warn=privileged \
+  pod-security.kubernetes.io/audit=privileged
 ```
 
-If you want to silence the warning and change the auditing level for the Pod Security Standard, add the following labels:
-```
-kubectl label ns --overwrite my-existing-namespace pod-security.kubernetes.io/audit=privileged
-kubectl label ns --overwrite my-existing-namespace pod-security.kubernetes.io/warn=privileged
-```
+In automated testing environments, set `testing.labelNamespace: true` to apply these labels automatically via a pre-install Job. This requires outbound access to `docker.io` and is not suitable for air-gapped or registry-restricted environments.
+
+### OpenShift Compatibility
+
+> **Note:** OpenShift is **not a recommended** configuration for this Helm chart. The
+> [official Red Hat certified CrowdStrike Falcon Operator](https://catalog.redhat.com/en/software/container-stacks/detail/62f2d38f76d039249424703d)
+> is the recommended installation method for OpenShift clusters.
+
+#### Security Context Constraints
+
+The required privileges differ depending on which workload mode is enabled:
+
+- **DaemonSet mode** (`daemonset.enabled: true`): Requires a privileged SCC to access the container runtime socket
+  (`/run/containerd/containerd.sock`, `/run/crio/crio.sock`, etc.) and, for CRI-O, additional hostPath mounts.
+- **Deployment mode** (`deployment.enabled: true`): Requires only permission to run as root (UID 0) with all
+  capabilities dropped. No host access is needed.
+
+Set `openshift.enabled: true` and `openshift.createSCC: true` to have the chart create the appropriate SCC automatically. The SCC grants only the
+minimum permissions required for the active workload mode. The SCC is managed as a standard Helm release resource and
+will be created on install and removed on uninstall.
+
+**Helm User Permissions:** When `openshift.createSCC: true`, the user or service account running Helm must have
+permission to create, update, and delete `SecurityContextConstraints` resources at the cluster level.
+
+To manage the SCC outside of Helm, set `openshift.createSCC: false`, define `openshift.sccName` with the name of your
+SCC, and ensure the SCC is created prior to deployment. The SCC must grant the permissions described above to the IAR
+service account.
+
+#### OpenShift Values
+
+| Parameter             | Description                                                                                                                | Default               |
+|:----------------------|:---------------------------------------------------------------------------------------------------------------------------|:----------------------|
+| `openshift.enabled`   | Enable OpenShift compatibility mode                                                                                        | `false`               |
+| `openshift.createSCC` | Create a `SecurityContextConstraints` resource granting the workload the required privileges for the active workload mode  | `true`                |
+| `openshift.sccName`   | Name of the SCC to create or use. If empty, defaults to the release fullname                                               | `""` (auto-generated) |
 
 ### Temp Volume Mount
 In order to perform image scan, IAR will pull the image and un-compress it for traversal through layers and image config and manifest.
@@ -317,7 +352,7 @@ By Default, this is set to `20Gi` but can be overridden by the customer by addin
 ```
 # This is a mandatory mount for both deployment and daemonset.
 # this is used as a tmp working space for image storage.
-# adjust this space to any comfortable value. the temp ssize limit should be equal to 
+# adjust this space to any comfortable value. the temp ssize limit should be equal to
 # 2 X to the largest image possible to run in the container.
 # for e.g. if the largest possible image is in the range of 4g put 8Gi as the value.
 volumes:
@@ -330,7 +365,7 @@ volumes:
 
 
 ### AWS IAM Roles for Service Accounts
-- **KIAM OR Kube2IAM.** 
+- **KIAM OR Kube2IAM.**
 For the IAR to detect cloud as AWS, it should be able to retrieve sts token to assume role to retrieve ECR Tokens.
   There are 2 options for  that . If your EKS cluster us using the **kiam** or **kube2iam** admission controller, add annotations
   for the IAR service account in the `config_values.yaml` as stated below, before installing. Make sure the roles have trust-relationship to allow
@@ -449,8 +484,8 @@ use the above secret as `"my-app-ns:regcred,my-app-ns:regcred2"`
 `autoDiscoverCredentials`
 if set to true, the IAR will try to discover the docker-registry secrets across all namespaces.
 if autoDiscoverCredentials is set to `true` then the provided credentials are ignored. Note that the secret
-should be existing of type docker-registry in ANY namespace on the cluster to be discovered. 
-IAR will NOT pick up any new secret added to the cluster after IAR is running. 
+should be existing of type docker-registry in ANY namespace on the cluster to be discovered.
+IAR will NOT pick up any new secret added to the cluster after IAR is running.
 For that a restart of IAR is needed.
 
 ### PROXY Usage
@@ -468,11 +503,11 @@ If a customer us using proxy settings. Please make sure to add the registry doma
 This is so that the IAR can connect to the registries without proxy and authenticate if needed using secrets provided or download the public free images.
 
 ***Note that some registries domains also have other urls based on the auth challenge that is sent by the registry service. Please make sure to add those as well to ```NO_PROXY```
-for e.g. for gitlab registries there exists the 
-- registry domain ```my-reg.gitlab.com``` 
+for e.g. for gitlab registries there exists the
+- registry domain ```my-reg.gitlab.com```
 - and the other ```www.gitlab.com```
 
-- The above is very registry provider specific. One needs to ensure nothing ie being blocked by Proxy 
+- The above is very registry provider specific. One needs to ensure nothing ie being blocked by Proxy
 
 ### Pod Eviction
 If for some reason pod evictions are observed in the Cluster due to exceeding ephemeral storage
@@ -520,7 +555,7 @@ metadata:
 #### Images
 Images can be excluded by adding the full image name in the below section of the `config_values.yaml`
 - Image without registries will be defaulted to `index.docker.io`
-- Images without tags will be defaulted to `latest` tag 
+- Images without tags will be defaulted to `latest` tag
 ```
   exclusions:
     imageName: "myregistry.io/mynamespace/myimage:tag1,myregistry.io/mynamespace/myimage@sha2561234678901209"
@@ -556,7 +591,7 @@ kind: Deployment / Daemonset
 metadata:
   name: myapp
   namespace: mynamespace
-  
+
 spec:
   replicas: 1
   template:

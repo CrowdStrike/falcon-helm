@@ -237,6 +237,36 @@
                     }
                 }
             }
+        },
+        "openshift": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "createSCC": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "sccName": {
+                    "type": "string",
+                    "default": ""
+                }
+            }
+        },
+        "testing": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "labelNamespace": {
+                    "type": "boolean",
+                    "default": false
+                }
+            }
         }
     },
     "oneOf": [

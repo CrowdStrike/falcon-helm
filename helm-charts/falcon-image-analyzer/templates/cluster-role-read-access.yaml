@@ -17,3 +17,13 @@ rules:
     - get
     - watch
     - list
+{{- if and (include "falcon-image-analyzer.openshiftEnabled" . | eq "true") (not (include "falcon-image-analyzer.openshiftCreateSCC" . | eq "true")) .Values.openshift.sccName }}
+  - apiGroups:
+    - security.openshift.io
+    resources:
+    - securitycontextconstraints
+    resourceNames:
+    - {{ include "falcon-image-analyzer.sccName" . }}
+    verbs:
+    - use
+{{- end }}

@@ -1,0 +1,52 @@
+{{- if and .Values.node.enabled (include "falcon-sensor.openshiftEnabled" . | eq "true") (include "falcon-sensor.openshiftCreateSCC" . | eq "true") }}
+# NOTE: Helm on an OpenShift cluster is NOT THE RECOMMENDED configuration. The official Red Hat certified falcon-operator
+# (https://catalog.redhat.com/en/software/container-stacks/detail/62f2d38f76d039249424703d) is the
+# recommended installation method for OpenShift clusters.
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: {{ include "falcon-sensor.sccName" . }}
+  labels:
+    {{- include "falcon-sensor.labels" . | nindent 4 }}
+  annotations:
+    kubernetes.io/description: >-
+      Grants the Falcon node sensor DaemonSet the privileges required to monitor
+      and protect cluster nodes. This SCC is required because the Falcon sensor
+      runs as a privileged process in the host's kernel. Using the falcon-helm
+      charts on OpenShift is not the recommended configuration; use the official
+      Red Hat certified operator for production deployments.
+allowHostDirVolumePlugin: true
+allowHostIPC: true
+allowHostNetwork: true
+allowHostPID: true
+allowHostPorts: false
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: true
+allowedCapabilities:
+  - '*'
+defaultAddCapabilities: []
+fsGroup:
+  type: RunAsAny
+readOnlyRootFilesystem: false
+requiredDropCapabilities: []
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - '*'
+supplementalGroups:
+  type: RunAsAny
+users:
+  - system:serviceaccount:{{ include "falcon-sensor.namespace" . }}:{{ .Values.serviceAccount.name }}
+  - system:serviceaccount:{{ include "falcon-sensor.namespace" . }}:{{ include "falcon-sensor.cleanupServiceAccountName" . }}
+groups: []
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - hostPath
+  - persistentVolumeClaim
+  - projected
+  - secret
+{{- end }}

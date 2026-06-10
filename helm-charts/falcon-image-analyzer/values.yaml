@@ -125,6 +125,21 @@ exclusions:
 # NOTE That setting this to true will also set the dnsPolicy: "ClusterFirstWithHostNet"
 hostNetwork: false
 
+# OpenShift configuration.
+# NOTE: OpenShift is NOT A RECOMMENDED configuration. The official Red Hat certified operator
+# (https://catalog.redhat.com/en/software/container-stacks/detail/62f2d38f76d039249424703d) is the
+# recommended installation method for OpenShift clusters.
+openshift:
+  # Set to true to enable OpenShift compatibility mode.
+  enabled: false
+  # Set to true to create a SecurityContextConstraints (SCC) resource granting the
+  # workload the privileges it requires. In DaemonSet mode this includes privileged
+  # access and hostPath volumes; in Deployment mode only runAsUser:0 is required.
+  createSCC: true
+  # Name of the SCC to create or use. If empty, defaults to the release fullname.
+  # Set createSCC: false and provide a name here to reference an existing SCC.
+  sccName: ""
+
 # Define ImageAnalyzer POD DNS Policy, defaults to "ClusterFirstWithHostNet" when hostNetwork = true
 dnsPolicy:
 
@@ -230,3 +245,14 @@ global:
   containerRegistry:
     pullSecret: ""
     configJSON: ""
+  openshift:
+    enabled: false
+    createSCC: true
+
+# Deploys the test suite during install for testing purposes.
+testing:
+  enabled: false
+  # Set to true to apply privileged PSS labels to the install namespace as a
+  # pre-install hook. Requires outbound access to docker.io. Not suitable for
+  # air-gapped or registry-restricted environments.
+  labelNamespace: false

@@ -20,7 +20,10 @@ spec:
         FAILED=0
 
         echo "--- Waiting for pods to initialize ---"
-        sleep 10
+        kubectl rollout status daemonset \
+          "{{ include "falcon-sensor.fullname" . }}" \
+          -n "{{ include "falcon-sensor.namespace" . }}" \
+          --timeout=300s
 
         echo "--- Checking all sensor pods are running ---"
         KUBECMD=$(kubectl get pods -n "{{ include "falcon-sensor.namespace" . }}" -l "app.kubernetes.io/component=kernel_sensor" --field-selector=status.phase!=Running --no-headers 2>&1)
@@ -108,6 +111,22 @@ spec:
                 fi
             done
         fi
+
+        {{- if .Values.testing.labelNamespace }}
+        echo "--- Checking PSS namespace labels ---"
+        NS_NAME="{{ include "falcon-sensor.namespace" . }}"
+        for LABEL in "pod-security.kubernetes.io/enforce=privileged" "pod-security.kubernetes.io/warn=privileged" "pod-security.kubernetes.io/audit=privileged"; do
+            KEY="${LABEL%%=*}"
+            VALUE="${LABEL##*=}"
+            ACTUAL=$(kubectl get namespace "${NS_NAME}" -o json 2>&1 | jq -r --arg key "${KEY}" '.metadata.labels[$key] // ""')
+            if [ "${ACTUAL}" != "${VALUE}" ]; then
+                echo "[FAIL]: Namespace '${NS_NAME}' label '${KEY}' is '${ACTUAL}', expected '${VALUE}'"
+                FAILED=1
+            else
+                echo "[OK]: Namespace '${NS_NAME}' has label '${KEY}=${VALUE}'"
+            fi
+        done
+        {{- end }}
 
         echo "--- Checking pod labels ---"
         for POD in ${PODS}; do

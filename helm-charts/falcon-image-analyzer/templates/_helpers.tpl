@@ -265,3 +265,28 @@ Get container registry config json from global value if it exists
 {{- .Values.image.registryConfigJSON | default "" -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+OpenShift SCC name. Uses openshift.sccName if set, otherwise defaults to the fullname.
+*/}}
+{{- define "falcon-image-analyzer.sccName" -}}
+{{- if .Values.openshift.sccName -}}
+{{- .Values.openshift.sccName -}}
+{{- else -}}
+{{- include "falcon-image-analyzer.fullname" . -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+OpenShift mode enabled — true if either chart-level or global is true.
+*/}}
+{{- define "falcon-image-analyzer.openshiftEnabled" -}}
+{{- or .Values.openshift.enabled (default false .Values.global.openshift.enabled) -}}
+{{- end -}}
+
+{{/*
+OpenShift createSCC — false if either chart-level or global disables it.
+*/}}
+{{- define "falcon-image-analyzer.openshiftCreateSCC" -}}
+{{- and .Values.openshift.createSCC .Values.global.openshift.createSCC -}}
+{{- end -}}

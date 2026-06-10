@@ -111,6 +111,20 @@ node:
   # Enable, to run cleanup for the prior daemonset deployment
   cleanupOnly: false
 
+  # OpenShift configuration.
+  # NOTE: OpenShift is NOT A RECOMMENDED configuration. The official Red Hat certified operator
+  # (https://catalog.redhat.com/en/software/container-stacks/detail/62f2d38f76d039249424703d) is the
+  # recommended installation method for OpenShift clusters.
+  # These settings apply only to the node DaemonSet and have no effect on the container sensor.
+  openshift:
+    # Set to true to enable OpenShift compatibility mode for the node DaemonSet.
+    enabled: false
+    # Set to true to create a SecurityContextConstraints (SCC) resource granting the
+    # DaemonSet service account the privileges required by the Falcon node sensor.
+    createSCC: true
+    # Name of the SCC to create or use. If empty, defaults to "<release-name>-falcon-sensor-node-sensor"
+    sccName: ""
+
 container:
   # When enabled, Helm chart deploys the Falcon Container Sensor to Pods through Webhooks
   enabled: false
@@ -289,6 +303,10 @@ serviceAccount:
 # Deploys the test suite during install for testing purposes.
 testing:
   enabled: false
+  # Set to true to apply privileged PSS labels to the install namespace as a
+  # pre-install hook. Requires outbound access to docker.io. Not suitable for
+  # air-gapped or registry-restricted environments.
+  labelNamespace: false
 
 # falcon.cid is required unless falconSecret.enabled is true and FALCONCTL_OPT_CID is already defined in an existing secret.
 falcon:
@@ -323,3 +341,6 @@ global:
   containerRegistry:
     pullSecret: ""
     configJSON: ""
+  openshift:
+    enabled: false
+    createSCC: true

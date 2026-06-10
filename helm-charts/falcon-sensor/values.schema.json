@@ -296,6 +296,23 @@
                     "example": [
                         "my_prod_cluster"
                     ]
+                },
+                "openshift": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": false
+                        },
+                        "createSCC": {
+                            "type": "boolean",
+                            "default": true
+                        },
+                        "sccName": {
+                            "type": "string",
+                            "default": ""
+                        }
+                    }
                 }
             }
         },
@@ -562,6 +579,10 @@
                 "enabled": {
                     "type": "boolean",
                     "default": "false"
+                },
+                "labelNamespace": {
+                    "type": "boolean",
+                    "default": false
                 }
             }
         },

@@ -35,7 +35,6 @@ The Falcon Kubernetes Admission Controller has been deployed and tested on these
 - Amazon Elastic Kubernetes Service (EKS)
 - Google Kubernetes Engine (GKE)
 - Microsoft Azure Kubernetes Service (AKS)
-- Red Hat OpenShift Container Platform 4.6 and later
 
 ## Helm Chart Support for Falcon Admission Controller Versions
 
@@ -146,22 +145,36 @@ CID checksum, and then click **Copy your Customer ID checksum to the clipboard**
       --set image.registryConfigJSON=$IMAGE_PULL_TOKEN
     ```
 
-- Verify that the Falcon KAC deployment is ready and the corresponding pod has a Running status:
+## OpenShift Compatibility
 
-  ```
-   kubectl get deployments,pods -n falcon-kac
-   NAME         READY   UP-TO-DATE   AVAILABLE   AGE
-   falcon-kac   1/1     1            1           7d2h
+> **Note:** OpenShift is **not a recommended** configuration for this Helm chart. The
+> [official Red Hat certified CrowdStrike Falcon Operator](https://catalog.redhat.com/en/software/container-stacks/detail/62f2d38f76d039249424703d)
+> is the recommended installation method for OpenShift clusters.
 
-   NAME                          READY   STATUS    RESTARTS         AGE
-   falcon-kac-7cc7dd57fc-pvzzf   2/2     Running   0                7d2h
-  ```
-- Verify that the Falcon KAC has an AID:
-  ```
-   kubectl exec deployment/falcon-kac -n falcon-kac -c falcon-ac -- falconctl -g --aid
-  ```
-  **Tip**: An AID is assigned to the Falcon KAC when it communicates with the Falcon cloud. If the Falcon KAC has an AID
-  that is not all zeros, it is installed and running properly.
+In the default configuration, all containers run as non-root with no privilege escalation and no host access, which
+satisfies the built-in `restricted-v2` SCC without any additional configuration.
+
+### Security Context Constraints
+
+If `hostNetwork` must be enabled (required when a custom CNI prevents control plane nodes from communicating directly
+with pods), a custom SCC that permits host network access is required. The chart can create this SCC automatically.
+
+The SCC is managed as a standard Helm release resource and will be created on install and removed on uninstall.
+
+**Helm User Permissions:** When `openshift.createSCC: true`, the user or service account running Helm must have
+permission to create, update, and delete `SecurityContextConstraints` resources at the cluster level.
+
+To use an existing SCC instead, set `openshift.createSCC=false`, define `openshift.sccName` with the name of your SCC,
+and ensure the SCC is created prior to deployment. The SCC must be bound to the service account manually before
+installing.
+
+### OpenShift Values
+
+| Parameter              | Description                                                                                                         | Default                        |
+|:-----------------------|:--------------------------------------------------------------------------------------------------------------------|:-------------------------------|
+| `openshift.enabled`    | Enable OpenShift compatibility mode                                                                                 | `false`                        |
+| `openshift.createSCC`  | Create a `SecurityContextConstraints` resource granting the Deployment service account host network access          | `true`                         |
+| `openshift.sccName`    | Name of the SCC to create or use. If empty, defaults to the release fullname                                        | `""` (auto-generated)          |
 
 ## Update Falcon KAC
 
@@ -232,3 +245,4 @@ The following tables lists the Falcon KAC configurable parameters and their defa
 | `falconSecret.secretName`                      | Existing k8s secret name to inject sensitive Falcon values.<br> The secret must be under the same namespace as the KAC deployment. | None       (Existing secret must include `FALCONCTL_OPT_CID`) |
 | `clusterName`                                  | Manually set cluster name for self-hosted Kubernetes clusters where auto-discovery fails (e.g., MicroK8s). Displayed as hostname in Host Management UI. | None (auto-discovery used) |
 | `falconImageAnalyzerNamespace`                 | Falcon Image Analyzer namespace | falcon-image-analyzer |
+| `hostNetwork`                                  | Enable host network mode. Required when a custom CNI prevents control plane to pod communication. | `false` |

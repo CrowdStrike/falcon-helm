@@ -1,0 +1,88 @@
+{{- if and .Values.testing.enabled (include "falcon-image-analyzer.openshiftEnabled" . | eq "true") }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "falcon-image-analyzer.fullname" . }}-test-openshift"
+  namespace: {{ include "falcon-image-analyzer.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "falcon-image-analyzer.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/component: test
+    helm.sh/chart: {{ include "falcon-image-analyzer.chart" . }}
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: kubectl
+      image: docker.io/bitnami/kubectl
+      imagePullPolicy: IfNotPresent
+      command:
+      - /bin/sh
+      - -c
+      - |
+        FAILED=0
+
+        {{- if (include "falcon-image-analyzer.openshiftCreateSCC" . | eq "true") }}
+        echo "--- Checking SCC exists ---"
+        if ! kubectl get scc "{{ include "falcon-image-analyzer.sccName" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: SCC '{{ include "falcon-image-analyzer.sccName" . }}' not found"
+            FAILED=1
+        else
+            echo "[OK]: SCC '{{ include "falcon-image-analyzer.sccName" . }}' exists"
+        fi
+
+        echo "--- Checking service account is bound to SCC ---"
+        SA_ENTRY="system:serviceaccount:{{ include "falcon-image-analyzer.namespace" . }}:{{ .Values.serviceAccount.name | default (include "falcon-image-analyzer.fullname" .) }}"
+        SCC_USERS=$(kubectl get scc "{{ include "falcon-image-analyzer.sccName" . }}" -o jsonpath="{.users}" 2>&1)
+        if ! echo "${SCC_USERS}" | grep -q "${SA_ENTRY}"; then
+            echo "[FAIL]: Service account '${SA_ENTRY}' is not bound to SCC"
+            echo "${SCC_USERS}"
+            FAILED=1
+        else
+            echo "[OK]: Service account is bound to SCC"
+        fi
+        {{- end }}
+
+        echo "--- Checking {{ if .Values.daemonset.enabled }}DaemonSet{{ else }}Deployment{{ end }} pods have openshift.io/scc annotation ---"
+        sleep 10
+        EXPECTED_SCC="{{ include "falcon-image-analyzer.sccName" . }}"
+        # Exclude test pods by filtering out pods with helm.sh/hook annotation
+        PODS=$(kubectl get pods -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+          -l "app.kubernetes.io/name={{ include "falcon-image-analyzer.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" \
+          -o json 2>&1 | jq -r '.items[] | select(.metadata.annotations["helm.sh/hook"] == null) | .metadata.name')
+        if [ -z "${PODS}" ]; then
+            echo "[FAIL]: No image analyzer pods found"
+            FAILED=1
+        else
+            for POD in ${PODS}; do
+                SCC_ANNOTATION=$(kubectl get pod "${POD}" \
+                  -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+                  -o jsonpath="{.metadata.annotations.openshift\.io/scc}" 2>&1)
+                if [ -z "${SCC_ANNOTATION}" ]; then
+                    echo "[FAIL]: Pod '${POD}' is missing openshift.io/scc annotation"
+                    FAILED=1
+                elif [ "${SCC_ANNOTATION}" != "${EXPECTED_SCC}" ]; then
+                    echo "[FAIL]: Pod '${POD}' has SCC '${SCC_ANNOTATION}' but expected '${EXPECTED_SCC}'"
+                    FAILED=1
+                else
+                    echo "[OK]: Pod '${POD}' is using SCC '${SCC_ANNOTATION}'"
+                fi
+            done
+        fi
+
+        if [ "${FAILED}" -eq 1 ]; then
+            exit 1
+        fi
+        exit 0
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+  serviceAccountName: {{ include "falcon-image-analyzer.fullname" . }}-test-sa
+  restartPolicy: Never
+{{- end }}

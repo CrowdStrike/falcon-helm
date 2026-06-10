@@ -39,6 +39,12 @@ The Falcon Helm chart has been tested to deploy on the following Kubernetes dist
 * Google Kubernetes Engine (GKE)
 * Rancher K3s
 
+> **OpenShift:** OpenShift is **not a recommended** configuration for this Helm chart. The
+> [official Red Hat certified CrowdStrike Falcon Operator](https://catalog.redhat.com/en/software/container-stacks/detail/62f2d38f76d039249424703d)
+> is the recommended installation method for OpenShift clusters. A best-effort
+> compatibility mode is available for the node DaemonSet only (see
+> [OpenShift Compatibility](#openshift-compatibility) below).
+
 # Dependencies
 
 1. Requires a x86_64 or ARM64 Kubernetes cluster
@@ -604,3 +610,57 @@ After validating the removal of the `/opt/Crowdstrike` directory, the cleanup Da
 ```bash
 helm uninstall falcon-helm -n <NAMESPACE>\
 ```
+
+## OpenShift Compatibility
+
+> **Note:** OpenShift is **not a recommended** configuration for this Helm chart. The
+> [official Red Hat certified CrowdStrike Falcon Operator](https://catalog.redhat.com/en/software/container-stacks/detail/62f2d38f76d039249424703d)
+> is the recommended installation method for OpenShift clusters.
+
+This chart provides a best-effort compatibility mode for deploying the Falcon node sensor as a DaemonSet on OpenShift clusters. **The container sensor (`container.enabled`) is not supported on OpenShift** and will produce an error if enabled alongside `node.openshift.enabled`.
+
+### Security Context Constraints
+
+OpenShift uses Security Context Constraints (SCC) to control pod privileges. Because the Falcon node sensor requires privileged host access (`hostPID`, `hostIPC`, `hostNetwork`, and a privileged container), the default `restricted` SCC is insufficient.
+
+When `node.openshift.enabled=true` and `node.openshift.createSCC=true`, the chart creates an SCC named `<release-name>-falcon-sensor-node-sensor` and binds it to the DaemonSet and cleanup DaemonSet service accounts.
+
+**Helm User Permissions:** When `node.openshift.createSCC: true`, the user or service account running Helm must have permission to create, update, and delete `SecurityContextConstraints` resources at the cluster level.
+
+To use an existing SCC instead, set `node.openshift.createSCC=false`, define `node.openshift.sccName` with the name of your SCC, and ensure the SCC is created prior to deployment. The SCC must be bound to the service accounts manually before installing.
+
+OpenShift runs Pod Security Admission in warn/audit mode alongside SCCs. To suppress PSA warnings for the install namespace, label it before installing:
+
+```bash
+kubectl label namespace falcon-system \
+  pod-security.kubernetes.io/enforce=privileged \
+  pod-security.kubernetes.io/warn=privileged \
+  pod-security.kubernetes.io/audit=privileged
+```
+
+### OpenShift Values
+
+| Parameter                      | Description                                                                                                   | Default                                   |
+|:-------------------------------|:--------------------------------------------------------------------------------------------------------------|:------------------------------------------|
+| `node.openshift.enabled`       | Enable OpenShift compatibility mode for the node DaemonSet                                                    | `false`                                   |
+| `node.openshift.createSCC`     | Create a `SecurityContextConstraints` resource granting the DaemonSet service account the required privileges | `true`                                    |
+| `node.openshift.sccName`       | Name of the SCC to create or use. If empty, defaults to `<release-name>-falcon-sensor-node-sensor`           | `""` (auto-generated from release name)   |
+
+### Pod Security Standards (PSS) Namespace Labeling
+
+Kubernetes 1.23+ enforces Pod Security Standards (PSS) which can block privileged pods like the Falcon node sensor. Apply the required `privileged` PSS labels to the install namespace before installing:
+
+```bash
+kubectl label namespace <namespace> \
+  pod-security.kubernetes.io/enforce=privileged \
+  pod-security.kubernetes.io/warn=privileged \
+  pod-security.kubernetes.io/audit=privileged
+```
+
+In automated testing environments, set `testing.labelNamespace: true` to apply these labels automatically via a pre-install Job. This requires outbound access to `docker.io` and is not suitable for air-gapped or registry-restricted environments.
+
+### Installing on OpenShift
+
+Set `node.openshift.enabled=true` to enable OpenShift compatibility mode. The chart will automatically create and manage the required SCC unless `node.openshift.createSCC=false` is set.
+
+For additional configuration options, see the [OpenShift Values](#openshift-values) table above.

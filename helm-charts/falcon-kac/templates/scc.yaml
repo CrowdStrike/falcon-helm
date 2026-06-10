@@ -1,0 +1,50 @@
+{{- if and (include "falcon-kac.openshiftEnabled" . | eq "true") (include "falcon-kac.openshiftCreateSCC" . | eq "true") .Values.hostNetwork }}
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: {{ include "falcon-kac.sccName" . }}
+  labels:
+    {{- include "falcon-kac.labels" . | nindent 4 }}
+  annotations:
+    kubernetes.io/description: >-
+      Grants the Falcon KAC Deployment the host network and host ports (4443, 4080)
+      access required when a custom CNI is in use. All other privileges remain at
+      the restricted level.
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: true
+allowHostPID: false
+allowHostPorts: true
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+allowedCapabilities: []
+defaultAddCapabilities: []
+fsGroup:
+  type: MustRunAs
+  ranges:
+    - min: 1
+      max: 65535
+readOnlyRootFilesystem: true
+requiredDropCapabilities:
+  - ALL
+runAsUser:
+  type: MustRunAsNonRoot
+seLinuxContext:
+  type: MustRunAs
+seccompProfiles:
+  - runtime/default
+supplementalGroups:
+  type: MustRunAs
+  ranges:
+    - min: 1
+      max: 65535
+users:
+  - system:serviceaccount:{{ include "falcon-kac.namespace" . }}:{{ .Values.serviceAccount.name }}
+groups: []
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - projected
+  - secret
+{{- end }}

@@ -199,6 +199,16 @@ GitOps or CI/CD pipeline per Kubernetes Best Operational and Security practices.
   **Note**: Your deployment will update only when you change the inputs for helm upgrade, for example by changing the
   image reference.
 
+### Adding clusterName to an Existing Deployment
+
+If you are adding a `clusterName` value to an existing Falcon KAC deployment where it was not previously set, you must first delete the `falcon-kac-meta` ConfigMap before running `helm upgrade`:
+
+```
+kubectl delete configmap falcon-kac-meta -n falcon-kac
+```
+
+Then proceed with the helm upgrade command including the `--set clusterName=<your-cluster-name>` parameter. This is necessary because Helm cannot take ownership of resources that were not originally created by the Helm release.
+
 - Verify that the new version of the Falcon KAC is running on the falcon-kac pods:
   ```
   kubectl get pods -n falcon-kac -o jsonpath='{range .items[*]}{"\n"}{.metadata.name}{":\t"}{range .spec.containers[*]}{.image}{", "}{end}{end}'

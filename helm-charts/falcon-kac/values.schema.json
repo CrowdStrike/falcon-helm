@@ -453,6 +453,10 @@
         "falconImageAnalyzerNamespace": {
             "type": "string",
             "default": "falcon-image-analyzer"
+        },
+        "priorityClassName": {
+            "type": "string",
+            "default": "system-cluster-critical"
         }
     }
 }

@@ -25,13 +25,6 @@ rules:
   - pods
   - services
   - nodes
-  - daemonsets
-  - replicasets
-  - deployments
-  - jobs
-  - ingresses
-  - cronjobs
-  - persistentvolumes
   {{- end }}
   verbs:
   - get

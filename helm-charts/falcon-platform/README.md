@@ -64,12 +64,25 @@ The table below shows the subchart versions bundled with each falcon-platform re
 
 | falcon-platform | falcon-sensor | falcon-kac | falcon-image-analyzer |
 |:----------------|:--------------|:-----------|:----------------------|
+| `1.4.1`         | `1.36.0`      | `1.6.0`    | `1.1.21`              |
 | `1.4.0`         | `1.36.0`      | `1.6.0`    | `1.1.20`              |
 | `1.3.0`         | `1.35.0`      | `1.6.0`    | `1.1.20`              |
 | `1.2.0`         | `1.34.2`      | `1.6.0`    | `1.1.18`              |
 | `1.1.0`         | `1.34.1`      | `1.5.2`    | `1.1.17`              |
 | `1.0.0`         | `1.34.1`      | `1.5.1`    | `1.1.16`              |
 
+
+<details>
+<summary><b>falcon-platform 1.4.1</b></summary>
+
+| Component | Helm Version | Sensor Version | Notes |
+|:----------|:--------|:---------------|:------|
+| falcon-sensor (node) | `1.36.0` | `>= 7.35` | — |
+| falcon-sensor (container) | `1.36.0` | `>= 7.37` | Added AI-DR support. |
+| falcon-kac | `1.6.0` | `>= 7.33` | — |
+| falcon-image-analyzer | `1.1.21` | `>= 1.0.24` | Added support for providing `AGENT_CID` through an existing secret. |
+
+</details>
 
 <details>
 <summary><b>falcon-platform 1.4.0</b></summary>
@@ -457,6 +470,7 @@ Falcon Image Analyzer specific configurations must be prefixed with `falcon-imag
 Instead of specifying sensitive values directly in Helm values, you can use existing Kubernetes secrets for the following env vars:
 - `FALCONCTL_OPT_CID`: Falcon CID - Required for falcon-sensor and falcon-kac
 - `FALCONCTL_OPT_PROVISIONING_TOKEN`: Falcon provisioning token - Optional for falcon-sensor and falcon-kac
+- `AGENT_CID`: Falcon CID - Required for falcon-image-analyzer
 - `AGENT_CLIENT_ID`: Falcon OAuth client ID - Required for falcon-image-analyzer
 - `AGENT_CLIENT_SECRET`: Falcon OAuth client secret - Required for falcon-image-analyzer
 
@@ -483,6 +497,7 @@ kubectl create secret generic $FALCON_SECRET_NAME -n falcon-kac \
   
 # Create secret with required values for falcon-image-analyzer
 kubectl create secret generic $FALCON_SECRET_NAME -n falcon-image-analyzer \
+  --from-literal=AGENT_CID=$FALCON_CID \
   --from-literal=AGENT_CLIENT_ID=$FALCON_CLIENT_ID \
   --from-literal=AGENT_CLIENT_SECRET=$FALCON_CLIENT_SECRET
 ```
@@ -503,8 +518,7 @@ helm install falcon-platform crowdstrike/falcon-platform --version 1.0.0 -n falc
   --set falcon-image-analyzer.image.repository=$IAR_REGISTRY \
   --set falcon-image-analyzer.image.tag=$IAR_IMAGE_TAG \
   --set falcon-image-analyzer.crowdstrikeConfig.agentRuntime=$IAR_AGENT_RUNTIME \
-  --set falcon-image-analyzer.crowdstrikeConfig.clusterName=$CLUSTER_NAME \
-  --set falcon-image-analyzer.crowdstrikeConfig.cid=$FALCON_CID                   # IAR Falcon CID is not yet supported by existing secrets
+  --set falcon-image-analyzer.crowdstrikeConfig.clusterName=$CLUSTER_NAME
 ```
 
 ## Upgrade Strategy

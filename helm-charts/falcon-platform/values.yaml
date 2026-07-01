@@ -19,6 +19,7 @@ global:
   # Required data for falcon-sensor and falcon-kac:
   #   - FALCONCTL_OPT_CID
   # Required data for falcon-image-analyzer:
+  #   - AGENT_CID
   #   - AGENT_CLIENT_ID
   #   - AGENT_CLIENT_SECRET
   # Optional data:

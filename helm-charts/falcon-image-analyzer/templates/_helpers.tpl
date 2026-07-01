@@ -229,7 +229,7 @@ Get Falcon CID from global value if it exists
 {{- if and .Values.global.falcon.cid (not .Values.crowdstrikeConfig.cid) -}}
 {{- .Values.global.falcon.cid -}}
 {{- else -}}
-{{- .Values.crowdstrikeConfig.cid -}}
+{{- .Values.crowdstrikeConfig.cid | default "" -}}
 {{- end -}}
 {{- end -}}
 
@@ -241,6 +241,17 @@ Get Falcon secret name from global value if it exists
 {{- .Values.global.falconSecret.secretName -}}
 {{- else -}}
 {{- .Values.crowdstrikeConfig.existingSecret -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Validate that Falcon CID is provided directly or by an existing secret.
+*/}}
+{{- define "falcon-image-analyzer.validateFalconCidOrFalconSecret" -}}
+{{- $hasCid := include "falcon-image-analyzer.falconCid" . | trim -}}
+{{- $hasSecret := include "falcon-image-analyzer.falconSecretName" . | trim -}}
+{{- if and (not $hasCid) (not $hasSecret) -}}
+{{- fail "Must configure one of global.falcon.cid, crowdstrikeConfig.cid, or an existing secret with AGENT_CID data" }}
 {{- end -}}
 {{- end -}}
 

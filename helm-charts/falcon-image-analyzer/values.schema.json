@@ -235,6 +235,19 @@
                             "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$"
                         }
                     }
+                },
+                "falconSecret": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": false
+                        },
+                        "secretName": {
+                            "type": "string",
+                            "description": "Name of existing Kubernetes secret containing Falcon configuration values"
+                        }
+                    }
                 }
             }
         },
@@ -338,19 +351,49 @@
         },
         {
             "if": {
-                "properties": {
-                    "global": {
+                "allOf": [
+                    {
                         "properties": {
-                            "falcon": {
+                            "global": {
                                 "properties": {
-                                    "cid": {
-                                        "const": null
+                                    "falcon": {
+                                        "properties": {
+                                            "cid": {
+                                                "const": null
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "properties": {
+                            "global": {
+                                "properties": {
+                                    "falconSecret": {
+                                        "properties": {
+                                            "secretName": {
+                                                "const": ""
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "properties": {
+                            "crowdstrikeConfig": {
+                                "properties": {
+                                    "existingSecret": {
+                                        "const": ""
                                     }
                                 }
                             }
                         }
                     }
-                }
+                ]
             },
             "then": {
                 "properties": {

@@ -224,7 +224,7 @@ crowdstrikeConfig:
 
   # Use this value if you have an existing secret
   # defined in your k8s that may contain secrets
-  # for falcon api client id and pw
+  # for Falcon CID, api client id, and pw
   existingSecret: ""
   agentRegion: "autodiscovery"
   agentRuntime: ""
@@ -241,6 +241,7 @@ global:
   falcon:
     cid:
   falconSecret:
+    enabled: false
     secretName: ""
   containerRegistry:
     pullSecret: ""

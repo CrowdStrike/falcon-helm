@@ -340,7 +340,7 @@ Global settings apply to all components unless component specific values are set
 Any existing secrets for `falconSecret` or `containerRegistry.pullSecret` must exist in the namespace dedicated to the respective Falcon component before installing the Helm chart. For example, you must already have an existing secret matching `global.falconSecret.secretName` in the `falcon-sensor` default namespace, or custom namespace you choose for your `falcon-sensor.namespaceOverride`.
 
 ### Component-Specific Configuration
-Each Falcon component supports the existing configuration options for each subchart. 
+Each Falcon component supports the existing configuration options for each subchart.
 
 #### Falcon Sensor
 Falcon Sensor specific configurations must be prefixed with `falcon-sensor`. For comprehensive configuration options please see the linked documentation below.
@@ -459,6 +459,7 @@ Instead of specifying sensitive values directly in Helm values, you can use exis
 - `FALCONCTL_OPT_PROVISIONING_TOKEN`: Falcon provisioning token - Optional for falcon-sensor and falcon-kac
 - `AGENT_CLIENT_ID`: Falcon OAuth client ID - Required for falcon-image-analyzer
 - `AGENT_CLIENT_SECRET`: Falcon OAuth client secret - Required for falcon-image-analyzer
+- `AGENT_CID`: Falcon CID - Required for falcon-image-analyzer
 
 When using `falconSecret`, create the secret in each respective namespace beforehand:
 
@@ -476,18 +477,19 @@ kubectl create namespace falcon-image-analyzer
 kubectl create secret generic $FALCON_SECRET_NAME -n falcon-system \
   --from-literal=FALCONCTL_OPT_CID=$FALCON_CID \
   --from-literal=FALCONCTL_OPT_PROVISIONING_TOKEN=$FALCON_PROVISIONING_TOKEN
-  
+
 # Create secret with required values for falcon-kac
 kubectl create secret generic $FALCON_SECRET_NAME -n falcon-kac \
   --from-literal=FALCONCTL_OPT_CID=$FALCON_CID
-  
+
 # Create secret with required values for falcon-image-analyzer
 kubectl create secret generic $FALCON_SECRET_NAME -n falcon-image-analyzer \
   --from-literal=AGENT_CLIENT_ID=$FALCON_CLIENT_ID \
-  --from-literal=AGENT_CLIENT_SECRET=$FALCON_CLIENT_SECRET
+  --from-literal=AGENT_CLIENT_SECRET=$FALCON_CLIENT_SECRET \
+  --from-literal=AGENT_CID=$FALCON_CID
 ```
 
-Once you have created your Kubernetes secrets, you can install the falcon-platform Helm chart with the following global options: 
+Once you have created your Kubernetes secrets, you can install the falcon-platform Helm chart with the following global options:
 
 ```bash
 helm install falcon-platform crowdstrike/falcon-platform --version 1.0.0 -n falcon-platform \
@@ -503,8 +505,7 @@ helm install falcon-platform crowdstrike/falcon-platform --version 1.0.0 -n falc
   --set falcon-image-analyzer.image.repository=$IAR_REGISTRY \
   --set falcon-image-analyzer.image.tag=$IAR_IMAGE_TAG \
   --set falcon-image-analyzer.crowdstrikeConfig.agentRuntime=$IAR_AGENT_RUNTIME \
-  --set falcon-image-analyzer.crowdstrikeConfig.clusterName=$CLUSTER_NAME \
-  --set falcon-image-analyzer.crowdstrikeConfig.cid=$FALCON_CID                   # IAR Falcon CID is not yet supported by existing secrets
+  --set falcon-image-analyzer.crowdstrikeConfig.clusterName=$CLUSTER_NAME
 ```
 
 ## Upgrade Strategy

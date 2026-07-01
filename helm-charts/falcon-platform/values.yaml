@@ -21,6 +21,7 @@ global:
   # Required data for falcon-image-analyzer:
   #   - AGENT_CLIENT_ID
   #   - AGENT_CLIENT_SECRET
+  #   - AGENT_CID
   # Optional data:
   #   - FALCONCTL_OPT_PROVISIONING_TOKEN
   falconSecret:

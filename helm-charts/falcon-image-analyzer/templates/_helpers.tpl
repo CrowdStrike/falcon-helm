@@ -226,21 +226,49 @@ namespaceOverride should only be used when installing falcon-image-analyzer as a
 Get Falcon CID from global value if it exists
 */}}
 {{- define "falcon-image-analyzer.falconCid" -}}
-{{- if and .Values.global.falcon.cid (not .Values.crowdstrikeConfig.cid) -}}
-{{- .Values.global.falcon.cid -}}
+{{- $globalCid := .Values.global.falcon.cid | default "" | trim -}}
+{{- $localCid := .Values.crowdstrikeConfig.cid | default "" | trim -}}
+{{- if and $globalCid (not $localCid) -}}
+{{- $globalCid -}}
 {{- else -}}
-{{- .Values.crowdstrikeConfig.cid -}}
+{{- $localCid -}}
 {{- end -}}
+{{- end -}}
+
+{{/*
+Check if Falcon secret is enabled from global value if it exists
+*/}}
+{{- define "falcon-image-analyzer.falconSecretEnabled" -}}
+{{- $globalEnabled := .Values.global.falconSecret.enabled | default false -}}
+{{- $existingSecret := .Values.crowdstrikeConfig.existingSecret | default "" -}}
+{{- or $globalEnabled $existingSecret -}}
 {{- end -}}
 
 {{/*
 Get Falcon secret name from global value if it exists
 */}}
 {{- define "falcon-image-analyzer.falconSecretName" -}}
-{{- if and .Values.global.falconSecret.secretName (not .Values.crowdstrikeConfig.existingSecret) -}}
-{{- .Values.global.falconSecret.secretName -}}
+{{- $globalSecretName := .Values.global.falconSecret.secretName | default "" -}}
+{{- $existingSecret := .Values.crowdstrikeConfig.existingSecret | default "" -}}
+{{- if and $globalSecretName (not $existingSecret) -}}
+{{- $globalSecretName -}}
 {{- else -}}
-{{- .Values.crowdstrikeConfig.existingSecret -}}
+{{- $existingSecret -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Check if the chart should create a secret with clientId/clientSecret keys.
+Returns "true" if both clientID and clientSecret are provided in crowdstrikeConfig.
+When true, the chart creates a managed secret containing AGENT_CLIENT_ID and AGENT_CLIENT_SECRET.
+*/}}
+{{- define "falcon-image-analyzer.shouldCreateClientCredsInSecret" -}}
+{{- $hasClientId := .Values.crowdstrikeConfig.clientID | default "" | trim -}}
+{{- $hasClientSecret := .Values.crowdstrikeConfig.clientSecret | default "" | trim -}}
+{{- if and $hasClientId $hasClientSecret -}}
+true
+{{- else -}}
+false
 {{- end -}}
 {{- end -}}
 
@@ -289,4 +317,50 @@ OpenShift createSCC — false if either chart-level or global disables it.
 */}}
 {{- define "falcon-image-analyzer.openshiftCreateSCC" -}}
 {{- and .Values.openshift.createSCC .Values.global.openshift.createSCC -}}
+{{- end -}}
+
+{{/*
+Perform all validations and fail with combined error message if any are invalid.
+Call this at the top of your main templates to validate all credential inputs.
+*/}}
+{{- define "falcon-image-analyzer.validateCredentials" -}}
+{{- $errors := list -}}
+
+{{- /* Check if credentials are required (no external/global secret) */ -}}
+{{- $globalSecretEnabled := .Values.global.falconSecret.enabled | default false -}}
+{{- $existingSecret := .Values.crowdstrikeConfig.existingSecret | default "" | trim -}}
+{{- $needsCredentials := and (not $globalSecretEnabled) (not $existingSecret) -}}
+
+{{- /* Validate clientID and clientSecret are provided as a pair */ -}}
+{{- $clientId := .Values.crowdstrikeConfig.clientID | default "" | trim -}}
+{{- $clientSecret := .Values.crowdstrikeConfig.clientSecret | default "" | trim -}}
+{{- $hasClientId := ne $clientId "" -}}
+{{- $hasClientSecret := ne $clientSecret "" -}}
+
+{{- if and $hasClientId (not $hasClientSecret) -}}
+  {{- $errors = append $errors "clientSecret is required when clientID is provided (must be provided as a pair)" -}}
+{{- end -}}
+{{- if and $hasClientSecret (not $hasClientId) -}}
+  {{- $errors = append $errors "clientID is required when clientSecret is provided (must be provided as a pair)" -}}
+{{- end -}}
+
+{{- if $needsCredentials -}}
+  {{- /* Validate clientID and clientSecret are provided */ -}}
+  {{- if not $hasClientId -}}
+    {{- $errors = append $errors "clientID is required when no existingSecret or global.falconSecret is configured" -}}
+  {{- end -}}
+  {{- if not $hasClientSecret -}}
+    {{- $errors = append $errors "clientSecret is required when no existingSecret or global.falconSecret is configured" -}}
+  {{- end -}}
+
+  {{- /* Validate CID is provided (either local or global) */ -}}
+  {{- $cid := include "falcon-image-analyzer.falconCid" . | trim -}}
+  {{- if not $cid -}}
+    {{- $errors = append $errors "CID is required (set crowdstrikeConfig.cid or global.falcon.cid) when no existingSecret or global.falconSecret is configured" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if $errors -}}
+{{- fail (printf "Credential validation failed:\n  - %s" (join "\n  - " $errors)) -}}
+{{- end -}}
 {{- end -}}

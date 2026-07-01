@@ -12,7 +12,6 @@ data:
   IS_KUBERNETES: {{ include "falcon-image-analyzer.isKubernetes" . | quote }}
   AGENT_HELM_VERSION: {{ .Chart.Version | quote }}
   LOG_OUTPUT: {{ .Values.log.output | quote }}
-  AGENT_CID: {{ include "falcon-image-analyzer.falconCid" . | quote }}
   AGENT_CLUSTER_NAME: {{ .Values.crowdstrikeConfig.clusterName | quote }}
   AGENT_REGISTRY_CREDENTIALS: {{ .Values.privateRegistries.credentials | quote }}
   AGENT_NAMESPACE_EXCLUSIONS: {{ .Values.exclusions.namespace | quote }}

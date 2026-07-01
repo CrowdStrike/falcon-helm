@@ -213,6 +213,9 @@ crowdstrikeConfig:
   enableKlogs: "false"
 
   enableDebug: "false"
+
+  # CrowdStrike API credentials - clientID and clientSecret must be provided as a pair
+  # Either provide both here (chart creates secret) or leave both empty (use existingSecret)
   clientID: ""
   clientSecret: ""
   cid:
@@ -225,6 +228,11 @@ crowdstrikeConfig:
   # Use this value if you have an existing secret
   # defined in your k8s that may contain secrets
   # for falcon api client id and pw
+  #
+  # Empty values are assumed to be in existingSecret:
+  #   clientID empty → AGENT_CLIENT_ID in existingSecret
+  #   clientSecret empty → AGENT_CLIENT_SECRET in existingSecret
+  #   cid empty → AGENT_CID in existingSecret
   existingSecret: ""
   agentRegion: "autodiscovery"
   agentRuntime: ""
@@ -241,6 +249,7 @@ global:
   falcon:
     cid:
   falconSecret:
+    enabled: false
     secretName: ""
   containerRegistry:
     pullSecret: ""

@@ -1,4 +1,5 @@
 {{- if .Values.deployment.enabled }}
+{{- include "falcon-image-analyzer.validateCredentials" . }}
 {{- $imagePullSecret := include "falcon-image-analyzer.imagePullSecret" . }}
 {{- $registryConfigJson := include "falcon-image-analyzer.registryConfigJson" . }}
 {{- $iarNamespace := include "falcon-image-analyzer.namespace" . }}
@@ -141,15 +142,20 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.hostIP
+          {{- $shouldCreateCid := include "falcon-image-analyzer.falconCid" . | trim -}}
+          {{- $shouldCreateClientCreds := include "falcon-image-analyzer.shouldCreateClientCredsInSecret" . | trim | eq "true" -}}
+          {{- $hasExistingSecret := include "falcon-image-analyzer.falconSecretName" . }}
           envFrom:
             - configMapRef:
                 name: {{ include "falcon-image-analyzer.fullname" . }}
+            {{- if or $shouldCreateCid $shouldCreateClientCreds }}
             - secretRef:
-                {{- if (include "falcon-image-analyzer.falconSecretName" .) }}
-                name: {{ include "falcon-image-analyzer.falconSecretName" . }}
-                {{- else }}
                 name: {{ include "falcon-image-analyzer.fullname" . }}
-                {{- end }}
+            {{- end }}
+            {{- if $hasExistingSecret }}
+            - secretRef:
+                name: {{ $hasExistingSecret }}
+            {{- end }}
           volumeMounts:
           {{- toYaml .Values.volumeMounts | default "" | nindent 12 }}
           {{- if .Values.azure.enabled }}

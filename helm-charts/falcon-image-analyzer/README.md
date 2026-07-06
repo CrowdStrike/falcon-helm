@@ -117,16 +117,55 @@ The following tables list the Falcon sensor configurable parameters and their de
 | `crowdstrikeConfig.clusterName`     optional                                                                                                       | Cluster name                                                                                                                                                   | None                                                                                                       |
 | `crowdstrikeConfig.enableDebug`   optional                                                                                                         | Set to `true` for debug level log verbosity.                                                                                                                   | false                                                                                                      |
 | `crowdstrikeConfig.enableKlogs`   optional                                                                                                         | Set to `true` for kubernetes api log verbosity.                                                                                                                | false                                                                                                      |
-| `crowdstrikeConfig.clientID`    required                                                                                                           | CrowdStrike Falcon OAuth API Client ID                                                                                                                         | None                                                                                                       |
-| `crowdstrikeConfig.clientSecret`     required                                                                                                      | CrowdStrike Falcon OAuth API Client secret                                                                                                                     | None                                                                                                       |
-| `crowdstrikeConfig.cid`         required                                                                                                           | Customer ID (CID)                                                                                                                                              | None                                                                                                       |
+| `crowdstrikeConfig.clientID`    required (unless using `existingSecret` or `global.falconSecret`); must be paired with `clientSecret`              | CrowdStrike Falcon OAuth API Client ID. Must be provided together with `clientSecret` as a pair.                                                              | None                                                                                                       |
+| `crowdstrikeConfig.clientSecret`     required (unless using `existingSecret` or `global.falconSecret`); must be paired with `clientID`         | CrowdStrike Falcon OAuth API Client secret. Must be provided together with `clientID` as a pair.                                                              | None                                                                                                       |
+| `crowdstrikeConfig.cid`         required (unless using `existingSecret`)                                                                          | Customer ID (CID)                                                                                                                                              | None                                                                                                       |
 | `crowdstrikeConfig.dockerAPIToken`  optional                                                                                                       | Crowdstrike Artifactory Image Pull Token for pulling IAR image directly from  `[CROWDSTRIKE_IMAGE_REGISTRY] described below`                                   | None                                                                                                       |
-| `crowdstrikeConfig.existingSecret`      optional                                                                                                   | Existing secret ref name of the customer Kubernetes cluster                                                                                                    | None                                                                                                       |
+| `crowdstrikeConfig.existingSecret`      optional                                                                                                   | Name of an existing Kubernetes secret containing IAR credentials. The secret must have keys: `AGENT_CLIENT_ID`, `AGENT_CLIENT_SECRET`, `AGENT_CID`. When set, `clientID`, `clientSecret`, and `cid` values are ignored. | None                                                                                                       |
 | `crowdstrikeConfig.agentRegion`      required                                                                                                      | Region of the CrowdStrike API to connect to value should be one of `us-1/us-2/eu-1/gov1/gov2`                                                                  | None                                                                                                       |
 | `crowdstrikeConfig.agentRuntime`             required ( if daemonset )                                                                             | The underlying runtime of the OS. docker/containerd/podman/crio. ONLY TO BE USED with `daemonset.enabled` = `true`                                             | None                                                                                                       |
 | `crowdstrikeConfig.agentRuntimeSocket`              optional                                                                                       | The unix socket path for the runtime socket. For example: `unix///var/run/docker.sock`. ONLY TO BE USED with ONLY TO BE USED with `daemonset.enabled` = `true` | None                                                                                                       |
 
 
+
+### Using Existing Kubernetes Secrets
+
+You can provide credentials via Helm values, an existing Kubernetes secret, or a mix of both. This is useful for secret management tools like External Secrets Operator or Sealed Secrets.
+
+`crowdstrikeConfig.existingSecret` takes precedence over `global.falconSecret.secretName` when using the `falcon-platform` umbrella chart.
+
+#### Configuration Modes
+
+| Mode | Values Set | Secret Keys | Behavior |
+|------|-----------|-------------|----------|
+| **Full Values** | `cid`, `clientID`, `clientSecret` (as pair) | None | Chart creates secret with all three keys |
+| **Full Secret** | None (all empty) | `AGENT_CID`, `AGENT_CLIENT_ID`, `AGENT_CLIENT_SECRET` | Chart reads all from existing secret |
+| **Partial** | Any combination (clientID/clientSecret as pair) | Remaining keys | Chart creates secret for provided values, reads rest from existing secret |
+
+**Note:** `clientID` and `clientSecret` must always be provided together as a pair. You cannot provide one without the other.
+
+#### Example
+
+Create a secret with all credentials:
+
+```bash
+kubectl create secret generic falcon-credentials -n falcon-image-analyzer \
+  --from-literal=AGENT_CLIENT_ID=$FALCON_CLIENT_ID \
+  --from-literal=AGENT_CLIENT_SECRET=$FALCON_CLIENT_SECRET \
+  --from-literal=AGENT_CID=$FALCON_CID
+```
+
+Reference it during installation (leave credential values empty):
+
+```bash
+helm install falcon-imageanalyzer crowdstrike/falcon-image-analyzer -n falcon-image-analyzer \
+  --set crowdstrikeConfig.existingSecret=falcon-credentials \
+  --set deployment.enabled=true \
+  --set image.repository=$IAR_REGISTRY \
+  --set image.tag=$IAR_IMAGE_TAG
+```
+
+For partial secrets, create an existing secret with only some keys (e.g., `AGENT_CLIENT_ID` and `AGENT_CLIENT_SECRET`), then provide the remaining credentials (e.g., `cid`) via Helm values. The chart creates a secret for the provided values and mounts both secrets to the workload without key conflicts.
 
 The `[CROWDSTRIKE_IMAGE_REGISTRY]` can be replaced with below registries based on the environment ( `agentRegion` )
 

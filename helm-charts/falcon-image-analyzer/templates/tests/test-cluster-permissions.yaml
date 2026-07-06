@@ -1,4 +1,5 @@
 {{- if .Values.testing.enabled -}}
+{{- $secretName := or .Values.crowdstrikeConfig.existingSecret .Values.global.falconSecret.secretName -}}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -74,4 +75,46 @@ roleRef:
   kind: ClusterRole
   name: {{ include "falcon-image-analyzer.fullname" . }}-test-access-role
   apiGroup: rbac.authorization.k8s.io
+{{- if $secretName }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "falcon-image-analyzer.fullname" . }}-test-secret-access-role
+  namespace: {{ include "falcon-image-analyzer.namespace" . }}
+  labels:
+    {{- include "falcon-image-analyzer.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  resourceNames:
+  - {{ $secretName }}
+  - {{ include "falcon-image-analyzer.fullname" . }}
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "falcon-image-analyzer.fullname" . }}-test-secret-access-binding
+  namespace: {{ include "falcon-image-analyzer.namespace" . }}
+  labels:
+    {{- include "falcon-image-analyzer.labels" . | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "falcon-image-analyzer.fullname" . }}-test-sa
+  namespace: {{ include "falcon-image-analyzer.namespace" . }}
+roleRef:
+  kind: Role
+  name: {{ include "falcon-image-analyzer.fullname" . }}-test-secret-access-role
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
 {{- end -}}

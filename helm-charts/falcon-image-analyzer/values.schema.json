@@ -177,23 +177,40 @@
                         "string"
                     ],
                     "description": "CrowdStrike CID",
-                    "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$",
+                    "anyOf": [
+                        {
+                            "type": "null"
+                        },
+                        {
+                            "type": "string",
+                            "const": ""
+                        },
+                        {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$"
+                        }
+                    ],
                     "example": [
                         "1234567890ABCDEF1234567890ABCDEF-12"
                     ]
                 },
                 "clientID": {
                     "type": "string",
-                    "description": "CrowdStrike Oauth Client ID"
+                    "description": "CrowdStrike Oauth Client ID (must be provided with clientSecret as a pair)",
+                    "examples": ["1234567890abcdef1234567890abcdef"]
                 },
                 "clientSecret": {
                     "type": "string",
-                    "description": "CrowdStrike Oauth Client Secret"
+                    "description": "CrowdStrike Oauth Client Secret (must be provided with clientID as a pair)",
+                    "examples": ["1234567890abcdef1234567890abcdef12345678"]
                 }
             },
             "dependentRequired": {
                 "clientID": [
                     "clientSecret"
+                ],
+                "clientSecret": [
+                    "clientID"
                 ]
             }
         },
@@ -232,7 +249,64 @@
                                 "null",
                                 "string"
                             ],
-                            "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$"
+                            "anyOf": [
+                                {
+                                    "type": "null"
+                                },
+                                {
+                                    "type": "string",
+                                    "const": ""
+                                },
+                                {
+                                    "type": "string",
+                                    "pattern": "^[0-9a-fA-F]{32}-[0-9a-fA-F]{2}$"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "falconSecret": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": false,
+                            "description": "Enable global falcon secret"
+                        },
+                        "secretName": {
+                            "type": "string",
+                            "default": "",
+                            "description": "Name of the global falcon secret"
+                        }
+                    }
+                },
+                "containerRegistry": {
+                    "type": "object",
+                    "properties": {
+                        "pullSecret": {
+                            "type": "string",
+                            "default": "",
+                            "description": "Global container registry pull secret name"
+                        },
+                        "configJSON": {
+                            "type": "string",
+                            "default": "",
+                            "description": "Global container registry config JSON"
+                        }
+                    }
+                },
+                "openshift": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": false,
+                            "description": "Global OpenShift mode"
+                        },
+                        "createSCC": {
+                            "type": "boolean",
+                            "default": true,
+                            "description": "Global OpenShift SCC creation flag"
                         }
                     }
                 }
@@ -332,80 +406,6 @@
                                 "pattern": "^(docker|containerd|crio|podman)$"
                             }
                         }
-                    }
-                }
-            }
-        },
-        {
-            "if": {
-                "properties": {
-                    "global": {
-                        "properties": {
-                            "falcon": {
-                                "properties": {
-                                    "cid": {
-                                        "const": null
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "then": {
-                "properties": {
-                    "crowdstrikeConfig": {
-                        "type": "object",
-                        "required": ["cid"],
-                        "properties": {
-                            "cid": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        {
-            "if": {
-                "properties": {
-                    "global": {
-                        "properties": {
-                            "falconSecret": {
-                                "properties": {
-                                    "secretName": {
-                                        "const": ""
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "then": {
-                "properties": {
-                    "crowdstrikeConfig": {
-                        "allOf": [
-                            {
-                                "if": {
-                                    "properties": {
-                                        "existingSecret": {
-                                            "const": ""
-                                        }
-                                    }
-                                },
-                                "then": {
-                                    "properties": {
-                                        "clientID": {
-                                            "pattern": "^[a-zA-Z0-9]{32}$"
-                                        },
-                                        "clientSecret": {
-                                            "pattern": "^[a-zA-Z0-9]{40}$"
-                                        }
-                                    }
-                                }
-                            }
-                        ]
                     }
                 }
             }

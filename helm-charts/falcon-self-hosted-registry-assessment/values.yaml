@@ -33,7 +33,7 @@ executor:
     # Overrides the image tag. In general, tags should not be used (including semver tags or `latest`).
     # This variable is provided for those who have yet to move off of using tags. The sha256 digest
     # should be used in place of tags for increased security and image immutability.
-    tag: "1.7.0"
+    tag: "1.8.0"
     # Setting a digest will override any tag and should be used instead of tags.
     #
     # Example digest variable configuration:
@@ -144,7 +144,7 @@ jobController:
     repository: "jobcontroller"
     # Overrides the image tag. In general, tags should not be used (including semver tags or `latest`). This variable is provided for those
     # who have yet to move off of using tags. The sha256 digest should be used in place of tags for increased security and image immutability.
-    tag: "1.7.0"
+    tag: "1.8.0"
     # Setting a digest will override any tag and should be used instead of tags.
     #
     # Example digest variable configuration:
@@ -281,6 +281,22 @@ proxyConfig:
 # Set enabled=true to use the bundled PostgreSQL deployment
 postgresql:
   enabled: false
+  # PostgreSQL container image (Bitnami subchart).
+  # Pinned by digest for immutability (FedRAMP/security-scan requirement).
+  # Resolves to PostgreSQL 18.4 (postgresql subchart 18.7.6 appVersion).
+  # Bitnami's Aug 2025 cutover removed versioned tags from docker.io/bitnami/
+  # (only ':latest' remains free; versioned tags require a paid subscription),
+  # so we pin the multi-arch index digest of ':latest' for reproducibility.
+  # IMPORTANT: re-resolve and re-pin this digest whenever the postgresql
+  # subchart version changes in Chart.yaml, otherwise upgrades silently keep
+  # this image. Re-resolve via:
+  #   docker buildx imagetools inspect docker.io/bitnami/postgresql:latest \
+  #     --format '{{json .Manifest}}' | jq -r '.digest'
+  image:
+    registry: docker.io
+    repository: bitnami/postgresql
+    tag: "latest"
+    digest: "sha256:256bf40a7343862b9a66d1d27cd34599e80dad99284fc5450b24cb02e26ff34e"
   auth:
     username: rauser
     password: ""

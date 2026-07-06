@@ -77,7 +77,7 @@ The following architecture diagram gives you insight into how SHRA works.
 * Per your configured schedule, the Jobs Controller tells one or more Executors which registries to scan. The Executors break up the work as follows:
    * `Registry scan`: identifies the repositories within your configured registries
    * `Repository scan`: identifies image tags within the repositories
-   * `Tag assessment`: downloads, uncompresses, and inventories new images, then sends the inventories to CrowdStrike's cloud for analysis
+   * `Tag assessment`: downloads, uncompresses, and inventories new Linux and Windows images, then sends the inventories to CrowdStrike's cloud for analysis
 
 * The CrowdStrike cloud assesses the image inventories to determine their potential vulnerabilities. Results are visible in the Falcon console. 
   * Go to [**Cloud security > Vulnerabilities > Image assessments**](https://falcon.crowdstrike.com/cloud-security/cwpp/image-assessment/images), then click the **Images** tab. 
@@ -113,12 +113,12 @@ The Falcon Self-hosted Registry Scanner Helm Chart has been tested to deploy on 
   * Cloud Security Manager
   * Kubernetes and Containers Manager
 * A client API key, as described in the configuration steps.
-* A x86_64 (AMD64) Kubernetes cluster.
+* A x86_64 (AMD64) Kubernetes cluster. Both Linux and Windows container images are assessed from this cluster; no Windows nodes are required.
 * [Helm](https://helm.sh/) 3.x is installed and supported by the Kubernetes provider.
 * A 1+ GiB persistent volume for a job controller SQLite database. 
 * A 1+ GiB persistent volume used by the executor for a registry assessment cache (SQLite only; not required when using PostgreSQL — see [Configure the executor database engine](#optional-configure-the-executor-database-engine)).
 * A working volume to store and expand images for assessment.
-* Networking sufficient to communicate with CrowdStrike cloud services and your image registries.
+* Networking sufficient to communicate with CrowdStrike cloud services and your image registries. Some older Windows base images (e.g. Windows Server 2016-era) reference non-distributable base layers hosted outside your registry, commonly at Microsoft Container Registry (`mcr.microsoft.com`); if you assess such images and your network restricts egress, allow outbound HTTPS to the referenced host(s).
 * Optional. [Cert Manager - Helm](https://cert-manager.io/docs/installation/helm/) if you wish to use TLS between the containers in this Chart. See [TLS Configuration](#optional-configure-grpc-over-tls).
 
 > [!NOTE]  
@@ -867,6 +867,8 @@ Hover over the **OICD** column to copy the compartment ID that you want to regis
     allowedRepositories: ""
     port: "443"
     host: "https://us-phoenix-1.ocir.io"
+    # For the OCI US Government (OC2) realm, use the GovCloud OCIR host, e.g.
+    # https://ocir.us-langley-1.oci.oraclegovcloud.com or https://ocir.us-luke-1.oci.oraclegovcloud.com
     cronSchedule: "0 0 * * *"
     credential_type: "oracle"
 ```
@@ -1304,6 +1306,14 @@ executor:
 
 Deploy a Bitnami PostgreSQL instance within your cluster, managed by this Helm chart. Set `postgresql.enabled` to `true` and configure authentication details.
 
+The bundled PostgreSQL subchart is pulled from the Bitnami **OCI registry** (`oci://registry-1.docker.io/bitnamicharts`) at chart version **18.7.6** (PostgreSQL 18.4), replacing the deprecated `https://charts.bitnami.com/bitnami` HTTP repository.
+
+> [!NOTE]
+> The bundled PostgreSQL container image is pinned by digest rather than tag. In August 2025, Bitnami relocated versioned images out of `docker.io/bitnami/` (only `:latest` remains freely available there; versioned tags now require a paid subscription), so the chart pins the multi-arch index digest of `:latest` for immutability. If you override the image via `postgresql.image`, re-resolve the digest with `docker buildx imagetools inspect docker.io/bitnami/postgresql:latest`.
+
+> [!WARNING]
+> This release upgrades the bundled PostgreSQL from version 16 to version 18. If you are upgrading an existing deployment that uses bundled PostgreSQL (`postgresql.enabled=true`) with persisted data, this is a breaking change that requires a manual database migration. See [Upgrade bundled PostgreSQL from version 16 to 18](#upgrade-bundled-postgresql-from-version-16-to-18). SQLite and external PostgreSQL deployments are not affected.
+
 ```yaml
 executor:
   storageEngine: "postgres"
@@ -1386,6 +1396,10 @@ The secret must contain keys matching the names specified in `existingSecretKeys
 | `postgresql.auth.username`            |         | Username for the bundled PostgreSQL instance.                                                                                                         | `"rauser"`             |
 | `postgresql.auth.password`            |         | Password for the bundled PostgreSQL instance.                                                                                                         | `""`                   |
 | `postgresql.auth.database`            |         | Database name for the bundled PostgreSQL instance.                                                                                                    | `"registry_assessment"`|
+| `postgresql.image.registry`           |         | Registry for the bundled PostgreSQL container image.                                                                                                  | `"docker.io"`          |
+| `postgresql.image.repository`         |         | Repository for the bundled PostgreSQL container image.                                                                                                | `"bitnami/postgresql"` |
+| `postgresql.image.tag`                |         | Tag for the bundled PostgreSQL container image. Overridden by `digest` when set.                                                                      | `"latest"`             |
+| `postgresql.image.digest`             |         | Digest pin for the bundled PostgreSQL container image. Takes precedence over `tag`. Re-resolve via `docker buildx imagetools inspect docker.io/bitnami/postgresql:latest`. | `"sha256:256bf40a…"`   |
 | `externalPostgresql.host`                    |         | Hostname of the external PostgreSQL server.                                                                                                           | `""`                   |
 | `externalPostgresql.port`                    |         | Port of the external PostgreSQL server.                                                                                                               | `5432`                 |
 | `externalPostgresql.database`                |         | Database name on the external PostgreSQL server.                                                                                                      | `"registry_assessment"`|
@@ -1893,6 +1907,46 @@ For more information on setting your scanning schedule, see [Configure your scan
 As needed, you can change your configuration values or replace the SHRA container images with new releases.
 
 After making changes to your `values_override.yaml` file, use the `helm upgrade` command shown in [Install the SHRA Helm Chart](#install-the-shra-helm-chart).
+
+### Upgrade bundled PostgreSQL from version 16 to 18
+
+This release upgrades the bundled PostgreSQL from version 16 to version 18. PostgreSQL does not start against a data directory created by a different major version, so upgrading an existing deployment that uses bundled PostgreSQL (`postgresql.enabled=true`) with persisted data requires a manual migration. Without it, the database pod fails to start with a `database files are incompatible with server` error after the upgrade. Your data is not deleted, but the database does not come up until you migrate it.
+
+This applies only to deployments that use bundled PostgreSQL with an existing persistent volume. SQLite and external PostgreSQL deployments are not affected. Bundled PostgreSQL is intended for evaluation and non-production use; for production, use external PostgreSQL so you control the database lifecycle independently of the chart.
+
+The following steps migrate your data. Replace `<namespace>`, `<release>`, `<username>`, `<password>`, and `<database>` with the values for your deployment, and plan for SHRA executor downtime while you complete them.
+
+1. Before upgrading, back up the database from the running PostgreSQL 16 pod. Use `pg_dump` of your application database rather than `pg_dumpall`, because the bundled database user is not a superuser and cannot read cluster-wide role data:
+   ```sh
+   kubectl exec -n <namespace> <release>-postgresql-0 -- \
+     env PGPASSWORD=<password> pg_dump -U <username> -d <database> > shra-pg16-backup.sql
+   ```
+2. Run the `helm upgrade`. One of two things happens, and both are fine:
+   - **The pod fails to start** with a `database files are incompatible with server` error. This is the expected outcome when PostgreSQL 18 starts against the existing PostgreSQL 16 data directory.
+   - **The pod comes up `Running`.** Some storage provisioners bind a new, empty volume on upgrade instead of reattaching the existing one, so PostgreSQL 18 initializes a fresh data directory and starts cleanly.
+
+   A `Running` pod does **not** mean your PostgreSQL 16 data was upgraded in place — a major version cannot be upgraded in place. The `pg_dump` backup from the previous step is the source of truth for your data, and the steps below reset the volume and restore from that backup either way. To confirm the running major version:
+   ```sh
+   kubectl exec -n <namespace> <release>-postgresql-0 -- postgres --version
+   ```
+3. Reset the bundled database storage so PostgreSQL 18 initializes a fresh data directory. Scale the database down first so its persistent volume claim can be released, delete the claim, then scale back up. The StatefulSet provisions a new, empty volume on scale-up:
+   ```sh
+   kubectl scale statefulset <release>-postgresql --replicas=0 -n <namespace>
+   kubectl delete pvc data-<release>-postgresql-0 -n <namespace>
+   kubectl scale statefulset <release>-postgresql --replicas=1 -n <namespace>
+   ```
+4. Restore the backup into the new instance once the PostgreSQL 18 pod is running. Use `psql` — **not** `pg_dump` — to load the dump; `pg_dump` only *exports* and will silently ignore the redirected file, leaving the database empty:
+   ```sh
+   kubectl exec -i -n <namespace> <release>-postgresql-0 -- \
+     env PGPASSWORD=<password> psql -U <username> -d <database> < shra-pg16-backup.sql
+   ```
+   `kubectl exec -i` may print a trailing `error reading from error stream: read message: %!w(<nil>)` line when stdin closes. This is a client-side kubectl artifact, not a database error, and can be ignored. Confirm the restore succeeded by inspecting the data instead — for example, list the restored tables:
+   ```sh
+   kubectl exec -n <namespace> <release>-postgresql-0 -- \
+     env PGPASSWORD=<password> psql -U <username> -d <database> -c "\dt"
+   ```
+
+If you cannot tolerate a major-version migration, move to external PostgreSQL (Option 3) before upgrading.
 
 ## Uninstall SHRA
 

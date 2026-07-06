@@ -1364,6 +1364,21 @@ entries:
     version: 1.0.0
   falcon-self-hosted-registry-assessment:
   - apiVersion: v2
+    appVersion: 1.8.0
+    created: "2026-07-06T21:15:47.657008995Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: oci://registry-1.docker.io/bitnamicharts
+      version: 18.7.6
+    description: CrowdStrike Self-hosted Registry Assessment
+    digest: ad855e18d9e7f09d258c75c7081d0c5ba8f33b146204fb83147567372a036e66
+    name: falcon-self-hosted-registry-assessment
+    type: application
+    urls:
+    - https://github.com/CrowdStrike/falcon-helm/releases/download/falcon-self-hosted-registry-assessment-1.8.0/falcon-self-hosted-registry-assessment-1.8.0.tgz
+    version: 1.8.0
+  - apiVersion: v2
     appVersion: 1.7.0
     created: "2026-04-14T18:18:10.233331814Z"
     dependencies:
@@ -3796,4 +3811,4 @@ entries:
     urls:
     - https://github.com/CrowdStrike/falcon-helm/releases/download/registry-scanner-0.1.0/registry-scanner-0.1.0.tgz
     version: 0.1.0
-generated: "2026-05-07T21:42:43.453668419Z"
+generated: "2026-07-06T21:15:47.789249827Z"

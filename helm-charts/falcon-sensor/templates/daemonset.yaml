@@ -193,10 +193,15 @@ spec:
         volumeMounts:
           - name: falconstore
             mountPath: /opt/CrowdStrike/falconstore
+          - name: cs-config
+            mountPath: /opt/CrowdStrike/config
       volumes:
         - name: falconstore
           hostPath:
             path: /opt/CrowdStrike/falconstore
+        - name: cs-config
+          hostPath:
+            path: /opt/CrowdStrike/config
       serviceAccountName: {{ .Values.serviceAccount.name }}
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
     {{- if or .Values.node.daemonset.priorityClassName .Values.node.gke.autopilot }}

@@ -127,6 +127,10 @@ labels: {}
 # Annotations to apply to the webhook deployment
 podAnnotations: {}
 
+# Set the priorityClassName for the KAC deployment.
+# A priority class is required to protect KAC pods from eviction under resource pressure.
+priorityClassName: system-cluster-critical
+
 tolerations: []
 
 affinity:

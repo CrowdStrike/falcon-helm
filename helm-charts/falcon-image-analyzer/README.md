@@ -505,9 +505,15 @@ Here `falcon-image-analyzer` is the namespace of IAR and `imageanalyzer-falcon-i
 
 ### Secrets Store CSI Driver Integration
 
-The chart supports sourcing `AGENT_CLIENT_ID` and `AGENT_CLIENT_SECRET` from [Azure Key Vault](https://azure.microsoft.com/en-us/products/key-vault) via the [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/) and the [Azure Key Vault provider](https://azure.github.io/secrets-store-csi-driver-provider-azure/). This avoids storing sensitive values in Helm values or Kubernetes Secrets directly.
+The chart supports sourcing `AGENT_CLIENT_ID`, `AGENT_CLIENT_SECRET`, and `AGENT_CID` from external secret stores via the [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/). Supported providers include:
+- [Azure Key Vault](https://azure.microsoft.com/en-us/products/key-vault) via the [Azure Key Vault provider](https://azure.github.io/secrets-store-csi-driver-provider-azure/)
+- [HashiCorp Vault](https://developer.hashicorp.com/vault) via the [Vault provider](https://developer.hashicorp.com/vault/docs/platform/k8s/csi)
+
+This avoids storing sensitive values in Helm values or Kubernetes Secrets directly.
 
 #### Prerequisites
+
+**For Azure Key Vault:**
 
 The following must be installed and configured on your AKS cluster before enabling this feature:
 
@@ -530,7 +536,32 @@ Create the following secrets in your Azure Key Vault before enabling the integra
 
 The `falcon-client-id` and `falcon-client-secret` secret names are fixed. `falcon-cid` is only fetched from the secrets store when CID is not supplied via `crowdstrikeConfig.cid` or `global.falcon.cid` — if either is set, `AGENT_CID` is sourced from the ConfigMap instead and `falcon-cid` does not need to exist in the secrets store.
 
+**For HashiCorp Vault:**
+
+The following must be installed and configured before enabling this feature:
+
+- [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/getting-started/installation)
+- [Vault Provider for Secrets Store CSI Driver](https://developer.hashicorp.com/vault/docs/platform/k8s/csi/installation)
+- HashiCorp Vault server with an appropriate auth method configured (Kubernetes auth, JWT/OIDC, AppRole, AWS IAM, Azure, GCP, etc.)
+- Vault policy granting read access to the secret path
+- For Kubernetes auth: Vault Kubernetes auth role bound to the chart's ServiceAccount in the `falcon-image-analyzer` namespace
+- For other auth methods: Configure via `secretsStore.vault.additionalParameters` (see [Vault CSI Provider auth methods](https://developer.hashicorp.com/vault/docs/platform/k8s/csi/configurations#authentication-methods))
+
+#### Required secrets in HashiCorp Vault
+
+Create the following secrets in your Vault instance before enabling the integration:
+
+| Secret key (default)        | Required | Value                                    |
+|:----------------------------|:---------|:-----------------------------------------|
+| `client_id`                 | Yes      | CrowdStrike Falcon OAuth API Client ID   |
+| `client_secret`             | Yes      | CrowdStrike Falcon OAuth API Client Secret |
+| `cid`                       | Only if `crowdstrikeConfig.cid` and `global.falcon.cid` are not set | CrowdStrike Customer ID (CID) |
+
+The secret key names can be customized via `secretsStore.vault.clientIdSecretKey`, `secretsStore.vault.clientSecretSecretKey`, and `secretsStore.vault.cidSecretKey`.
+
 #### Configuration
+
+**Azure Key Vault example:**
 
 ```yaml
 secretsStore:
@@ -549,6 +580,21 @@ serviceAccount:
 # Add the Workload Identity label to the pod
 podLabels:
   azure.workload.identity/use: "true"
+```
+
+**HashiCorp Vault example:**
+
+```yaml
+secretsStore:
+  enabled: true
+  provider: vault
+  vault:
+    address: "https://vault.example.com"
+    roleName: "falcon-image-analyzer"            # Kubernetes auth role name
+    secretPath: "secret/data/crowdstrike"        # Full path including /data/ for KV v2
+    clientIdSecretKey: "client_id"               # Optional, defaults to "client_id"
+    clientSecretSecretKey: "client_secret"       # Optional, defaults to "client_secret"
+    cidSecretKey: "cid"                          # Optional, defaults to "cid"
 ```
 
 > [!NOTE]

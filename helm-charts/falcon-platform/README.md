@@ -534,12 +534,18 @@ helm install falcon-platform crowdstrike/falcon-platform --version 1.0.0 -n falc
 
 ### Secrets Store CSI Driver Integration
 
-The Falcon Platform supports sourcing credentials from [Azure Key Vault](https://azure.microsoft.com/en-us/products/key-vault) via the [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/) and the [Azure Key Vault provider](https://azure.github.io/secrets-store-csi-driver-provider-azure/). The vault name, tenant ID, and optional workload identity client ID can be configured once under `global.secretsStore` and shared across all components. Per-component values override globals when both are set.
+The Falcon Platform supports sourcing credentials from external secret stores via the [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/). Supported providers include:
+- [Azure Key Vault](https://azure.microsoft.com/en-us/products/key-vault) via the [Azure Key Vault provider](https://azure.github.io/secrets-store-csi-driver-provider-azure/)
+- [HashiCorp Vault](https://developer.hashicorp.com/vault) via the [Vault provider](https://developer.hashicorp.com/vault/docs/platform/k8s/csi)
+
+For Azure Key Vault, the vault name, tenant ID, and optional workload identity client ID can be configured once under `global.secretsStore` and shared across all components. Per-component values override globals when both are set.
 
 > [!NOTE]
 > When the Secrets Store CSI Driver is enabled for `falcon-sensor` or `falcon-kac`, it is mutually exclusive with `falcon.cid`/`global.falcon.cid` and `falconSecret`. For `falcon-image-analyzer`, it is mutually exclusive with `crowdstrikeConfig.clientID`/`clientSecret` and `existingSecret`, but CID can still be supplied via `crowdstrikeConfig.cid` or `global.falcon.cid` alongside the secrets store — if either is set, `falcon-cid` is not fetched from the secrets store.
 
 #### Prerequisites (all components)
+
+**For Azure Key Vault:**
 
 - [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/getting-started/installation)
 - [Azure Key Vault Provider for Secrets Store CSI Driver](https://azure.github.io/secrets-store-csi-driver-provider-azure/docs/getting-started/installation/)
@@ -547,19 +553,46 @@ The Falcon Platform supports sourcing credentials from [Azure Key Vault](https:/
 - AKS cluster with OIDC issuer enabled
 - A user-assigned managed identity with `Key Vault Secrets User` role on the vault, with federated credentials bound to each component's ServiceAccount in its respective namespace
 
+**For HashiCorp Vault:**
+
+- [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/getting-started/installation)
+- [Vault Provider for Secrets Store CSI Driver](https://developer.hashicorp.com/vault/docs/platform/k8s/csi/installation)
+- HashiCorp Vault server with an appropriate auth method configured (Kubernetes auth, JWT/OIDC, AppRole, AWS IAM, Azure, GCP, etc.)
+- Vault policy granting read access to the secret paths
+- For Kubernetes auth: Vault Kubernetes auth role bound to each component's ServiceAccount in its respective namespace
+- For other auth methods: Configure via component-specific `secretsStore.vault.additionalParameters` (see individual chart documentation)
+
 #### Required secrets per component
 
-| Component              | Secret key (default)     | Env var mapped           |
-|:-----------------------|:-------------------------|:-------------------------|
-| falcon-sensor          | `falcon-cid`             | `FALCONCTL_OPT_CID`      |
-| falcon-sensor          | `falcon-provisioning-token` (optional, configurable) | `FALCONCTL_OPT_PROVISIONING_TOKEN` |
-| falcon-kac             | `falcon-cid`             | `FALCONCTL_OPT_CID`      |
-| falcon-kac             | `falcon-provisioning-token` (optional, configurable) | `FALCONCTL_OPT_PROVISIONING_TOKEN` |
-| falcon-image-analyzer  | `falcon-client-id`       | `AGENT_CLIENT_ID`        |
-| falcon-image-analyzer  | `falcon-client-secret`   | `AGENT_CLIENT_SECRET`    |
+**Azure Key Vault** (fixed secret names):
+
+| Component              | Secret name (Azure)             | Env var mapped                      |
+|:-----------------------|:--------------------------------|:------------------------------------|
+| falcon-sensor          | `falcon-cid`                    | `FALCONCTL_OPT_CID`                 |
+| falcon-sensor          | `falcon-provisioning-token` (optional, configurable) | `FALCONCTL_OPT_PROVISIONING_TOKEN`  |
+| falcon-kac             | `falcon-cid`                    | `FALCONCTL_OPT_CID`                 |
+| falcon-kac             | `falcon-provisioning-token` (optional, configurable) | `FALCONCTL_OPT_PROVISIONING_TOKEN`  |
+| falcon-image-analyzer  | `falcon-client-id`              | `AGENT_CLIENT_ID`                   |
+| falcon-image-analyzer  | `falcon-client-secret`          | `AGENT_CLIENT_SECRET`               |
 | falcon-image-analyzer  | `falcon-cid` (only if `crowdstrikeConfig.cid` / `global.falcon.cid` not set) | `AGENT_CID` |
 
+**HashiCorp Vault** (customizable secret key names):
+
+| Component              | Secret key (default)            | Env var mapped                      |
+|:-----------------------|:--------------------------------|:------------------------------------|
+| falcon-sensor          | `cid`                           | `FALCONCTL_OPT_CID`                 |
+| falcon-sensor          | `provisioning_token` (optional, configurable) | `FALCONCTL_OPT_PROVISIONING_TOKEN`  |
+| falcon-kac             | `cid`                           | `FALCONCTL_OPT_CID`                 |
+| falcon-kac             | `provisioning_token` (optional, configurable) | `FALCONCTL_OPT_PROVISIONING_TOKEN`  |
+| falcon-image-analyzer  | `client_id`                     | `AGENT_CLIENT_ID`                   |
+| falcon-image-analyzer  | `client_secret`                 | `AGENT_CLIENT_SECRET`               |
+| falcon-image-analyzer  | `cid` (only if `crowdstrikeConfig.cid` / `global.falcon.cid` not set) | `AGENT_CID` |
+
+See individual component chart documentation for customizing Vault secret key names.
+
 #### Example configuration
+
+**Azure Key Vault:**
 
 Use `global.secretsStore` to configure the shared secrets store once. Secret names are fixed per component (`falcon-cid`, `falcon-client-id`, `falcon-client-secret`) — only the Workload Identity `serviceAccount.annotations` and pod labels must be configured per component.
 
@@ -603,6 +636,40 @@ falcon-image-analyzer:
 To use a custom provisioning token secret name for `falcon-sensor` or `falcon-kac`, set `secretsStore.provisioningTokenSecretName`.
 
 Each component can still override `vaultName`, `tenantID`, or `clientID` individually if needed — per-component values take precedence over globals.
+
+**HashiCorp Vault (Kubernetes auth):**
+
+For HashiCorp Vault with Kubernetes auth, configure the Vault address and role per component. The secret path and key names can be customized per component or inherited from global settings.
+
+```yaml
+global:
+  secretsStore:
+    enabled: true
+    provider: vault
+
+falcon-sensor:
+  secretsStore:
+    vault:
+      address: "https://vault.example.com"
+      roleName: "falcon-sensor"
+      secretPath: "secret/data/crowdstrike"
+
+falcon-kac:
+  secretsStore:
+    vault:
+      address: "https://vault.example.com"
+      roleName: "falcon-kac"
+      secretPath: "secret/data/crowdstrike"
+
+falcon-image-analyzer:
+  secretsStore:
+    vault:
+      address: "https://vault.example.com"
+      roleName: "falcon-image-analyzer"
+      secretPath: "secret/data/crowdstrike"
+```
+
+For alternative Vault auth methods (JWT, AppRole, AWS IAM, etc.), use `additionalParameters` in each component's configuration. See the individual component chart documentation for details.
 
 ## Upgrade Strategy
 

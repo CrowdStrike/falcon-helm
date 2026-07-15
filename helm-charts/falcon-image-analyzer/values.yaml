@@ -119,12 +119,14 @@ secretsStore:
 
   # HashiCorp Vault
   # Required when provider: vault
-  # Auth: configure Vault Kubernetes auth role to allow the chart's ServiceAccount
+  # Auth: By default, uses Kubernetes auth. For other auth methods (JWT, AppRole, AWS IAM, etc.),
+  #       use additionalParameters to configure the auth method.
   vault:
     # REQUIRED: Vault server address
     address: ""       # e.g. https://vault.example.com
 
-    # REQUIRED: Kubernetes auth role name
+    # REQUIRED for Kubernetes auth: Kubernetes auth role name
+    # Optional for other auth methods (configure via additionalParameters instead)
     roleName: ""
 
     # REQUIRED: Full Vault API path including /data/ for KV v2

@@ -584,9 +584,15 @@ Once the falcon-sensor helm chart is deployed, you must run a helm upgrade if yo
 new namespaces created after the initial helm install.
 ### Secrets Store CSI Driver Integration
 
-The chart supports sourcing `FALCONCTL_OPT_CID` (and optionally `FALCONCTL_OPT_PROVISIONING_TOKEN`) from [Azure Key Vault](https://azure.microsoft.com/en-us/products/key-vault) via the [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/) and the [Azure Key Vault provider](https://azure.github.io/secrets-store-csi-driver-provider-azure/). This applies to both the Node DaemonSet and the Container sidecar Deployment.
+The chart supports sourcing `FALCONCTL_OPT_CID` (and optionally `FALCONCTL_OPT_PROVISIONING_TOKEN`) from external secret stores via the [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/). Supported providers include:
+- [Azure Key Vault](https://azure.microsoft.com/en-us/products/key-vault) via the [Azure Key Vault provider](https://azure.github.io/secrets-store-csi-driver-provider-azure/)
+- [HashiCorp Vault](https://developer.hashicorp.com/vault) via the [Vault provider](https://developer.hashicorp.com/vault/docs/platform/k8s/csi)
+
+This applies to both the Node DaemonSet and the Container sidecar Deployment.
 
 #### Prerequisites
+
+**For Azure Key Vault:**
 
 The following must be installed and configured on your AKS cluster before enabling this feature:
 
@@ -608,7 +614,31 @@ Create the following secrets in your Azure Key Vault before enabling the integra
 
 The CID secret must be named `falcon-cid` in the secrets store. The provisioning token secret name is configurable via `secretsStore.provisioningTokenSecretName`.
 
+**For HashiCorp Vault:**
+
+The following must be installed and configured before enabling this feature:
+
+- [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/getting-started/installation)
+- [Vault Provider for Secrets Store CSI Driver](https://developer.hashicorp.com/vault/docs/platform/k8s/csi/installation)
+- HashiCorp Vault server with an appropriate auth method configured (Kubernetes auth, JWT/OIDC, AppRole, AWS IAM, Azure, GCP, etc.)
+- Vault policy granting read access to the secret path
+- For Kubernetes auth: Vault Kubernetes auth role bound to the chart's ServiceAccount
+- For other auth methods: Configure via `secretsStore.vault.additionalParameters` (see [Vault CSI Provider auth methods](https://developer.hashicorp.com/vault/docs/platform/k8s/csi/configurations#authentication-methods))
+
+#### Required secrets in HashiCorp Vault
+
+Create the following secrets in your Vault instance before enabling the integration:
+
+| Secret key (default)            | Required | Value                          |
+|:--------------------------------|:---------|:-------------------------------|
+| `cid`                           | Yes      | CrowdStrike Customer ID (CID)  |
+| `provisioning_token` (optional) | No       | Provisioning token             |
+
+The secret key names can be customized via `secretsStore.vault.cidSecretKey` and `secretsStore.vault.provisioningTokenSecretKey`.
+
 #### Configuration
+
+**Azure Key Vault example:**
 
 ```yaml
 secretsStore:
@@ -635,6 +665,21 @@ node:
 container:
   labels:
     azure.workload.identity/use: "true"
+```
+
+**HashiCorp Vault example:**
+
+```yaml
+secretsStore:
+  enabled: true
+  provider: vault
+  vault:
+    address: "https://vault.example.com"
+    roleName: "falcon-sensor"
+    secretPath: "secret/data/crowdstrike"        # Full path including /data/ for KV v2
+    cidSecretKey: "cid"                          # Optional, defaults to "cid"
+    provisioningTokenSecretKey: "provisioning_token"  # Optional, defaults to "provisioning_token"
+  provisioningTokenSecretName: ""  # leave empty to omit
 ```
 
 > [!NOTE]

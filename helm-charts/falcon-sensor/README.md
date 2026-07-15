@@ -181,6 +181,18 @@ The following tables lists the more common configurable parameters of the chart 
 | `falcon.cloud`                  | CrowdStrike cloud region (`us-1`, `us-2`, `eu-1`, `us-gov-1`, `us-gov-2`)<br><br>**NOTE:** This option is supported by Falcon sensor version 7.28 and above                                                                                                                                           | None                                                                                                                       |
 | `falconSecret.enabled`          | Enable k8s secrets to inject sensitive Falcon values                                                                                                                                                                                                                                                  | false       (Must be true if falcon.cid is not set)                                                                        |
 | `falconSecret.secretName`       | Existing k8s secret name to inject sensitive Falcon values.<br> The secret must be under the same namespace as the sensor deployment.<br><br> Secret name must be `"falcon-node-sensor-secret"` if deploying to a GKE Autopilot cluster.                                                              | None       (Existing secret must include `FALCONCTL_OPT_CID`)                                                              |
+| `secretsStore.enabled`        | Enable Secrets Store CSI Driver integration. Mutually exclusive with `falcon.cid` and `falconSecret.enabled`. See [Secrets Store CSI Driver Integration](#secrets-store-csi-driver-integration).                                                                                                       | `false`                                                                                                                    |
+| `secretsStore.provider`       | Secrets Store CSI Driver provider (`azure`, `vault`)                                                                                                                                                                                                                                                   | None                                                                                                                       |
+| `secretsStore.secretName`     | Name of the Kubernetes secret created by the CSI driver to sync secrets into. Defaults to `<release-fullname>-csi` if empty.                                                                                                                                                                          | None                                                                                                                       |
+| `secretsStore.azure.vaultName` | Azure Key Vault name                                                                                                                                                                                                                                                                                  | None                                                                                                                       |
+| `secretsStore.azure.tenantID`  | Azure Tenant ID                                                                                                                                                                                                                                                                                       | None                                                                                                                       |
+| `secretsStore.azure.clientID`  | Azure Workload Identity client ID. Only required if multiple managed identities are assigned to the node.                                                                                                                                                                                             | None                                                                                                                       |
+| `secretsStore.vault.address`  | HashiCorp Vault server address (e.g. `https://vault.example.com`). Required when `provider: vault`.                                                                                                                                                                                                   | None                                                                                                                       |
+| `secretsStore.vault.roleName` | Vault Kubernetes auth role name. Required when `provider: vault`.                                                                                                                                                                                                                                     | None                                                                                                                       |
+| `secretsStore.vault.secretPath` | Full Vault API path to the secret (include `/data/` for KV v2, e.g. `secret/data/crowdstrike`). Required when `provider: vault`.                                                                                                                                                                    | None                                                                                                                       |
+| `secretsStore.vault.cidSecretKey` | Key name for the CID value in the Vault secret.                                                                                                                                                                                                                                                   | `cid`                                                                                                                      |
+| `secretsStore.provisioningTokenSecretName` | Name of the secrets store secret containing `FALCONCTL_OPT_PROVISIONING_TOKEN`. Leave empty to omit.                                                                                                                                                                                  | None                                                                                                                       |
+| `node.podLabels`              | Additional labels to add to node DaemonSet pod metadata. Note: may affect WorkloadAllowlists in GKE Autopilot. Example: `azure.workload.identity/use: "true"`.                                                                                                                                        | `{}`                                                                                                                       |
 
 `falcon.cid` and `node.image.repository` are required values.
 
@@ -330,6 +342,18 @@ The following tables lists the more common configurable parameters of the chart 
 | `falcon.cid`                                     | CrowdStrike Customer ID (CID)                                                                                                           | None       (Required if falconSecret.enabled is false)                                                                                                                                                                                                    |
 | `falconSecret.enabled`                           | Enable k8s secrets to inject sensitive Falcon values                                                                                    | false       (Must be true if falcon.cid is not set)                                                                                                                                                                                                       |
 | `falconSecret.secretName`                        | Existing k8s secret name to inject sensitive Falcon values.<br> The secret must be under the same namespace as the sensor deployment.   | None       (Existing secret must include `FALCONCTL_OPT_CID`)                                                                                                                                                                                             |
+| `secretsStore.enabled`                         | Enable Secrets Store CSI Driver integration. Mutually exclusive with `falcon.cid` and `falconSecret.enabled`. See [Secrets Store CSI Driver Integration](#secrets-store-csi-driver-integration). | `false`                                                                                                                                                                                                               |
+| `secretsStore.provider`                       | Secrets Store CSI Driver provider (`azure`, `vault`)                                                                                                                    | None                                                                                                                                                                                                                                                      |
+| `secretsStore.secretName`                     | Name of the Kubernetes secret created by the CSI driver to sync secrets into. Defaults to `<release-fullname>-csi` if empty.                                          | None                                                                                                                                                                                                                                                      |
+| `secretsStore.azure.vaultName`                        | Azure Key Vault name                                                                                                                         | None                                                                                                                                                                                                                                                      |
+| `secretsStore.azure.tenantID`                        | Azure Tenant ID                               | None                                                                                                                                                                                                                                                      |
+| `secretsStore.azure.clientID`           | Azure Workload Identity client ID. Only required if multiple managed identities are assigned to the node.                                             | None                                                                                                                                                                                                                                                      |
+| `secretsStore.vault.address`                  | HashiCorp Vault server address (e.g. `https://vault.example.com`). Required when `provider: vault`.                                                                   | None                                                                                                                                                                                                                                                      |
+| `secretsStore.vault.roleName`                 | Vault Kubernetes auth role name. Required when `provider: vault`.                                                                                                     | None                                                                                                                                                                                                                                                      |
+| `secretsStore.vault.secretPath`               | Full Vault API path to the secret (include `/data/` for KV v2, e.g. `secret/data/crowdstrike`). Required when `provider: vault`.                                     | None                                                                                                                                                                                                                                                      |
+| `secretsStore.vault.cidSecretKey`             | Key name for the CID value in the Vault secret.                                                                                                                       | `cid`                                                                                                                                                                                                                                                     |
+| `secretsStore.provisioningTokenSecretName`     | Name of the secrets store secret containing `FALCONCTL_OPT_PROVISIONING_TOKEN`. Leave empty to omit.                                             | None                                                                                                                                                                                                                                                      |
+| `container.podLabels`                         | Additional labels to add to container sidecar Deployment pod metadata. Note: may affect WorkloadAllowlists in GKE Autopilot. Example: `azure.workload.identity/use: "true"`. | `{}`                                                                                                                                                                                                                                                 |
 
 `falcon.cid` and `container.image.repository` are required values.
 
@@ -558,6 +582,63 @@ The following namespaces are automatically excluded:
 
 Once the falcon-sensor helm chart is deployed, you must run a helm upgrade if you want AITap enabled for any
 new namespaces created after the initial helm install.
+### Secrets Store CSI Driver Integration
+
+The chart supports sourcing `FALCONCTL_OPT_CID` (and optionally `FALCONCTL_OPT_PROVISIONING_TOKEN`) from [Azure Key Vault](https://azure.microsoft.com/en-us/products/key-vault) via the [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/) and the [Azure Key Vault provider](https://azure.github.io/secrets-store-csi-driver-provider-azure/). This applies to both the Node DaemonSet and the Container sidecar Deployment.
+
+#### Prerequisites
+
+The following must be installed and configured on your AKS cluster before enabling this feature:
+
+- [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/getting-started/installation)
+- [Azure Key Vault Provider for Secrets Store CSI Driver](https://azure.github.io/secrets-store-csi-driver-provider-azure/docs/getting-started/installation/)
+- [Azure Workload Identity](https://azure.github.io/azure-workload-identity/docs/installation.html) webhook installed on the cluster
+- AKS cluster with OIDC issuer enabled (`az aks update --enable-oidc-issuer --name <cluster> --resource-group <rg>`)
+- A user-assigned managed identity with `Key Vault Secrets User` role on the vault
+- A federated credential binding the managed identity to the chart's ServiceAccount
+
+#### Required secrets in Azure Key Vault
+
+Create the following secrets in your Azure Key Vault before enabling the integration:
+
+| Secret name (default)       | Required | Value                          |
+|:----------------------------|:---------|:-------------------------------|
+| `falcon-cid`                | Yes      | CrowdStrike Customer ID (CID)  |
+| `falcon-provisioning-token` | No       | Provisioning token             |
+
+The CID secret must be named `falcon-cid` in the secrets store. The provisioning token secret name is configurable via `secretsStore.provisioningTokenSecretName`.
+
+#### Configuration
+
+```yaml
+secretsStore:
+  enabled: true
+  provider: azure
+  azure:
+    vaultName: "my-keyvault"
+    tenantID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    # clientID is optional - only required if multiple managed identities are assigned
+    clientID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  provisioningTokenSecretName: ""  # leave empty to omit
+
+serviceAccount:
+  annotations:
+    azure.workload.identity/client-id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# Add the Workload Identity label to node DaemonSet pods
+node:
+  daemonset:
+    labels:
+      azure.workload.identity/use: "true"
+
+# Add the Workload Identity label to container sidecar Deployment pods
+container:
+  labels:
+    azure.workload.identity/use: "true"
+```
+
+> [!NOTE]
+> `secretsStore.enabled` cannot be combined with `falcon.cid` or `falconSecret.enabled`. These are mutually exclusive secret sources.
 
 ### Uninstall Helm Chart
 

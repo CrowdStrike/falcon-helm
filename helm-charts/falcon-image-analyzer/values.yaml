@@ -54,6 +54,11 @@ volumeMounts:
 
 podAnnotations: {}
 
+# Additional labels to add to pod metadata.
+# podLabels:
+#   azure.workload.identity/use: "true"
+podLabels: {}
+
 podSecurityContext: {}
 
 securityContext: {}
@@ -85,6 +90,63 @@ azure:
 
   # Path to the Kubernetes Azure config file on worker nodes
   azureConfig: /etc/kubernetes/azure.json
+
+# Secrets Store CSI Driver integration.
+# Requires secrets-store-csi-driver and the appropriate provider addon to be
+# installed on the cluster. When enabled, AGENT_CLIENT_ID, AGENT_CLIENT_SECRET
+# (and optionally AGENT_CID) are sourced from the secrets store.
+# Auth wiring (pod annotations/labels, serviceAccount annotations) is provider-
+# specific and left to the user via podAnnotations/podLabels/serviceAccount.annotations.
+secretsStore:
+  enabled: false
+
+  # Provider: azure | vault
+  provider: ""
+
+  # Name of the Kubernetes secret that will be created by the CSI driver.
+  # The SecretProviderClass will sync secrets from the provider into this Kubernetes secret.
+  # If empty, defaults to "<release-fullname>-csi"
+  secretName: ""
+
+  # Azure Key Vault
+  # Required when provider: azure
+  # Auth: set podLabels: {azure.workload.identity/use: "true"} and
+  #       serviceAccount.annotations: {azure.workload.identity/client-id: "<id>"}
+  azure:
+    vaultName: ""
+    tenantID: ""
+    clientID: ""  # optional: workload identity client ID
+
+  # HashiCorp Vault
+  # Required when provider: vault
+  # Auth: configure Vault Kubernetes auth role to allow the chart's ServiceAccount
+  vault:
+    # REQUIRED: Vault server address
+    address: ""       # e.g. https://vault.example.com
+
+    # REQUIRED: Kubernetes auth role name
+    roleName: ""
+
+    # REQUIRED: Full Vault API path including /data/ for KV v2
+    # Example KV v2: "secret/data/crowdstrike"
+    # Example KV v1: "secret/crowdstrike"
+    # Note: The vault kv CLI auto-adds /data/, but the API requires it explicitly
+    secretPath: ""
+
+    # Secret key names in Vault
+    clientIdSecretKey: "client_id"  # Key name for the client ID in Vault
+    clientSecretSecretKey: "client_secret"  # Key name for the client secret in Vault
+    cidSecretKey: "cid"  # Key name for the CID in Vault
+
+    # Additional provider-specific parameters (optional)
+    # Add any extra Vault CSI provider parameters here as key-value pairs
+    # See: https://github.com/hashicorp/secrets-store-csi-driver-provider-vault
+    # Common examples:
+    #   vaultNamespace: "admin"              # Vault Enterprise namespace
+    #   vaultCACertSecret: "vault-ca-cert"   # Custom CA cert for TLS
+    #   vaultKubernetesMountPath: "k8s"     # Custom Kubernetes auth mount path
+    #   vaultTLSServerName: "vault.example.com"  # SNI for TLS verification
+    additionalParameters: {}
 
 # GCP GKE workload identity init container
 gcp:
@@ -257,6 +319,22 @@ global:
   openshift:
     enabled: false
     createSCC: true
+  secretsStore:
+    enabled: false
+    provider: ""
+    secretName: ""
+    azure:
+      vaultName: ""
+      tenantID: ""
+      clientID: ""
+    vault:
+      address: ""
+      roleName: ""
+      secretPath: ""  # Full Vault API path - include /data/ for KV v2 (e.g., "secret/data/crowdstrike")
+      clientIdSecretKey: "client_id"
+      clientSecretSecretKey: "client_secret"
+      cidSecretKey: "cid"
+      additionalParameters: {}
 
 # Deploys the test suite during install for testing purposes.
 testing:

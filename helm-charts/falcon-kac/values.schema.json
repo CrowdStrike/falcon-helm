@@ -453,6 +453,42 @@
         "falconImageAnalyzerNamespace": {
             "type": "string",
             "default": "falcon-image-analyzer"
+        },
+        "secretsStore": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable Secrets Store CSI Driver integration"
+                },
+                "provider": {
+                    "type": "string",
+                    "description": "CSI provider: azure or vault",
+                    "enum": ["", "azure", "vault"]
+                },
+                "azure": {
+                    "type": "object",
+                    "properties": {
+                        "vaultName": { "type": "string" },
+                        "tenantID": { "type": "string" },
+                        "clientID": { "type": "string" }
+                    }
+                },
+                "vault": {
+                    "type": "object",
+                    "properties": {
+                        "address": { "type": "string" },
+                        "roleName": { "type": "string" },
+                        "namespace": { "type": "string" },
+                        "caCertSecretName": { "type": "string" }
+                    }
+                },
+                "provisioningTokenSecretName": {
+                    "type": "string",
+                    "description": "Name of the secrets store secret containing FALCONCTL_OPT_PROVISIONING_TOKEN (optional)"
+                }
+            }
         }
     }
 }

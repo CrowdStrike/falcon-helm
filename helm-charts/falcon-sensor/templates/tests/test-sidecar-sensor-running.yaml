@@ -35,6 +35,8 @@ rules:
   - create
   - get
   - list
+  - watch
+  - delete
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -61,6 +63,7 @@ metadata:
     {{- include "falcon-sensor.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test-success
+    sensor.falcon-system.crowdstrike.com/injection: disabled
 spec:
   containers:
     - name: kubectl
@@ -220,8 +223,12 @@ spec:
         fi
 
         if [ "${FAILED}" -eq 1 ]; then
+            kubectl delete pod busybox -n busybox --ignore-not-found=true
+            kubectl wait pod busybox -n busybox --for=delete --timeout=60s 2>/dev/null || true
             exit 1
         fi
+        kubectl delete pod busybox -n busybox --ignore-not-found=true
+        kubectl wait pod busybox -n busybox --for=delete --timeout=60s 2>/dev/null || true
         exit 0
 
       securityContext:

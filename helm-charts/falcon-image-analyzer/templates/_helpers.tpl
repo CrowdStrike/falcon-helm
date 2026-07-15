@@ -83,6 +83,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
+Labels for test resources — excludes selector labels to prevent adoption by DaemonSet/Deployment.
+*/}}
+{{- define "falcon-image-analyzer.testLabels" -}}
+helm.sh/chart: {{ include "falcon-image-analyzer.chart" . }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
 Selector labels
 */}}
 {{- define "falcon-image-analyzer.selectorLabels" -}}
@@ -273,6 +284,35 @@ false
 {{- end -}}
 
 {{/*
+Get the name of the Kubernetes secret that will be created by the CSI driver.
+This is separate from falconSecret.secretName to allow independent configuration.
+*/}}
+{{- define "falcon-image-analyzer.csiSecretName" -}}
+{{- $csiSecretName := .Values.secretsStore.secretName | default .Values.global.secretsStore.secretName -}}
+{{- if $csiSecretName -}}
+{{- $csiSecretName -}}
+{{- else -}}
+{{- printf "%s-csi" (include "falcon-image-analyzer.fullname" .) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Returns true when Secrets Store CSI is enabled locally or globally.
+*/}}
+{{- define "falcon-image-analyzer.csiEnabled" -}}
+{{- if or .Values.secretsStore.enabled .Values.global.secretsStore.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Returns the effective CSI provider (local overrides global).
+*/}}
+{{- define "falcon-image-analyzer.csiProvider" -}}
+{{- .Values.secretsStore.provider | default .Values.global.secretsStore.provider -}}
+{{- end -}}
+
+{{/*
 Get container registry pull secret from global value if it exists
 */}}
 {{- define "falcon-image-analyzer.imagePullSecret" -}}
@@ -326,10 +366,11 @@ Call this at the top of your main templates to validate all credential inputs.
 {{- define "falcon-image-analyzer.validateCredentials" -}}
 {{- $errors := list -}}
 
-{{- /* Check if credentials are required (no external/global secret) */ -}}
+{{- /* Check if credentials are required (no external/global secret, and no CSI driver) */ -}}
 {{- $globalSecretEnabled := .Values.global.falconSecret.enabled | default false -}}
 {{- $existingSecret := .Values.crowdstrikeConfig.existingSecret | default "" | trim -}}
-{{- $needsCredentials := and (not $globalSecretEnabled) (not $existingSecret) -}}
+{{- $csiEnabled := include "falcon-image-analyzer.csiEnabled" . | eq "true" -}}
+{{- $needsCredentials := and (not $globalSecretEnabled) (not $existingSecret) (not $csiEnabled) -}}
 
 {{- /* Validate clientID and clientSecret are provided as a pair */ -}}
 {{- $clientId := .Values.crowdstrikeConfig.clientID | default "" | trim -}}

@@ -98,6 +98,11 @@
             "type": "object",
             "default": {}
         },
+        "podLabels": {
+            "type": "object",
+            "default": {},
+            "description": "Additional labels to add to pod metadata. Use to set azure.workload.identity/use: 'true' when using Azure Key Vault."
+        },
         "podSecurityContext": {
             "type": "object",
             "default": {}
@@ -129,6 +134,52 @@
         },
         "volumes": {
             "type": "array"
+        },
+        "azure": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Mount azure.json from the node for AKS image pull authentication"
+                },
+                "azureConfig": {
+                    "type": "string",
+                    "default": "/etc/kubernetes/azure.json"
+                }
+            }
+        },
+        "secretsStore": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable Secrets Store CSI Driver integration"
+                },
+                "provider": {
+                    "type": "string",
+                    "description": "CSI provider: azure or vault",
+                    "enum": ["", "azure", "vault"]
+                },
+                "azure": {
+                    "type": "object",
+                    "properties": {
+                        "vaultName": { "type": "string" },
+                        "tenantID": { "type": "string" },
+                        "clientID": { "type": "string" }
+                    }
+                },
+                "vault": {
+                    "type": "object",
+                    "properties": {
+                        "address": { "type": "string" },
+                        "roleName": { "type": "string" },
+                        "namespace": { "type": "string" },
+                        "caCertSecretName": { "type": "string" }
+                    }
+                }
+            }
         },
         "crowdstrikeConfig": {
             "type": "object",
@@ -307,6 +358,29 @@
                             "type": "boolean",
                             "default": true,
                             "description": "Global OpenShift SCC creation flag"
+                        }
+                    }
+                },
+                "secretsStore": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": { "type": "boolean" },
+                        "provider": { "type": "string" },
+                        "azure": {
+                            "type": "object",
+                            "properties": {
+                                "vaultName": { "type": "string" },
+                                "tenantID": { "type": "string" },
+                                "clientID": { "type": "string" }
+                            }
+                        },
+                        "vault": {
+                            "type": "object",
+                            "properties": {
+                                "address": { "type": "string" },
+                                "roleName": { "type": "string" },
+                                "namespace": { "type": "string" }
+                            }
                         }
                     }
                 }

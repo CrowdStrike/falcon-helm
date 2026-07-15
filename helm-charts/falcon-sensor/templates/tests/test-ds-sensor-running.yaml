@@ -6,9 +6,10 @@ metadata:
   name: "{{ include "falcon-sensor.fullname" . }}-test-ds-sensor-running"
   namespace: {{ include "falcon-sensor.namespace" . }}
   labels:
-    {{- include "falcon-sensor.labels" . | nindent 4 }}
+    {{- include "falcon-sensor.testLabels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test-success
+    sensor.falcon-system.crowdstrike.com/injection: disabled
 spec:
   containers:
     - name: kubectl
@@ -26,10 +27,25 @@ spec:
           --timeout=300s
 
         echo "--- Checking all sensor pods are running ---"
-        KUBECMD=$(kubectl get pods -n "{{ include "falcon-sensor.namespace" . }}" -l "app.kubernetes.io/component=kernel_sensor" --field-selector=status.phase!=Running --no-headers 2>&1)
-        if ! echo "${KUBECMD}" | grep -q "No resources found"; then
+        # Get all pods with the sensor label, filter out test pods
+        ALL_PODS=$(kubectl get pods -n "{{ include "falcon-sensor.namespace" . }}" \
+          -l "app.kubernetes.io/component=kernel_sensor" \
+          --field-selector=status.phase!=Running \
+          -o jsonpath="{.items[*].metadata.name}" 2>&1)
+
+        # Filter out test pods (any pod with 'test-' in the name)
+        NON_RUNNING=""
+        for POD in ${ALL_PODS}; do
+            if [[ ! "${POD}" =~ test- ]]; then
+                NON_RUNNING="${NON_RUNNING} ${POD}"
+            fi
+        done
+
+        if [ -n "${NON_RUNNING}" ]; then
             echo "[FAIL]: Not all sensor pods are running"
-            echo "${KUBECMD}"
+            kubectl get pods -n "{{ include "falcon-sensor.namespace" . }}" \
+              -l "app.kubernetes.io/component=kernel_sensor" \
+              --no-headers 2>&1 | grep -v "test-"
             FAILED=1
         else
             echo "[OK]: Sensor pods are running"

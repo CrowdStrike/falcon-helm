@@ -153,8 +153,8 @@
             "type": "object",
             "properties": {
                 "enabled": {
-                    "type": "boolean",
-                    "default": false,
+                    "type": ["boolean", "null"],
+                    "default": null,
                     "description": "Enable Secrets Store CSI Driver integration"
                 },
                 "provider": {

@@ -186,7 +186,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
-        {{- if and (include "falcon-sensor.csiEnabled" . | eq "true") (not .Values.secretsStore.syncK8sSecret) }}
+        {{- if include "falcon-sensor.csiEnabled" . | eq "true" }}
           - name: FALCONCTL_OPT_CID
             valueFrom:
               secretKeyRef:
@@ -208,11 +208,6 @@ spec:
         {{- if and (include "falcon-sensor.falconSecretEnabled" . | eq "true") (not (include "falcon-sensor.csiEnabled" . | eq "true")) }}
         - secretRef:
             name: {{ include "falcon-sensor.falconSecretName" . }}
-        {{- end }}
-        {{- if and (include "falcon-sensor.csiEnabled" . | eq "true") .Values.secretsStore.syncK8sSecret }}
-        # When secret sync is enabled, reference the synced Kubernetes secret
-        - secretRef:
-            name: {{ include "falcon-sensor.csiSecretName" . }}
         {{- end }}
         volumeMounts:
           - name: falconstore

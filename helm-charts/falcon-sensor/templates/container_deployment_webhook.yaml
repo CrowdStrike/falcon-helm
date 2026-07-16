@@ -156,11 +156,7 @@ spec:
         - secretRef:
             name: {{ include "falcon-sensor.falconSecretName" . }}
         {{- end }}
-        {{- if and (include "falcon-sensor.csiEnabled" . | eq "true") .Values.secretsStore.syncK8sSecret }}
-        - secretRef:
-            name: {{ include "falcon-sensor.csiSecretName" . }}
-        {{- end }}
-        {{- if and (include "falcon-sensor.csiEnabled" . | eq "true") (not .Values.secretsStore.syncK8sSecret) }}
+        {{- if include "falcon-sensor.csiEnabled" . | eq "true"}}
         env:
           - name: FALCONCTL_OPT_CID
             valueFrom:

@@ -227,17 +227,14 @@ Get Falcon CID from global value if it exists
 {{- end -}}
 
 {{/*
-Check if Falcon secret is enabled from global value if it exists.
+Check if Falcon secret is enabled from global value if it exists
 */}}
 {{- define "falcon-sensor.falconSecretEnabled" -}}
 {{- or .Values.global.falconSecret.enabled .Values.falconSecret.enabled -}}
 {{- end -}}
 
 {{/*
-Get Falcon secret name from global value if it exists.
-When Secrets Store CSI is enabled, returns the name of the secret that
-SecretProviderClass.secretObjects will sync from the secrets store, so that the
-existing envFrom/secretRef wiring picks it up unchanged.
+Get Falcon secret name from global value if it exists
 */}}
 {{- define "falcon-sensor.falconSecretName" -}}
 {{- if and .Values.global.falconSecret.secretName (not .Values.falconSecret.secretName) -}}

@@ -336,7 +336,7 @@ Global settings apply to all components unless component specific values are set
 | global.openshift.enabled            | false   | Enable OpenShift compatibility mode for all Falcon components                                      |
 | global.openshift.createSCC          | true    | Create SecurityContextConstraints resources. Set to `false` to manage SCCs outside of Helm         |
 | global.secretsStore.enabled         | false   | Enable Secrets Store CSI Driver as the secret source for all components. See [Secrets Store CSI Driver Integration](#secrets-store-csi-driver-integration). |
-| global.secretsStore.provider        | ""      | Secrets Store CSI Driver provider (`azure`, `aws`, `gcp`, `vault`)                                 |
+| global.secretsStore.provider        | ""      | Secrets Store CSI Driver provider (`azure`, `vault`)                                 |
 | global.secretsStore.azure.vaultName | ""      | Azure Key Vault name shared across all components                                                  |
 | global.secretsStore.azure.tenantID  | ""      | Azure Tenant ID shared across all components                                                       |
 | global.secretsStore.azure.clientID  | ""      | Azure Workload Identity client ID (optional; required only when multiple managed identities are assigned) |

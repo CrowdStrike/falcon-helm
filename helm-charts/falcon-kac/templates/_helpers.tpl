@@ -219,10 +219,13 @@ This is separate from falconSecret.secretName to allow independent configuration
 {{- end -}}
 
 {{/*
-Returns true when Secrets Store CSI is enabled locally or globally.
+Returns true when Secrets Store CSI is enabled.
+Component-level setting overrides global setting.
 */}}
 {{- define "falcon-kac.csiEnabled" -}}
-{{- if or .Values.secretsStore.enabled .Values.global.secretsStore.enabled -}}
+{{- if eq .Values.secretsStore.enabled false -}}
+  {{- /* Explicitly disabled - don't check global */}}
+{{- else if or .Values.secretsStore.enabled .Values.global.secretsStore.enabled -}}
 true
 {{- end -}}
 {{- end -}}

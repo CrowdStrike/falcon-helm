@@ -345,7 +345,8 @@ falconSecret:
 # Auth wiring (pod annotations/labels, serviceAccount annotations) is provider-
 # specific and left to the user via podAnnotations/podLabels/serviceAccount.annotations.
 secretsStore:
-  enabled: false
+  # Component-level setting overrides global setting.
+  enabled:
 
   # Provider: azure | vault
   provider: ""

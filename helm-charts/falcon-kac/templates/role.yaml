@@ -30,7 +30,11 @@ rules:
   resources:
   - leases
   verbs:
-  - '*'
+  - create
+  - get
+  - list
+  - watch
+  - update
 
 {{- if (include "falcon-kac.falconSecretEnabled" . | eq "true") }}
 - apiGroups:

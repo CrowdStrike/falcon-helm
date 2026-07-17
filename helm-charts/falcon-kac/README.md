@@ -21,6 +21,18 @@ Kubernetes cluster.
   - [Update Falcon KAC](#update-falcon-kac)
   - [Uninstall Falcon KAC](#uninstall-falcon-kac)
 - [Falcon Configuration Options](#falcon-configuration-options)
+  - [Image Configuration](#image-configuration)
+  - [Falcon Sensor](#falcon-sensor)
+  - [Admission Control](#admission-control)
+  - [Cluster Visibility](#cluster-visibility)
+  - [Webhook Configuration](#webhook-configuration)
+  - [Image Analyzer Integration](#image-analyzer-integration)
+  - [Secret Management](#secret-management)
+  - [Networking](#networking)
+  - [Certificate Management](#certificate-management)
+  - [Deployment Configuration](#deployment-configuration)
+  - [Resource Limits](#resource-limits)
+  - [OpenShift](#openshift)
 
 # Getting Started
 
@@ -168,13 +180,7 @@ To use an existing SCC instead, set `openshift.createSCC=false`, define `openshi
 and ensure the SCC is created prior to deployment. The SCC must be bound to the service account manually before
 installing.
 
-### OpenShift Values
-
-| Parameter              | Description                                                                                                         | Default                        |
-|:-----------------------|:--------------------------------------------------------------------------------------------------------------------|:-------------------------------|
-| `openshift.enabled`    | Enable OpenShift compatibility mode                                                                                 | `false`                        |
-| `openshift.createSCC`  | Create a `SecurityContextConstraints` resource granting the Deployment service account host network access          | `true`                         |
-| `openshift.sccName`    | Name of the SCC to create or use. If empty, defaults to the release fullname                                        | `""` (auto-generated)          |
+For a full list of OpenShift configuration parameters, see [OpenShift](#openshift) under Falcon Configuration Options.
 
 ## Update Falcon KAC
 
@@ -234,25 +240,148 @@ Then proceed with the helm upgrade command including the `--set clusterName=<you
 
 # Falcon Configuration Options
 
-The following tables lists the Falcon KAC configurable parameters and their default values.
+The following sections list all configurable Falcon KAC parameters grouped by function.
 
-| Parameter                                      | Description                                                                                                                        | Default                                                       |
-|:-----------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------|
-| `falcon.cid`                                   | CrowdStrike Customer ID (CID)                                                                                                      | None       (Required if falconSecret.enabled is false)        |
-| `falcon.apd`                                   | App Proxy Disable (APD)                                                                                                            | None                                                          |
-| `falcon.aph`                                   | App Proxy Hostname (APH)                                                                                                           | None                                                          |
-| `falcon.app`                                   | App Proxy Port (APP)                                                                                                               | None                                                          |
-| `falcon.trace`                                 | Set trace level. (`none`,`err`,`warn`,`info`,`debug`)                                                                              | `none`                                                        |
-| `falcon.feature`                               | Sensor Feature options                                                                                                             | None                                                          |
-| `falcon.billing`                               | Utilize default or metered billing                                                                                                 | None                                                          |
-| `falcon.tags`                                  | Comma separated list of tags for sensor grouping                                                                                   | None                                                          |
-| `falcon.provisioning_token`                    | Provisioning token value                                                                                                           | None                                                          |
-| `clusterVisibility.resourceSnapshots.enabled`  | Enable cluster snapshots                                                                                                           | `true`                                                        |
-| `clusterVisibility.resourceSnapshots.interval` | Interval between cluster snapshots                                                                                                 | `22h`                                                         |
-| `clusterVisibility.resourceWatcher.enabled`    | Enable Cluster Visibility                                                                                                          | `true`                                                        |
-| `admissionControl.enabled`                     | Enable Admission Control                                                                                                           | `true`                                                        |
-| `falconSecret.enabled`                         | Enable k8s secrets to inject sensitive Falcon values                                                                               | false      (Must be true if falcon.cid is not set)            |
-| `falconSecret.secretName`                      | Existing k8s secret name to inject sensitive Falcon values.<br> The secret must be under the same namespace as the KAC deployment. | None       (Existing secret must include `FALCONCTL_OPT_CID`) |
-| `clusterName`                                  | Manually set cluster name for self-hosted Kubernetes clusters where auto-discovery fails (e.g., MicroK8s). Displayed as hostname in Host Management UI. | None (auto-discovery used) |
-| `falconImageAnalyzerNamespace`                 | Falcon Image Analyzer namespace | falcon-image-analyzer |
-| `hostNetwork`                                  | Enable host network mode. Required when a custom CNI prevents control plane to pod communication. | `false` |
+## Image Configuration
+
+Settings that control which container image is pulled and how it is authenticated.
+
+| Parameter                  | Description                                                                                                  | Default       |
+|:---------------------------|:-------------------------------------------------------------------------------------------------------------|:--------------|
+| `image.repository`         | Container image repository                                                                                   | `falcon-kac`  |
+| `image.tag`                | Image tag. Prefer `image.digest` for immutability; this field is provided for legacy compatibility.          | `latest`      |
+| `image.digest`             | Image digest (`sha256:...`). Overrides `image.tag` when set.                                                 | None          |
+| `image.pullPolicy`         | Kubernetes image pull policy                                                                                 | `Always`      |
+| `image.pullSecrets`        | List of existing Kubernetes image pull secret names                                                          | None          |
+| `image.registryConfigJSON` | Base64-encoded Docker `config.json` used to create an image pull secret. Conflicts with `image.pullSecrets`. | None          |
+
+## Falcon Sensor
+
+Core sensor identity and connectivity settings passed to `falconctl`.
+
+| Parameter                   | Description                                          | Default                                            |
+|:----------------------------|:-----------------------------------------------------|:---------------------------------------------------|
+| `falcon.cid`                | CrowdStrike Customer ID (CID)                        | None (required if `falconSecret.enabled` is false) |
+| `falcon.apd`                | App Proxy Disable (APD)                              | None                                               |
+| `falcon.aph`                | App Proxy Hostname (APH)                             | None                                               |
+| `falcon.app`                | App Proxy Port (APP)                                 | None                                               |
+| `falcon.trace`              | Trace level (`none`, `err`, `warn`, `info`, `debug`) | `none`                                             |
+| `falcon.feature`            | Sensor feature options                               | None                                               |
+| `falcon.billing`            | Billing mode (`default` or `metered`)                | None                                               |
+| `falcon.tags`               | Comma-separated list of tags for sensor grouping     | None                                               |
+| `falcon.provisioning_token` | Provisioning token value                             | None                                               |
+| `clusterName`               | Manually set cluster name when auto-discovery fails. | None (auto-discovery used)                         |
+
+## Admission Control
+
+Controls whether the KAC operates as a validating admission webhook.
+
+| Parameter                  | Description                                                                                        | Default |
+|:---------------------------|:---------------------------------------------------------------------------------------------------|:--------|
+| `admissionControl.enabled` | Enable admission control. When false, KAC does not validate workloads or detect misconfigurations. | `true`  |
+
+## Webhook Configuration
+
+Fine-grained controls for the Kubernetes ValidatingWebhookConfiguration.
+
+| Parameter                   | Description                                                                                              | Default  |
+|:----------------------------|:---------------------------------------------------------------------------------------------------------|:---------|
+| `webhook.failurePolicy`     | Webhook failure policy (`Ignore` or `Fail`). `Ignore` allows workloads to proceed if KAC is unavailable. | `Ignore` |
+| `webhook.disableNamespaces` | Comma-separated list of namespaces excluded from webhook validation (e.g., `test1,test2`)                | None     |
+
+## Cluster Visibility
+
+Configures how KAC monitors and reports Kubernetes cluster state to CrowdStrike cloud.
+
+| Parameter                                      | Description                                                                                                     | Default |
+|:-----------------------------------------------|:----------------------------------------------------------------------------------------------------------------|:--------|
+| `clusterVisibility.resourceSnapshots.enabled`  | Create snapshots of Kubernetes resources. Disabling may cause long-lived resources to disappear from Falcon UI. | `true`  |
+| `clusterVisibility.resourceSnapshots.interval` | Interval between snapshots. Maximum is `22h`; minimum is `30m`. Format: `HHhMMm` (e.g., `12h`, `45m`, `1h30m`). | `22h`   |
+| `clusterVisibility.resourceWatcher.enabled`    | Watch the cluster for resource events. Disabling means Falcon UI reflects only the last snapshot state.         | `true`  |
+| `clusterVisibility.resourceConfigMap.enabled`  | Watch ConfigMap events. KAC redacts sensitive data. Set to false to exclude ConfigMaps from cluster visibility. | `true`  |
+
+## Image Analyzer Integration
+
+Parameters for integrating KAC with other CrowdStrike components deployed in the same cluster.
+
+| Parameter                      | Description                                                                                    | Default                 |
+|:-------------------------------|:-----------------------------------------------------------------------------------------------|:------------------------|
+| `falconImageAnalyzerNamespace` | Namespace where the Falcon Image Analyzer is deployed. Used for cross-component communication. | `falcon-image-analyzer` |
+
+## Secret Management
+
+Options for supplying sensitive Falcon values (CID, etc.) via a Kubernetes Secret instead of plain values.
+
+| Parameter                 | Description                                                                                                            | Default |
+|:--------------------------|:-----------------------------------------------------------------------------------------------------------------------|:--------|
+| `falconSecret.enabled`    | Use an existing Kubernetes secret to supply sensitive Falcon values. Must be `true` when `falcon.cid` is not set.      | `false` |
+| `falconSecret.secretName` | Name of the existing secret. Must be in the same namespace as the KAC deployment and must contain `FALCONCTL_OPT_CID`. | None    |
+
+## Networking
+
+Controls network identity and connectivity for the KAC pod.
+
+| Parameter     | Description                                                                                                            | Default |
+|:--------------|:-----------------------------------------------------------------------------------------------------------------------|:--------|
+| `hostNetwork` | Run the KAC pod in host network mode. Required when a custom CNI prevents control-plane-to-pod communication.          | `false` |
+| `dnsPolicy`   | Pod DNS policy. Defaults to `ClusterFirstWithHostNet` when `hostNetwork` is `true`; otherwise follows cluster default. | None    |
+| `domainName`  | Custom DNS domain suffix for in-cluster service resolution (e.g., `testing.io` if `svc.testing.io` is required).       | None    |
+| `webhookPort` | Port on which the validating webhook backend listens                                                                   | `4443`  |
+| `watcherPort` | Port on which the resource watcher listens                                                                             | `4080`  |
+
+## Certificate Management
+
+Settings for the TLS certificates used by the validating webhook.
+
+| Parameter               | Description                                             | Default |
+|:------------------------|:--------------------------------------------------------|:--------|
+| `autoCertificateUpdate` | Automatically rotate certificates on each Helm upgrade  | `true`  |
+| `certExpiration`        | Certificate validity period in days                     | `3650`  |
+
+## Deployment Configuration
+
+Controls pod scheduling, labeling, and overall deployment behavior.
+
+| Parameter                    | Description                                                                                 | Default                       |
+|:-----------------------------|:--------------------------------------------------------------------------------------------|:------------------------------|
+| `replicas`                   | Number of KAC deployment replicas                                                           | `1`                           |
+| `autoDeploymentUpdate`       | Roll out a new Deployment automatically on `helm upgrade`                                   | `true`                        |
+| `annotations`                | Annotations applied to the Deployment resource                                              | `{}`                          |
+| `labels`                     | Additional labels applied to the Deployment resource                                        | `{}`                          |
+| `podAnnotations`             | Annotations applied to KAC pods                                                             | `{}`                          |
+| `tolerations`                | Pod tolerations for node scheduling                                                         | `[]`                          |
+| `affinity`                   | Pod affinity/anti-affinity rules. Defaults to require `amd64` or `arm64` node architecture. | `nodeAffinity` (amd64, arm64) |
+| `serviceAccount.name`        | Name of the Kubernetes ServiceAccount used by the KAC pod                                   | `falcon-kac-sa`               |
+| `serviceAccount.annotations` | Annotations applied to the ServiceAccount (e.g., for IRSA or Workload Identity)             | `{}`                          |
+| `resourceQuota.pods`         | Maximum number of pods allowed by the ResourceQuota object created for the KAC namespace    | `2`                           |
+| `nameOverride`               | Override the chart name component of generated resource names                               | `""`                          |
+| `fullnameOverride`           | Override the full generated resource name prefix                                            | `""`                          |
+
+## Resource Limits
+
+CPU and memory resource requests and limits for each KAC container. Review actual consumption in your environment and adjust accordingly.
+
+| Parameter                                        | Description                                                           | Default |
+|:-------------------------------------------------|:----------------------------------------------------------------------|:--------|
+| `falconClientResources.requests.cpu`             | CPU request for the `falcon-client` (webhook) container               | `250m`  |
+| `falconClientResources.requests.memory`          | Memory request for the `falcon-client` (webhook) container            | `384Mi` |
+| `falconClientResources.limits.memory`            | Memory limit for the `falcon-client` (webhook) container              | `384Mi` |
+| `falconClientNoWebhookResources.requests.cpu`    | CPU request for `falcon-client` when admission control is disabled    | `100m`  |
+| `falconClientNoWebhookResources.requests.memory` | Memory request for `falcon-client` when admission control is disabled | `128Mi` |
+| `falconClientNoWebhookResources.limits.memory`   | Memory limit for `falcon-client` when admission control is disabled   | `128Mi` |
+| `falconWatcherResources.requests.cpu`            | CPU request for the resource watcher container                        | `250m`  |
+| `falconWatcherResources.requests.memory`         | Memory request for the resource watcher container                     | `512Mi` |
+| `falconWatcherResources.limits.memory`           | Memory limit for the resource watcher container                       | `512Mi` |
+| `falconAcResources.requests.cpu`                 | CPU request for the `falcon-ac` (admission controller) container      | `100m`  |
+| `falconAcResources.requests.memory`              | Memory request for the `falcon-ac` (admission controller) container   | `256Mi` |
+| `falconAcResources.limits.memory`                | Memory limit for the `falcon-ac` (admission controller) container     | `256Mi` |
+
+## OpenShift
+
+> **Note:** OpenShift is **not a recommended** configuration. The [official Red Hat certified CrowdStrike Falcon Operator](https://catalog.redhat.com/en/software/container-stacks/detail/62f2d38f76d039249424703d) is the recommended installation method for OpenShift clusters.
+
+| Parameter             | Description                                                                                                 | Default               |
+|:----------------------|:------------------------------------------------------------------------------------------------------------|:----------------------|
+| `openshift.enabled`   | Enable OpenShift compatibility mode                                                                         | `false`               |
+| `openshift.createSCC` | Create a `SecurityContextConstraints` resource granting the Deployment service account host network access. | `true`                |
+| `openshift.sccName`   | Name of the SCC to create or bind. Set `createSCC: false` and provide a name to reference an existing SCC.  | `""` (auto-generated) |

@@ -639,7 +639,7 @@ Each component can still override `vaultName`, `tenantID`, or `clientID` individ
 
 **HashiCorp Vault (Kubernetes auth):**
 
-For HashiCorp Vault with Kubernetes auth, configure the Vault address and role per component. The secret path and key names can be customized per component or inherited from global settings.
+For HashiCorp Vault with Kubernetes auth, configure the Vault address and role per component. Settings can be configured globally or at the component level, with component-level values taking precedence over global settings.
 
 ```yaml
 global:

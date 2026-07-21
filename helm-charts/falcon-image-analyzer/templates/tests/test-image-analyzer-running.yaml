@@ -185,6 +185,76 @@ spec:
             done
         fi
 
+        echo "--- Checking required environment variables ---"
+        for POD in ${PODS}; do
+            {{- if include "falcon-image-analyzer.csiEnabled" . | eq "true" }}
+            # Check AGENT_CLIENT_ID (set as env var when CSI is enabled)
+            CLIENT_ID_DEFINED=$(kubectl get pod "${POD}" \
+              -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+              -o jsonpath='{.spec.containers[0].env[?(@.name=="AGENT_CLIENT_ID")].name}' 2>&1)
+
+            if [ "${CLIENT_ID_DEFINED}" != "AGENT_CLIENT_ID" ]; then
+                echo "[FAIL]: Pod '${POD}' does not have AGENT_CLIENT_ID environment variable defined"
+                FAILED=1
+            else
+                echo "[OK]: Pod '${POD}' has AGENT_CLIENT_ID environment variable defined"
+            fi
+
+            # Check AGENT_CLIENT_SECRET (set as env var when CSI is enabled)
+            CLIENT_SECRET_DEFINED=$(kubectl get pod "${POD}" \
+              -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+              -o jsonpath='{.spec.containers[0].env[?(@.name=="AGENT_CLIENT_SECRET")].name}' 2>&1)
+
+            if [ "${CLIENT_SECRET_DEFINED}" != "AGENT_CLIENT_SECRET" ]; then
+                echo "[FAIL]: Pod '${POD}' does not have AGENT_CLIENT_SECRET environment variable defined"
+                FAILED=1
+            else
+                echo "[OK]: Pod '${POD}' has AGENT_CLIENT_SECRET environment variable defined"
+            fi
+            {{- else }}
+            true
+            {{- end }}
+        done
+
+        {{- if include "falcon-image-analyzer.shouldCreateClientCredsInSecret" . | eq "true" }}
+        # Check AGENT_CLIENT_ID and AGENT_CLIENT_SECRET are present in the envFrom secret
+        CLIENT_ID_KEY=$(kubectl get secret "{{ include "falcon-image-analyzer.fullname" . }}" \
+          -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+          -o jsonpath='{.data.AGENT_CLIENT_ID}' 2>&1)
+
+        if [ -z "${CLIENT_ID_KEY}" ]; then
+            echo "[FAIL]: Secret '{{ include "falcon-image-analyzer.fullname" . }}' does not have AGENT_CLIENT_ID key"
+            FAILED=1
+        else
+            echo "[OK]: Secret '{{ include "falcon-image-analyzer.fullname" . }}' contains AGENT_CLIENT_ID"
+        fi
+
+        CLIENT_SECRET_KEY=$(kubectl get secret "{{ include "falcon-image-analyzer.fullname" . }}" \
+          -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+          -o jsonpath='{.data.AGENT_CLIENT_SECRET}' 2>&1)
+
+        if [ -z "${CLIENT_SECRET_KEY}" ]; then
+            echo "[FAIL]: Secret '{{ include "falcon-image-analyzer.fullname" . }}' does not have AGENT_CLIENT_SECRET key"
+            FAILED=1
+        else
+            echo "[OK]: Secret '{{ include "falcon-image-analyzer.fullname" . }}' contains AGENT_CLIENT_SECRET"
+        fi
+        {{- end }}
+
+        {{- if include "falcon-image-analyzer.falconCid" . }}
+        # Check AGENT_CID is present in the envFrom secret
+        CID_KEY=$(kubectl get secret "{{ include "falcon-image-analyzer.fullname" . }}" \
+          -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+          -o jsonpath='{.data.AGENT_CID}' 2>&1)
+
+        if [ -z "${CID_KEY}" ]; then
+            echo "[FAIL]: Secret '{{ include "falcon-image-analyzer.fullname" . }}' does not have AGENT_CID key"
+            FAILED=1
+        else
+            echo "[OK]: Secret '{{ include "falcon-image-analyzer.fullname" . }}' contains AGENT_CID"
+        fi
+        {{- end }}
+
         {{- if .Values.testing.labelNamespace }}
         echo "--- Checking PSS namespace labels ---"
         NS_NAME="{{ include "falcon-image-analyzer.namespace" . }}"

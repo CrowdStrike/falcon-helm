@@ -352,7 +352,7 @@ OpenShift SCC name. Uses openshift.sccName if set, otherwise defaults to the ful
 OpenShift mode enabled — true if either chart-level or global is true.
 */}}
 {{- define "falcon-image-analyzer.openshiftEnabled" -}}
-{{- or .Values.openshift.enabled (default false .Values.global.openshift.enabled) -}}
+{{- or .Values.openshift.enabled .Values.global.openshift.enabled -}}
 {{- end -}}
 
 {{/*

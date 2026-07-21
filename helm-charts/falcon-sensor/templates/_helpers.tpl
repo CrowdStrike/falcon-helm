@@ -397,7 +397,7 @@ OpenShift SCC name for the node DaemonSet.
 OpenShift mode enabled — true if either chart-level or global is true.
 */}}
 {{- define "falcon-sensor.openshiftEnabled" -}}
-{{- if or .Values.node.openshift.enabled (default false .Values.global.openshift.enabled) -}}
+{{- if or .Values.node.openshift.enabled .Values.global.openshift.enabled -}}
 {{- "true" -}}
 {{- end -}}
 {{- end -}}

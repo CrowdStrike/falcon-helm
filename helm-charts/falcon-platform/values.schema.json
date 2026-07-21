@@ -138,6 +138,14 @@
                   "description": "Key name for provisioning token in Vault",
                   "default": "provisioning_token"
                 },
+                "clientIdSecretKey": {
+                  "type": "string",
+                  "description": "Key name for client ID in Vault (falcon-image-analyzer)"
+                },
+                "clientSecretSecretKey": {
+                  "type": "string",
+                  "description": "Key name for client secret in Vault (falcon-image-analyzer)"
+                },
                 "additionalParameters": {
                   "type": "object",
                   "description": "Additional Vault CSI provider parameters"

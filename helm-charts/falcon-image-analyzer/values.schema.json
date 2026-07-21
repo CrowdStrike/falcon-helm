@@ -162,6 +162,10 @@
                     "description": "CSI provider: azure or vault",
                     "enum": ["", "azure", "vault"]
                 },
+                "secretName": {
+                    "type": "string",
+                    "description": "Name of the Kubernetes secret created by the CSI driver"
+                },
                 "azure": {
                     "type": "object",
                     "properties": {
@@ -175,8 +179,11 @@
                     "properties": {
                         "address": { "type": "string" },
                         "roleName": { "type": "string" },
-                        "namespace": { "type": "string" },
-                        "caCertSecretName": { "type": "string" }
+                        "secretPath": { "type": "string" },
+                        "cidSecretKey": { "type": "string" },
+                        "clientIdSecretKey": { "type": "string" },
+                        "clientSecretSecretKey": { "type": "string" },
+                        "additionalParameters": { "type": "object" }
                     }
                 }
             }

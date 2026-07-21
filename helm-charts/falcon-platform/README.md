@@ -340,6 +340,15 @@ Global settings apply to all components unless component specific values are set
 | global.secretsStore.azure.vaultName | ""      | Azure Key Vault name shared across all components                                                  |
 | global.secretsStore.azure.tenantID  | ""      | Azure Tenant ID shared across all components                                                       |
 | global.secretsStore.azure.clientID  | ""      | Azure Workload Identity client ID (optional; required only when multiple managed identities are assigned) |
+| global.secretsStore.secretName      | ""      | Name of the Kubernetes secret created by the CSI driver (overridable per component)               |
+| global.secretsStore.vault.address   | ""      | HashiCorp Vault server address (e.g. `https://vault.example.com`). Required when `provider: vault`. |
+| global.secretsStore.vault.roleName  | ""      | Vault Kubernetes auth role name. Required for Kubernetes auth; optional for other auth methods.   |
+| global.secretsStore.vault.secretPath | ""     | Full Vault API path to the secret (include `/data/` for KV v2, e.g. `secret/data/crowdstrike`). Required when `provider: vault`. |
+| global.secretsStore.vault.cidSecretKey | `cid` | Key name for the CID value in the Vault secret.                                                   |
+| global.secretsStore.vault.provisioningTokenSecretKey | `provisioning_token` | Key name for the provisioning token value in the Vault secret.            |
+| global.secretsStore.vault.clientIdSecretKey | `client_id` | Key name for the client ID value in the Vault secret (falcon-image-analyzer only).          |
+| global.secretsStore.vault.clientSecretSecretKey | `client_secret` | Key name for the client secret value in the Vault secret (falcon-image-analyzer only). |
+| global.secretsStore.vault.additionalParameters | None | Additional Vault CSI provider parameters (e.g. for alternate auth methods).                  |
 
 > [!NOTE]
 Any existing secrets for `falconSecret` or `containerRegistry.pullSecret` must exist in the namespace dedicated to the respective Falcon component before installing the Helm chart. For example, you must already have an existing secret matching `global.falconSecret.secretName` in the `falcon-sensor` default namespace, or custom namespace you choose for your `falcon-sensor.namespaceOverride`.

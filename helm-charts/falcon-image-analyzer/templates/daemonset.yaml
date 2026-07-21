@@ -162,7 +162,7 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "falcon-image-analyzer.fullname" . }}
-            {{- if and (not (include "falcon-image-analyzer.csiEnabled" . | eq "true")) (or $shouldCreateCid $shouldCreateClientCreds) }}
+            {{- if or $shouldCreateCid (and (not (include "falcon-image-analyzer.csiEnabled" . | eq "true")) $shouldCreateClientCreds) }}
             - secretRef:
                 name: {{ include "falcon-image-analyzer.fullname" . }}
             {{- end }}

@@ -54,12 +54,8 @@ helm.sh/chart: {{ include "falcon-kac.chart" . }}
 Labels for test resources — excludes selector labels to prevent adoption by Deployment.
 */}}
 {{- define "falcon-kac.testLabels" -}}
-helm.sh/chart: {{ include "falcon-kac.chart" . }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-app.kubernetes.io/component: kac
-app.kubernetes.io/name: {{ include "falcon-kac.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-crowdstrike.com/provider: crowdstrike
+app.kubernetes.io/component: test
 {{- end }}
 
 {{/*
@@ -292,7 +288,7 @@ OpenShift SCC name. Uses openshift.sccName if set, otherwise defaults to the ful
 OpenShift mode enabled — true if either chart-level or global is true.
 */}}
 {{- define "falcon-kac.openshiftEnabled" -}}
-{{- or .Values.openshift.enabled (default false .Values.global.openshift.enabled) -}}
+{{- or .Values.openshift.enabled .Values.global.openshift.enabled -}}
 {{- end -}}
 
 {{/*

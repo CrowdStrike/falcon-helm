@@ -149,8 +149,8 @@ spec:
         fi
         echo ""
 
-        # Test 6: Verify AGENT_CLIENT_ID and AGENT_CLIENT_SECRET environment variables
-        echo "--- Test 6: Checking AGENT_CLIENT_ID and AGENT_CLIENT_SECRET environment variables ---"
+        # Test 6: Verify AGENT_CLIENT_ID, AGENT_CLIENT_SECRET, and AGENT_CID environment variables
+        echo "--- Test 6: Checking AGENT_CLIENT_ID, AGENT_CLIENT_SECRET, and AGENT_CID environment variables ---"
         for POD in ${PODS}; do
             # Check if pod is running
             POD_STATUS=$(kubectl get pod "${POD}" \
@@ -207,6 +207,31 @@ spec:
                     echo "[WARN]: Pod '${POD}' AGENT_CLIENT_SECRET secretKeyRef is not optional"
                 fi
             fi
+
+            {{- if not (include "falcon-image-analyzer.falconCid" .) }}
+            # Check if AGENT_CID is defined
+            CID_DEFINED=$(kubectl get pod "${POD}" \
+              -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+              -o jsonpath='{.spec.containers[0].env[?(@.name=="AGENT_CID")].name}' 2>&1)
+
+            if [ "${CID_DEFINED}" != "AGENT_CID" ]; then
+                echo "[FAIL]: Pod '${POD}' does not have AGENT_CID environment variable defined"
+                FAILED=1
+            else
+                echo "[OK]: Pod '${POD}' has AGENT_CID environment variable defined"
+
+                # Check if it's using optional secretKeyRef
+                IS_OPTIONAL=$(kubectl get pod "${POD}" \
+                  -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+                  -o jsonpath='{.spec.containers[0].env[?(@.name=="AGENT_CID")].valueFrom.secretKeyRef.optional}' 2>&1)
+
+                if [ "${IS_OPTIONAL}" = "true" ]; then
+                    echo "[OK]: Pod '${POD}' AGENT_CID uses optional secretKeyRef"
+                else
+                    echo "[WARN]: Pod '${POD}' AGENT_CID secretKeyRef is not optional"
+                fi
+            fi
+            {{- end }}
         done
         echo ""
 

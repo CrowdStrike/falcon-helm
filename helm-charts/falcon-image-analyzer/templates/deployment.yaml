@@ -60,7 +60,10 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
       labels:
-    {{- include "falcon-image-analyzer.labels" . | nindent 8 }}
+        {{- include "falcon-image-analyzer.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       {{- if or $imagePullSecret $registryConfigJson (.Values.crowdstrikeConfig.dockerAPIToken) }}
       imagePullSecrets:
@@ -145,10 +148,32 @@ spec:
           {{- $shouldCreateCid := include "falcon-image-analyzer.falconCid" . | trim -}}
           {{- $shouldCreateClientCreds := include "falcon-image-analyzer.shouldCreateClientCredsInSecret" . | trim | eq "true" -}}
           {{- $hasExistingSecret := include "falcon-image-analyzer.falconSecretName" . }}
+            {{- if (include "falcon-image-analyzer.csiEnabled" .) | eq "true" }}
+            - name: AGENT_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "falcon-image-analyzer.csiSecretName" . }}
+                  key: AGENT_CLIENT_ID
+                  optional: true
+            - name: AGENT_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "falcon-image-analyzer.csiSecretName" . }}
+                  key: AGENT_CLIENT_SECRET
+                  optional: true
+            {{- if not (or .Values.crowdstrikeConfig.cid .Values.global.falcon.cid) }}
+            - name: AGENT_CID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "falcon-image-analyzer.csiSecretName" . }}
+                  key: AGENT_CID
+                  optional: true
+            {{- end }}
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ include "falcon-image-analyzer.fullname" . }}
-            {{- if or $shouldCreateCid $shouldCreateClientCreds }}
+            {{- if or $shouldCreateCid (and (not (include "falcon-image-analyzer.csiEnabled" . | eq "true")) $shouldCreateClientCreds) }}
             - secretRef:
                 name: {{ include "falcon-image-analyzer.fullname" . }}
             {{- end }}
@@ -161,6 +186,11 @@ spec:
           {{- if .Values.azure.enabled }}
             - name: azure-config
               mountPath: /etc/kubernetes/azure.json
+          {{- end }}
+          {{- if (include "falcon-image-analyzer.csiEnabled" .) | eq "true" }}
+            - name: csi-secrets
+              mountPath: /mnt/secrets-store
+              readOnly: true
           {{- end }}
             - mountPath: /run/secrets/tls
               name: {{ include "falcon-image-analyzer.name" . }}-tls-certs
@@ -176,6 +206,14 @@ spec:
           hostPath:
             path: {{ .Values.azure.azureConfig }}
             type: File
+        {{- end }}
+        {{- if (include "falcon-image-analyzer.csiEnabled" .) | eq "true" }}
+        - name: csi-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ include "falcon-image-analyzer.fullname" . }}-csi
         {{- end }}
         - name: {{ include "falcon-image-analyzer.name" . }}-tls-certs
           secret:

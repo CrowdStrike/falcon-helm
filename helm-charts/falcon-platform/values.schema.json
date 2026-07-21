@@ -75,6 +75,84 @@
               "default": true
             }
           }
+        },
+        "secretsStore": {
+          "type": "object",
+          "description": "Global Secrets Store CSI Driver configuration applied to all Falcon components",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable Secrets Store CSI Driver integration for all components",
+              "default": false
+            },
+            "provider": {
+              "type": "string",
+              "description": "CSI provider: azure or vault",
+              "enum": ["", "azure", "vault"]
+            },
+            "secretName": {
+              "type": "string",
+              "description": "Name of the Kubernetes secret created by the CSI driver"
+            },
+            "azure": {
+              "type": "object",
+              "description": "Azure Key Vault configuration",
+              "properties": {
+                "vaultName": {
+                  "type": "string",
+                  "description": "Azure Key Vault name"
+                },
+                "tenantID": {
+                  "type": "string",
+                  "description": "Azure tenant ID"
+                },
+                "clientID": {
+                  "type": "string",
+                  "description": "Azure workload identity client ID (optional)"
+                }
+              }
+            },
+            "vault": {
+              "type": "object",
+              "description": "HashiCorp Vault configuration",
+              "properties": {
+                "address": {
+                  "type": "string",
+                  "description": "Vault server address (e.g., https://vault.example.com)"
+                },
+                "roleName": {
+                  "type": "string",
+                  "description": "Kubernetes auth role name (required for Kubernetes auth)"
+                },
+                "secretPath": {
+                  "type": "string",
+                  "description": "Full Vault API path including /data/ for KV v2"
+                },
+                "cidSecretKey": {
+                  "type": "string",
+                  "description": "Key name for CID in Vault",
+                  "default": "cid"
+                },
+                "provisioningTokenSecretKey": {
+                  "type": "string",
+                  "description": "Key name for provisioning token in Vault",
+                  "default": "provisioning_token"
+                },
+                "clientIdSecretKey": {
+                  "type": "string",
+                  "description": "Key name for client ID in Vault (falcon-image-analyzer)"
+                },
+                "clientSecretSecretKey": {
+                  "type": "string",
+                  "description": "Key name for client secret in Vault (falcon-image-analyzer)"
+                },
+                "additionalParameters": {
+                  "type": "object",
+                  "description": "Additional Vault CSI provider parameters"
+                }
+              }
+            }
+          }
         }
       }
     },

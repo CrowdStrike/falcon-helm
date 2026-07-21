@@ -84,6 +84,9 @@ spec:
         {{ $key }}: {{ $value | quote }}
         {{- end }}
         {{- end }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       annotations:
         sensor.falcon-system.crowdstrike.com/injection: disabled
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum | quote }}
@@ -139,10 +142,26 @@ spec:
         - name: __CS_IAR_NAMESPACE
           value: {{ .Values.falconImageAnalyzerNamespace | quote }}
         {{- end }}
+        {{- if (include "falcon-kac.csiEnabled" .) | eq "true" }}
+        - name: FALCONCTL_OPT_CID
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "falcon-kac.csiSecretName" . }}
+              key: FALCONCTL_OPT_CID
+              optional: true
+        {{- if .Values.secretsStore.provisioningTokenSecretName }}
+        - name: FALCONCTL_OPT_PROVISIONING_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "falcon-kac.csiSecretName" . }}
+              key: FALCONCTL_OPT_PROVISIONING_TOKEN
+              optional: true
+        {{- end }}
+        {{- end }}
         envFrom:
         - configMapRef:
             name: {{ include "falcon-kac.fullname" . }}-config
-        {{- if $falconSecretEnabled }}
+        {{- if and $falconSecretEnabled (not (include "falcon-kac.csiEnabled" . | eq "true")) }}
         - secretRef:
             name: {{ $falconSecretName }}
         {{- end }}
@@ -190,6 +209,11 @@ spec:
           name: crowdstrike-falcon-vol0
         - mountPath: /var/private
           name: crowdstrike-falcon-vol1
+        {{- if (include "falcon-kac.csiEnabled" .) | eq "true" }}
+        - name: csi-secrets
+          mountPath: /mnt/secrets-store
+          readOnly: true
+        {{- end }}
       - name: falcon-watcher
         args:
         - "client"
@@ -211,10 +235,26 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
+        {{- if (include "falcon-kac.csiEnabled" .) | eq "true" }}
+        - name: FALCONCTL_OPT_CID
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "falcon-kac.csiSecretName" . }}
+              key: FALCONCTL_OPT_CID
+              optional: true
+        {{- if .Values.secretsStore.provisioningTokenSecretName }}
+        - name: FALCONCTL_OPT_PROVISIONING_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "falcon-kac.csiSecretName" . }}
+              key: FALCONCTL_OPT_PROVISIONING_TOKEN
+              optional: true
+        {{- end }}
+        {{- end }}
         envFrom:
         - configMapRef:
             name: {{ include "falcon-kac.fullname" . }}-config
-        {{- if $falconSecretEnabled }}
+        {{- if and $falconSecretEnabled (not (include "falcon-kac.csiEnabled" . | eq "true")) }}
         - secretRef:
             name: {{ $falconSecretName }}
         {{- end }}
@@ -258,10 +298,27 @@ spec:
         - mountPath: /var/falcon-watcher
           name: crowdstrike-falcon-vol2
       - name: falcon-ac
+        {{- if (include "falcon-kac.csiEnabled" .) | eq "true" }}
+        env:
+        - name: FALCONCTL_OPT_CID
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "falcon-kac.csiSecretName" . }}
+              key: FALCONCTL_OPT_CID
+              optional: true
+        {{- if .Values.secretsStore.provisioningTokenSecretName }}
+        - name: FALCONCTL_OPT_PROVISIONING_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "falcon-kac.csiSecretName" . }}
+              key: FALCONCTL_OPT_PROVISIONING_TOKEN
+              optional: true
+        {{- end }}
+        {{- end }}
         envFrom:
         - configMapRef:
             name: {{ include "falcon-kac.fullname" . }}-config
-        {{- if $falconSecretEnabled }}
+        {{- if and $falconSecretEnabled (not (include "falcon-kac.csiEnabled" . | eq "true")) }}
         - secretRef:
             name: {{ $falconSecretName }}
         {{- end }}
@@ -336,6 +393,14 @@ spec:
       - name: crowdstrike-falcon-vol2
         emptyDir:
           sizeLimit: 64Mi
+      {{- if (include "falcon-kac.csiEnabled" .) | eq "true" }}
+      - name: csi-secrets
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: {{ include "falcon-kac.fullname" . }}-csi
+      {{- end }}
 ---
 {{- if .Values.admissionControl.enabled }}
 apiVersion: admissionregistration.k8s.io/v1

@@ -5,9 +5,10 @@ metadata:
   name: "{{ include "falcon-kac.fullname" . }}-test-kac-running"
   namespace: {{ include "falcon-kac.namespace" . }}
   labels:
-    {{- include "falcon-kac.labels" . | nindent 4 }}
+    {{- include "falcon-kac.testLabels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test-success
+    sensor.falcon-system.crowdstrike.com/injection: disabled
 spec:
   containers:
     - name: kubectl
@@ -27,11 +28,25 @@ spec:
           --timeout=300s
 
         echo "--- Checking all KAC pods are running ---"
-        # Exclude test pods by filtering out pods with helm.sh/hook annotation
-        KUBECMD=$(kubectl get pods -n "{{ include "falcon-kac.namespace" . }}" -l "app={{ include "falcon-kac.name" . }}" --field-selector=status.phase!=Running --no-headers 2>&1 | grep -v "test-kac-running" || echo "No resources found")
-        if ! echo "${KUBECMD}" | grep -q "No resources found"; then
+        # Get all pods with the KAC label, filter out test pods
+        ALL_PODS=$(kubectl get pods -n "{{ include "falcon-kac.namespace" . }}" \
+          -l "app={{ include "falcon-kac.name" . }}" \
+          --field-selector=status.phase!=Running \
+          -o jsonpath="{.items[*].metadata.name}" 2>&1)
+
+        # Filter out test pods (any pod with 'test-' in the name)
+        NON_RUNNING=""
+        for POD in ${ALL_PODS}; do
+            if [[ ! "${POD}" =~ test- ]]; then
+                NON_RUNNING="${NON_RUNNING} ${POD}"
+            fi
+        done
+
+        if [ -n "${NON_RUNNING}" ]; then
             echo "[FAIL]: Not all KAC pods are running"
-            echo "${KUBECMD}"
+            kubectl get pods -n "{{ include "falcon-kac.namespace" . }}" \
+              -l "app={{ include "falcon-kac.name" . }}" \
+              --no-headers 2>&1 | grep -v "test-"
             FAILED=1
         else
             echo "[OK]: KAC pods are running"

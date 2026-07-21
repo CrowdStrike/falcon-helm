@@ -51,6 +51,14 @@ helm.sh/chart: {{ include "falcon-kac.chart" . }}
 {{- end }}
 
 {{/*
+Labels for test resources — excludes selector labels to prevent adoption by Deployment.
+*/}}
+{{- define "falcon-kac.testLabels" -}}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/component: test
+{{- end }}
+
+{{/*
 Selector labels
 */}}
 {{- define "falcon-kac.selectorLabels" -}}
@@ -176,14 +184,14 @@ Get Falcon CID from global value if it exists
 {{- end -}}
 
 {{/*
-Check if Falcon secret is enabled from global value if it exists
+Check if Falcon secret is enabled from global value if it exists.
 */}}
 {{- define "falcon-kac.falconSecretEnabled" -}}
 {{- or .Values.global.falconSecret.enabled .Values.falconSecret.enabled -}}
 {{- end -}}
 
 {{/*
-Get Falcon secret name from global value if it exists
+Get Falcon secret name from global value if it exists.
 */}}
 {{- define "falcon-kac.falconSecretName" -}}
 {{- if and .Values.global.falconSecret.secretName (not .Values.falconSecret.secretName) -}}
@@ -194,15 +202,48 @@ Get Falcon secret name from global value if it exists
 {{- end -}}
 
 {{/*
-Validate one of falcon.cid or falconSecret is configured
+Get the name of the Kubernetes secret that will be created by the CSI driver.
+This is separate from falconSecret.secretName to allow independent configuration.
+*/}}
+{{- define "falcon-kac.csiSecretName" -}}
+{{- $csiSecretName := .Values.secretsStore.secretName | default .Values.global.secretsStore.secretName -}}
+{{- if $csiSecretName -}}
+{{- $csiSecretName -}}
+{{- else -}}
+{{- printf "%s-csi" (include "falcon-kac.fullname" .) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Returns true when Secrets Store CSI is enabled.
+Component-level setting overrides global setting.
+*/}}
+{{- define "falcon-kac.csiEnabled" -}}
+{{- if eq .Values.secretsStore.enabled false -}}
+  {{- /* Explicitly disabled - don't check global */}}
+{{- else if or .Values.secretsStore.enabled .Values.global.secretsStore.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Returns the effective CSI provider (local overrides global).
+*/}}
+{{- define "falcon-kac.csiProvider" -}}
+{{- .Values.secretsStore.provider | default .Values.global.secretsStore.provider -}}
+{{- end -}}
+
+{{/*
+Validate one of falcon.cid, falconSecret, or secretsStore is configured
 */}}
 {{- define "falcon-kac.validateOneOfFalconCidOrFalconSecret" -}}
 {{- $hasCid := include "falcon-kac.falconCid" . -}}
 {{- $secretEnabled := (include "falcon-kac.falconSecretEnabled" . | eq "true") -}}
 {{- $hasSecret := include "falcon-kac.falconSecretName" . -}}
+{{- $csiEnabled := (include "falcon-kac.csiEnabled" . | eq "true") -}}
 
-{{- if and (not $hasCid) (or (not $secretEnabled) (not $hasSecret)) -}}
-{{- fail "Must configure one of falcon.cid or falconSecret with FALCONCTL_OPT_CID data" }}
+{{- if and (not $hasCid) (or (not $secretEnabled) (not $hasSecret)) (not $csiEnabled) -}}
+{{- fail "Must configure one of falcon.cid, falconSecret with FALCONCTL_OPT_CID data, or secretsStore" }}
 {{- end -}}
 
 {{- if and ($hasCid) ($secretEnabled) -}}
@@ -247,7 +288,7 @@ OpenShift SCC name. Uses openshift.sccName if set, otherwise defaults to the ful
 OpenShift mode enabled — true if either chart-level or global is true.
 */}}
 {{- define "falcon-kac.openshiftEnabled" -}}
-{{- or .Values.openshift.enabled (default false .Values.global.openshift.enabled) -}}
+{{- or .Values.openshift.enabled .Values.global.openshift.enabled -}}
 {{- end -}}
 
 {{/*

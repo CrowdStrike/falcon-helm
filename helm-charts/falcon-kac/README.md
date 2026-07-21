@@ -385,3 +385,115 @@ CPU and memory resource requests and limits for each KAC container. Review actua
 | `openshift.enabled`   | Enable OpenShift compatibility mode                                                                         | `false`               |
 | `openshift.createSCC` | Create a `SecurityContextConstraints` resource granting the Deployment service account host network access. | `true`                |
 | `openshift.sccName`   | Name of the SCC to create or bind. Set `createSCC: false` and provide a name to reference an existing SCC.  | `""` (auto-generated) |
+
+## Secrets Store CSI Driver Integration
+
+The chart supports sourcing `FALCONCTL_OPT_CID` (and optionally `FALCONCTL_OPT_PROVISIONING_TOKEN`) from external secret stores via the [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/). Supported providers include:
+- [Azure Key Vault](https://azure.microsoft.com/en-us/products/key-vault) via the [Azure Key Vault provider](https://azure.github.io/secrets-store-csi-driver-provider-azure/)
+- [HashiCorp Vault](https://developer.hashicorp.com/vault) via the [Vault provider](https://developer.hashicorp.com/vault/docs/platform/k8s/csi)
+
+### Configuration Parameters
+
+| Parameter                                       | Description                                                                                                                                                                                        | Default              |
+|:------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------|
+| `secretsStore.enabled`                          | Enable Secrets Store CSI Driver integration. Mutually exclusive with `falcon.cid` and `falconSecret.enabled`.                                                                                      | `false`              |
+| `secretsStore.provider`                         | Secrets Store CSI Driver provider (`azure`, `vault`)                                                                                                                                               | None                 |
+| `secretsStore.secretName`                       | Name of the Kubernetes secret created by the CSI driver to sync secrets into. Defaults to `<release-fullname>-csi` if empty.                                                                       | None                 |
+| `secretsStore.azure.vaultName`                  | Azure Key Vault name                                                                                                                                                                               | None                 |
+| `secretsStore.azure.tenantID`                   | Azure Tenant ID                                                                                                                                                                                    | None                 |
+| `secretsStore.azure.clientID`                   | Azure Workload Identity client ID. Only required if multiple managed identities are assigned to the node.                                                                                          | None                 |
+| `secretsStore.vault.address`                    | HashiCorp Vault server address (e.g. `https://vault.example.com`). Required when `provider: vault`.                                                                                               | None                 |
+| `secretsStore.vault.roleName`                   | Vault Kubernetes auth role name. Required for Kubernetes auth; optional for other auth methods (configure via `additionalParameters`).                                                             | None                 |
+| `secretsStore.vault.secretPath`                 | Full Vault API path to the secret (include `/data/` for KV v2, e.g. `secret/data/crowdstrike`). Required when `provider: vault`.                                                                  | None                 |
+| `secretsStore.vault.cidSecretKey`               | Key name for the CID value in the Vault secret.                                                                                                                                                    | `cid`                |
+| `secretsStore.vault.provisioningTokenSecretKey` | Key name for the provisioning token value in the Vault secret.                                                                                                                                     | `provisioning_token` |
+| `secretsStore.vault.additionalParameters`       | Additional Vault CSI provider parameters (e.g. for alternate auth methods). See [Vault CSI Provider auth methods](https://developer.hashicorp.com/vault/docs/platform/k8s/csi/configurations#authentication-methods). | None   |
+| `secretsStore.provisioningTokenSecretName`      | Name of the secrets store secret containing `FALCONCTL_OPT_PROVISIONING_TOKEN`. Leave empty to omit.                                                                                              | None                 |
+
+### Prerequisites
+
+**For Azure Key Vault:**
+
+The following must be installed and configured on your AKS cluster before enabling this feature:
+
+- [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/getting-started/installation)
+- [Azure Key Vault Provider for Secrets Store CSI Driver](https://azure.github.io/secrets-store-csi-driver-provider-azure/docs/getting-started/installation/)
+- [Azure Workload Identity](https://azure.github.io/azure-workload-identity/docs/installation.html) webhook installed on the cluster
+- AKS cluster with OIDC issuer enabled (`az aks update --enable-oidc-issuer --name <cluster> --resource-group <rg>`)
+- A user-assigned managed identity with `Key Vault Secrets User` role on the vault
+- A federated credential binding the managed identity to the chart's ServiceAccount in the KAC namespace
+
+### Required secrets in Azure Key Vault
+
+Create the following secrets in your Azure Key Vault before enabling the integration:
+
+| Secret name (default)       | Required | Value                          |
+|:----------------------------|:---------|:-------------------------------|
+| `falcon-cid`                | Yes      | CrowdStrike Customer ID (CID)  |
+| `falcon-provisioning-token` | No       | Provisioning token             |
+
+The CID secret must be named `falcon-cid` in the secrets store. The provisioning token secret name is configurable via `secretsStore.provisioningTokenSecretName`.
+
+**For HashiCorp Vault:**
+
+The following must be installed and configured before enabling this feature:
+
+- [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/getting-started/installation)
+- [Vault Provider for Secrets Store CSI Driver](https://developer.hashicorp.com/vault/docs/platform/k8s/csi/installation)
+- HashiCorp Vault server with an appropriate auth method configured (Kubernetes auth, JWT/OIDC, AppRole, AWS IAM, Azure, GCP, etc.)
+- Vault policy granting read access to the secret path
+- For Kubernetes auth: Vault Kubernetes auth role bound to the chart's ServiceAccount in the KAC namespace
+- For other auth methods: Configure via `secretsStore.vault.additionalParameters` (see [Vault CSI Provider auth methods](https://developer.hashicorp.com/vault/docs/platform/k8s/csi/configurations#authentication-methods))
+
+### Required secrets in HashiCorp Vault
+
+Create the following secrets in your Vault instance before enabling the integration:
+
+| Secret key (default)            | Required | Value                          |
+|:--------------------------------|:---------|:-------------------------------|
+| `cid`                           | Yes      | CrowdStrike Customer ID (CID)  |
+| `provisioning_token` (optional) | No       | Provisioning token             |
+
+The secret key names can be customized via `secretsStore.vault.cidSecretKey` and `secretsStore.vault.provisioningTokenSecretKey`.
+
+### Configuration
+
+**Azure Key Vault example:**
+
+```yaml
+secretsStore:
+  enabled: true
+  provider: azure
+  azure:
+    vaultName: "my-keyvault"
+    tenantID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    # clientID is optional - only required if multiple managed identities are assigned
+    clientID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  provisioningTokenSecretName: ""  # leave empty to omit
+
+serviceAccount:
+  annotations:
+    azure.workload.identity/client-id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# Add the Workload Identity label to KAC pods
+labels:
+  azure.workload.identity/use: "true"
+```
+
+**HashiCorp Vault example:**
+
+```yaml
+secretsStore:
+  enabled: true
+  provider: vault
+  vault:
+    address: "https://vault.example.com"
+    roleName: "falcon-kac"
+    secretPath: "secret/data/crowdstrike"        # Full path including /data/ for KV v2
+    cidSecretKey: "cid"                          # Optional, defaults to "cid"
+    provisioningTokenSecretKey: "provisioning_token"  # Optional, defaults to "provisioning_token"
+  provisioningTokenSecretName: ""  # leave empty to omit
+```
+
+> [!NOTE]
+> `secretsStore.enabled` cannot be combined with `falcon.cid` or `falconSecret.enabled`. These are mutually exclusive secret sources.

@@ -106,6 +106,7 @@ The following tables list the Falcon sensor configurable parameters and their de
 | `image.registryConfigJSON`        optional                                                                                                         | iar private registry secret in docker config format                                                                                                            | None                                                                                                       |
 | `azure.enabled`         optional                                                                                                                   | Set to `true` if cluster is Azure AKS or self-managed on Azure nodes.                                                                                          | false                                                                                                      |
 | `azure.azureConfig`          optional                                                                                                              | Azure  config file path                                                                                                                                        | `/etc/kubernetes/azure.json`                                                                               |
+| `podLabels`                  optional                                                                                                              | Additional labels to add to pod metadata. Use to set `azure.workload.identity/use: "true"` for Azure Workload Identity.                                       | `{}`                                                                                                       |
 | `gcp.enabled`                  optional                                                                                                            | Set to `true` if cluster is Google GKE or self-managed on Google Cloud GCP nodes.                                                                              | false                                                                                                      |
 | `exclusions.namespace`                  optional   ( available in falcon-imageanalyzer >= 1.0.8 and Helm Chart v >= 1.1.3)                         | Set the value as a comma separate list of namespaces to be excluded. all pods in that namespace(s) will be excluded                                            | ""                                                                                                         |
 | `exclusions.registry`                  optional   ( available in falcon-imageanalyzer >= 1.0.8 and Helm Chart v >= 1.1.3)                          | Set the value as a comma separate list of registries to be excluded. all images in that registry(s) will be excluded                                           | ""                                                                                                         |
@@ -490,6 +491,122 @@ and a trust-relationship as
 ```
 
 Here `falcon-image-analyzer` is the namespace of IAR and `imageanalyzer-falcon-image-analyzer` is the name of the iar Service Account
+
+## Secrets Store CSI Driver Integration
+
+The chart supports sourcing `AGENT_CLIENT_ID`, `AGENT_CLIENT_SECRET`, and `AGENT_CID` from external secret stores via the [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/). Supported providers include:
+- [Azure Key Vault](https://azure.microsoft.com/en-us/products/key-vault) via the [Azure Key Vault provider](https://azure.github.io/secrets-store-csi-driver-provider-azure/)
+- [HashiCorp Vault](https://developer.hashicorp.com/vault) via the [Vault provider](https://developer.hashicorp.com/vault/docs/platform/k8s/csi)
+
+This avoids storing sensitive values in Helm values or Kubernetes Secrets directly.
+
+### Configuration Parameters
+
+| Parameter                                  | Description                                                                                                                                                                                                                                                                     | Default         |
+|:-------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------|
+| `secretsStore.enabled`                     | Enable Secrets Store CSI Driver integration. Mutually exclusive with `crowdstrikeConfig.clientID`/`clientSecret` and `crowdstrikeConfig.existingSecret`.                                                                                                                       | `false`         |
+| `secretsStore.provider`                    | Secrets Store CSI Driver provider (`azure`, `vault`)                                                                                                                                                                                                                            | None            |
+| `secretsStore.secretName`                  | Name of the Kubernetes secret created by the CSI driver to sync secrets into. Defaults to `<release-fullname>-csi` if empty.                                                                                                                                                   | None            |
+| `secretsStore.azure.vaultName`             | Azure Key Vault name                                                                                                                                                                                                                                                            | None            |
+| `secretsStore.azure.tenantID`              | Azure Tenant ID                                                                                                                                                                                                                                                                 | None            |
+| `secretsStore.azure.clientID`              | Azure Workload Identity client ID. Only required if multiple managed identities are assigned to the node.                                                                                                                                                                      | None            |
+| `secretsStore.vault.address`               | HashiCorp Vault server address (e.g. `https://vault.example.com`). Required when `provider: vault`.                                                                                                                                                                            | None            |
+| `secretsStore.vault.roleName`              | Vault Kubernetes auth role name. Required for Kubernetes auth; optional for other auth methods (configure via `additionalParameters`).                                                                                                                                         | None            |
+| `secretsStore.vault.secretPath`            | Full Vault API path to the secret (include `/data/` for KV v2, e.g. `secret/data/crowdstrike`). Required when `provider: vault`.                                                                                                                                              | None            |
+| `secretsStore.vault.clientIdSecretKey`     | Key name for the client ID value in the Vault secret.                                                                                                                                                                                                                          | `client_id`     |
+| `secretsStore.vault.clientSecretSecretKey` | Key name for the client secret value in the Vault secret.                                                                                                                                                                                                                      | `client_secret` |
+| `secretsStore.vault.cidSecretKey`          | Key name for the CID value in the Vault secret. Only used when CID is not set via `crowdstrikeConfig.cid` or `global.falcon.cid`.                                                                                                                                              | `cid`           |
+| `secretsStore.vault.additionalParameters`  | Additional Vault CSI provider parameters (e.g. for alternate auth methods). See [Vault CSI Provider auth methods](https://developer.hashicorp.com/vault/docs/platform/k8s/csi/configurations#authentication-methods).                                                         | None            |
+
+#### Prerequisites
+
+**For Azure Key Vault:**
+
+The following must be installed and configured on your AKS cluster before enabling this feature:
+
+- [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/getting-started/installation)
+- [Azure Key Vault Provider for Secrets Store CSI Driver](https://azure.github.io/secrets-store-csi-driver-provider-azure/docs/getting-started/installation/)
+- [Azure Workload Identity](https://azure.github.io/azure-workload-identity/docs/installation.html) webhook installed on the cluster
+- AKS cluster with OIDC issuer enabled (`az aks update --enable-oidc-issuer --name <cluster> --resource-group <rg>`)
+- A user-assigned managed identity with `Key Vault Secrets User` role on the vault
+- A federated credential binding the managed identity to the chart's ServiceAccount in the `falcon-image-analyzer` namespace
+
+#### Required secrets in Azure Key Vault
+
+Create the following secrets in your Azure Key Vault before enabling the integration:
+
+| Secret name             | Required | Value                                    |
+|:------------------------|:---------|:-----------------------------------------|
+| `falcon-client-id`      | Yes      | CrowdStrike Falcon OAuth API Client ID   |
+| `falcon-client-secret`  | Yes      | CrowdStrike Falcon OAuth API Client Secret |
+| `falcon-cid`            | Only if `crowdstrikeConfig.cid` and `global.falcon.cid` are not set | CrowdStrike Customer ID (CID) |
+
+The `falcon-client-id` and `falcon-client-secret` secret names are fixed. `falcon-cid` is only fetched from the secrets store when CID is not supplied via `crowdstrikeConfig.cid` or `global.falcon.cid` — if either is set, `AGENT_CID` is sourced from the ConfigMap instead and `falcon-cid` does not need to exist in the secrets store.
+
+**For HashiCorp Vault:**
+
+The following must be installed and configured before enabling this feature:
+
+- [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/getting-started/installation)
+- [Vault Provider for Secrets Store CSI Driver](https://developer.hashicorp.com/vault/docs/platform/k8s/csi/installation)
+- HashiCorp Vault server with an appropriate auth method configured (Kubernetes auth, JWT/OIDC, AppRole, AWS IAM, Azure, GCP, etc.)
+- Vault policy granting read access to the secret path
+- For Kubernetes auth: Vault Kubernetes auth role bound to the chart's ServiceAccount in the `falcon-image-analyzer` namespace
+- For other auth methods: Configure via `secretsStore.vault.additionalParameters` (see [Vault CSI Provider auth methods](https://developer.hashicorp.com/vault/docs/platform/k8s/csi/configurations#authentication-methods))
+
+#### Required secrets in HashiCorp Vault
+
+Create the following secrets in your Vault instance before enabling the integration:
+
+| Secret key (default)        | Required | Value                                    |
+|:----------------------------|:---------|:-----------------------------------------|
+| `client_id`                 | Yes      | CrowdStrike Falcon OAuth API Client ID   |
+| `client_secret`             | Yes      | CrowdStrike Falcon OAuth API Client Secret |
+| `cid`                       | Only if `crowdstrikeConfig.cid` and `global.falcon.cid` are not set | CrowdStrike Customer ID (CID) |
+
+The secret key names can be customized via `secretsStore.vault.clientIdSecretKey`, `secretsStore.vault.clientSecretSecretKey`, and `secretsStore.vault.cidSecretKey`.
+
+#### Configuration
+
+**Azure Key Vault example:**
+
+```yaml
+secretsStore:
+  enabled: true
+  provider: azure
+  azure:
+    vaultName: "my-keyvault"
+    tenantID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    # clientID is optional - only required if multiple managed identities are assigned
+    clientID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+serviceAccount:
+  annotations:
+    azure.workload.identity/client-id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# Add the Workload Identity label to the pod
+podLabels:
+  azure.workload.identity/use: "true"
+```
+
+**HashiCorp Vault example:**
+
+```yaml
+secretsStore:
+  enabled: true
+  provider: vault
+  vault:
+    address: "https://vault.example.com"
+    roleName: "falcon-image-analyzer"            # Kubernetes auth role name
+    secretPath: "secret/data/crowdstrike"        # Full path including /data/ for KV v2
+    clientIdSecretKey: "client_id"               # Optional, defaults to "client_id"
+    clientSecretSecretKey: "client_secret"       # Optional, defaults to "client_secret"
+    cidSecretKey: "cid"                          # Optional, defaults to "cid"
+```
+
+> [!NOTE]
+> `secretsStore.enabled` cannot be combined with `crowdstrikeConfig.clientID`/`clientSecret` or `crowdstrikeConfig.existingSecret`. These are mutually exclusive secret sources for credentials.
+> CID can still be supplied via `crowdstrikeConfig.cid` or `global.falcon.cid` alongside the secrets store — if either is set, `falcon-cid` is not fetched from the secrets store.
 
 ### Authentication for Private Registries
 - If you are using ECR or cloud based Private Registries then assigning the IAM role to the iar service-account in `falcon-image-analyzer` namespace should be enough

@@ -43,6 +43,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
+Labels for test resources — excludes selector labels to prevent adoption by DaemonSet/Deployment.
+*/}}
+{{- define "falcon-sensor.testLabels" -}}
+helm.sh/chart: {{ include "falcon-sensor.chart" . }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
 Selector labels
 */}}
 {{- define "falcon-sensor.selectorLabels" -}}
@@ -234,15 +245,48 @@ Get Falcon secret name from global value if it exists
 {{- end -}}
 
 {{/*
-Validate one of falcon.cid or falconSecret is configured
+Get the name of the Kubernetes secret that will be created by the CSI driver.
+This is separate from falconSecret.secretName to allow independent configuration.
+*/}}
+{{- define "falcon-sensor.csiSecretName" -}}
+{{- $csiSecretName := .Values.secretsStore.secretName | default .Values.global.secretsStore.secretName -}}
+{{- if $csiSecretName -}}
+{{- $csiSecretName -}}
+{{- else -}}
+{{- printf "%s-csi" (include "falcon-sensor.fullname" .) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Returns true when Secrets Store CSI is enabled.
+Component-level setting overrides global setting.
+*/}}
+{{- define "falcon-sensor.csiEnabled" -}}
+{{- if eq .Values.secretsStore.enabled false -}}
+  {{- /* Explicitly disabled - don't check global */}}
+{{- else if or .Values.secretsStore.enabled .Values.global.secretsStore.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Returns the effective CSI provider (local overrides global).
+*/}}
+{{- define "falcon-sensor.csiProvider" -}}
+{{- .Values.secretsStore.provider | default .Values.global.secretsStore.provider -}}
+{{- end -}}
+
+{{/*
+Validate one of falcon.cid, falconSecret, or secretsStore is configured
 */}}
 {{- define "falcon-sensor.validateOneOfFalconCidOrFalconSecret" -}}
 {{- $hasCid := include "falcon-sensor.falconCid" . -}}
 {{- $secretEnabled := (include "falcon-sensor.falconSecretEnabled" . | eq "true") -}}
 {{- $hasSecret := include "falcon-sensor.falconSecretName" . -}}
+{{- $csiEnabled := (include "falcon-sensor.csiEnabled" . | eq "true") -}}
 
-{{- if and (not $hasCid) (or (not $secretEnabled) (not $hasSecret)) -}}
-{{- fail "Must configure one of falcon.cid or falconSecret with FALCONCTL_OPT_CID data" }}
+{{- if and (not $hasCid) (or (not $secretEnabled) (not $hasSecret)) (not $csiEnabled) -}}
+{{- fail "Must configure one of falcon.cid, falconSecret with FALCONCTL_OPT_CID data, or secretsStore" }}
 {{- end -}}
 
 {{- if and ($hasCid) ($secretEnabled) -}}
@@ -353,7 +397,9 @@ OpenShift SCC name for the node DaemonSet.
 OpenShift mode enabled — true if either chart-level or global is true.
 */}}
 {{- define "falcon-sensor.openshiftEnabled" -}}
-{{- or .Values.node.openshift.enabled (default false .Values.global.openshift.enabled) -}}
+{{- if or .Values.node.openshift.enabled .Values.global.openshift.enabled -}}
+{{- "true" -}}
+{{- end -}}
 {{- end -}}
 
 {{/*

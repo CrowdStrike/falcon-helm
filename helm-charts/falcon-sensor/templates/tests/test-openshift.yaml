@@ -5,9 +5,10 @@ metadata:
   name: "{{ include "falcon-sensor.fullname" . }}-test-openshift"
   namespace: {{ include "falcon-sensor.namespace" . }}
   labels:
-    {{- include "falcon-sensor.labels" . | nindent 4 }}
+    {{- include "falcon-sensor.testLabels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test-success
+    sensor.falcon-system.crowdstrike.com/injection: disabled
 spec:
   containers:
     - name: kubectl

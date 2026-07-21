@@ -1,0 +1,309 @@
+{{- if and .Values.testing.enabled (include "falcon-kac.csiEnabled" . | eq "true") -}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "falcon-kac.fullname" . }}-test-csi-integration"
+  namespace: {{ include "falcon-kac.namespace" . }}
+  labels:
+    {{- include "falcon-kac.testLabels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test-success
+    sensor.falcon-system.crowdstrike.com/injection: disabled
+spec:
+  containers:
+    - name: kubectl
+      image: docker.io/bitnami/kubectl
+      command:
+      - /bin/sh
+      - -c
+      - |
+        FAILED=0
+
+        echo "=== CSI Driver Integration Tests ==="
+        echo ""
+
+        # Test 1: SecretProviderClass exists
+        echo "--- Test 1: Checking SecretProviderClass ---"
+        SPC_NAME="{{ include "falcon-kac.fullname" . }}-csi"
+        if ! kubectl get secretproviderclass "${SPC_NAME}" -n "{{ include "falcon-kac.namespace" . }}" > /dev/null 2>&1; then
+            echo "[FAIL]: SecretProviderClass '${SPC_NAME}' not found"
+            FAILED=1
+        else
+            echo "[OK]: SecretProviderClass '${SPC_NAME}' exists"
+
+            # Verify provider is set correctly
+            PROVIDER=$(kubectl get secretproviderclass "${SPC_NAME}" \
+              -n "{{ include "falcon-kac.namespace" . }}" \
+              -o jsonpath='{.spec.provider}' 2>&1)
+            if [ "${PROVIDER}" != "{{ include "falcon-kac.csiProvider" . }}" ]; then
+                echo "[FAIL]: SecretProviderClass provider is '${PROVIDER}', expected '{{ include "falcon-kac.csiProvider" . }}'"
+                FAILED=1
+            else
+                echo "[OK]: SecretProviderClass provider is '${PROVIDER}'"
+            fi
+        fi
+        echo ""
+
+        # Test 2: Deployment has CSI volume configured
+        echo "--- Test 2: Checking Deployment CSI volume configuration ---"
+        # Find deployment by label selector (works with both standalone and umbrella chart)
+        DEPLOY_NAME=$(kubectl get deployment -n "{{ include "falcon-kac.namespace" . }}" \
+          -l "app.kubernetes.io/component=kac" \
+          -o jsonpath='{.items[0].metadata.name}' 2>&1)
+
+        if [ -z "${DEPLOY_NAME}" ]; then
+            echo "[FAIL]: No KAC deployment found"
+            FAILED=1
+        else
+            echo "Found deployment: ${DEPLOY_NAME}"
+
+            # Check if csi-secrets volume exists
+            CSI_VOLUME=$(kubectl get deployment "${DEPLOY_NAME}" \
+              -n "{{ include "falcon-kac.namespace" . }}" \
+              -o jsonpath='{.spec.template.spec.volumes[?(@.name=="csi-secrets")].csi.driver}' 2>&1)
+
+            if [ "${CSI_VOLUME}" != "secrets-store.csi.k8s.io" ]; then
+                echo "[FAIL]: CSI volume driver is '${CSI_VOLUME}', expected 'secrets-store.csi.k8s.io'"
+                FAILED=1
+            else
+                echo "[OK]: CSI volume driver is configured correctly"
+            fi
+
+            # Verify secretProviderClass reference
+            SPC_REF=$(kubectl get deployment "${DEPLOY_NAME}" \
+              -n "{{ include "falcon-kac.namespace" . }}" \
+              -o jsonpath='{.spec.template.spec.volumes[?(@.name=="csi-secrets")].csi.volumeAttributes.secretProviderClass}' 2>&1)
+
+            if [ "${SPC_REF}" != "${SPC_NAME}" ]; then
+                echo "[FAIL]: SecretProviderClass reference is '${SPC_REF}', expected '${SPC_NAME}'"
+                FAILED=1
+            else
+                echo "[OK]: SecretProviderClass reference is correct"
+            fi
+        fi
+        echo ""
+
+        # Test 3: Deployment has CSI volume mount
+        echo "--- Test 3: Checking Deployment CSI volume mount ---"
+        if [ -n "${DEPLOY_NAME}" ]; then
+            VOLUME_MOUNT=$(kubectl get deployment "${DEPLOY_NAME}" \
+              -n "{{ include "falcon-kac.namespace" . }}" \
+              -o jsonpath='{.spec.template.spec.containers[0].volumeMounts[?(@.name=="csi-secrets")].mountPath}' 2>&1)
+
+            if [ "${VOLUME_MOUNT}" != "/mnt/secrets-store" ]; then
+                echo "[FAIL]: CSI volume mount path is '${VOLUME_MOUNT}', expected '/mnt/secrets-store'"
+                FAILED=1
+            else
+                echo "[OK]: CSI volume is mounted at '/mnt/secrets-store'"
+            fi
+        fi
+        echo ""
+
+        # Test 4: Wait for pods to be ready
+        echo "--- Test 4: Waiting for Deployment pods to be ready ---"
+        if [ -n "${DEPLOY_NAME}" ]; then
+            kubectl rollout status deployment "${DEPLOY_NAME}" \
+              -n "{{ include "falcon-kac.namespace" . }}" \
+              --timeout=300s
+
+            if [ $? -ne 0 ]; then
+                echo "[FAIL]: Deployment pods failed to become ready"
+                FAILED=1
+            else
+                echo "[OK]: Deployment pods are ready"
+            fi
+        fi
+        echo ""
+
+        # Test 5: Check CSI volume is mounted in running pods
+        echo "--- Test 5: Checking CSI volume mount in running pods ---"
+        ALL_PODS=$(kubectl get pods -n "{{ include "falcon-kac.namespace" . }}" \
+          -l "app.kubernetes.io/component=kac" \
+          --field-selector=status.phase=Running \
+          -o jsonpath="{.items[*].metadata.name}" 2>&1)
+
+        # Filter out test pods (pods with 'test-' in the name)
+        PODS=""
+        for POD in ${ALL_PODS}; do
+            if [[ ! "${POD}" =~ test- ]]; then
+                PODS="${PODS} ${POD}"
+            fi
+        done
+
+        if [ -z "${PODS}" ]; then
+            echo "[FAIL]: No KAC pods found"
+            FAILED=1
+        else
+            for POD in ${PODS}; do
+                # Check if csi-secrets volume is mounted
+                MOUNT_EXISTS=$(kubectl get pod "${POD}" \
+                  -n "{{ include "falcon-kac.namespace" . }}" \
+                  -o jsonpath='{.spec.volumes[?(@.name=="csi-secrets")].csi.driver}' 2>&1)
+
+                if [ "${MOUNT_EXISTS}" != "secrets-store.csi.k8s.io" ]; then
+                    echo "[FAIL]: Pod '${POD}' does not have CSI volume configured"
+                    FAILED=1
+                else
+                    echo "[OK]: Pod '${POD}' has CSI volume configured"
+                fi
+            done
+        fi
+        echo ""
+
+        # Test 6: Verify FALCONCTL_OPT_CID environment variable
+        echo "--- Test 6: Checking FALCONCTL_OPT_CID environment variable ---"
+        for POD in ${PODS}; do
+            # Check if pod is running
+            POD_STATUS=$(kubectl get pod "${POD}" \
+              -n "{{ include "falcon-kac.namespace" . }}" \
+              -o jsonpath='{.status.phase}' 2>&1)
+
+            if [ "${POD_STATUS}" != "Running" ]; then
+                echo "[WARN]: Pod '${POD}' is not running (${POD_STATUS}), skipping env check"
+                continue
+            fi
+
+            # Check if FALCONCTL_OPT_CID is defined in container spec
+            CID_ENV_DEFINED=$(kubectl get pod "${POD}" \
+              -n "{{ include "falcon-kac.namespace" . }}" \
+              -o jsonpath='{.spec.containers[0].env[?(@.name=="FALCONCTL_OPT_CID")].name}' 2>&1)
+
+            if [ "${CID_ENV_DEFINED}" != "FALCONCTL_OPT_CID" ]; then
+                # Check if it's coming from secretRef (for non-CSI mode)
+                SECRET_REF=$(kubectl get pod "${POD}" \
+                  -n "{{ include "falcon-kac.namespace" . }}" \
+                  -o jsonpath='{.spec.containers[0].envFrom[?(@.secretRef.name)].secretRef.name}' 2>&1)
+
+                if [ -z "${SECRET_REF}" ]; then
+                    echo "[FAIL]: Pod '${POD}' does not have FALCONCTL_OPT_CID environment variable defined"
+                    FAILED=1
+                else
+                    echo "[OK]: Pod '${POD}' has FALCONCTL_OPT_CID via secretRef '${SECRET_REF}'"
+                fi
+            else
+                echo "[OK]: Pod '${POD}' has FALCONCTL_OPT_CID environment variable defined"
+
+                # Check if it's using optional secretKeyRef
+                IS_OPTIONAL=$(kubectl get pod "${POD}" \
+                  -n "{{ include "falcon-kac.namespace" . }}" \
+                  -o jsonpath='{.spec.containers[0].env[?(@.name=="FALCONCTL_OPT_CID")].valueFrom.secretKeyRef.optional}' 2>&1)
+
+                if [ "${IS_OPTIONAL}" = "true" ]; then
+                    echo "[OK]: Pod '${POD}' FALCONCTL_OPT_CID uses optional secretKeyRef"
+                else
+                    echo "[WARN]: Pod '${POD}' FALCONCTL_OPT_CID secretKeyRef is not optional"
+                fi
+            fi
+        done
+        echo ""
+
+        # Test 7: Verify secret is eventually created by CSI driver
+        echo "--- Test 7: Checking if CSI-synced Kubernetes secret is created ---"
+        SECRET_NAME="{{ include "falcon-kac.csiSecretName" . }}"
+
+        # Wait up to 60 seconds for the secret to be created
+        RETRY_COUNT=0
+        MAX_RETRIES=12
+        SECRET_EXISTS=false
+
+        while [ ${RETRY_COUNT} -lt ${MAX_RETRIES} ]; do
+            if kubectl get secret "${SECRET_NAME}" -n "{{ include "falcon-kac.namespace" . }}" > /dev/null 2>&1; then
+                SECRET_EXISTS=true
+                break
+            fi
+            echo "Waiting for secret '${SECRET_NAME}' to be created by CSI driver... (${RETRY_COUNT}/${MAX_RETRIES})"
+            sleep 5
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+        done
+
+        if [ "${SECRET_EXISTS}" = "true" ]; then
+            echo "[OK]: Secret '${SECRET_NAME}' exists"
+
+            # Check if secret has FALCONCTL_OPT_CID key
+            CID_KEY=$(kubectl get secret "${SECRET_NAME}" \
+              -n "{{ include "falcon-kac.namespace" . }}" \
+              -o jsonpath='{.data.FALCONCTL_OPT_CID}' 2>&1)
+
+            if [ -z "${CID_KEY}" ]; then
+                echo "[FAIL]: Secret '${SECRET_NAME}' does not have FALCONCTL_OPT_CID key"
+                FAILED=1
+            else
+                echo "[OK]: Secret '${SECRET_NAME}' contains FALCONCTL_OPT_CID"
+                # Note: We don't decode/display the actual CID value for security
+            fi
+        else
+            echo "[FAIL]: Secret '${SECRET_NAME}' was not created by CSI driver after 60 seconds"
+            echo "This could indicate CSI driver is not running or secrets store authentication failed"
+            FAILED=1
+        fi
+        echo ""
+
+        # Test 8: Verify SecretProviderClass secretObjects configuration
+        echo "--- Test 8: Checking SecretProviderClass secretObjects ---"
+        SECRET_OBJ_NAME=$(kubectl get secretproviderclass "${SPC_NAME}" \
+          -n "{{ include "falcon-kac.namespace" . }}" \
+          -o jsonpath='{.spec.secretObjects[0].secretName}' 2>&1)
+
+        if [ "${SECRET_OBJ_NAME}" != "${SECRET_NAME}" ]; then
+            echo "[FAIL]: SecretProviderClass secretObjects name is '${SECRET_OBJ_NAME}', expected '${SECRET_NAME}'"
+            FAILED=1
+        else
+            echo "[OK]: SecretProviderClass secretObjects references correct secret name"
+        fi
+        echo ""
+
+        # Test 9: Check for CSI-related errors in pod events
+        echo "--- Test 9: Checking for CSI mount errors in pod events ---"
+        for POD in ${PODS}; do
+            CSI_ERRORS=$(kubectl get events -n "{{ include "falcon-kac.namespace" . }}" \
+              --field-selector involvedObject.name="${POD}" \
+              --field-selector type=Warning 2>&1 | grep -i "mount\|csi\|secret" || true)
+
+            if [ -n "${CSI_ERRORS}" ]; then
+                echo "[WARN]: Pod '${POD}' has CSI-related warning events:"
+                echo "${CSI_ERRORS}"
+                # Don't fail on warnings, just report them
+            else
+                echo "[OK]: Pod '${POD}' has no CSI mount errors"
+            fi
+        done
+        echo ""
+
+        {{- if .Values.secretsStore.provisioningTokenSecretName }}
+        # Test 10: Verify provisioning token if configured
+        echo "--- Test 10: Checking provisioning token configuration ---"
+        if [ "${SECRET_EXISTS}" = "true" ]; then
+            TOKEN_KEY=$(kubectl get secret "${SECRET_NAME}" \
+              -n "{{ include "falcon-kac.namespace" . }}" \
+              -o jsonpath='{.data.FALCONCTL_OPT_PROVISIONING_TOKEN}' 2>&1)
+
+            if [ -z "${TOKEN_KEY}" ]; then
+                echo "[FAIL]: Secret '${SECRET_NAME}' does not have FALCONCTL_OPT_PROVISIONING_TOKEN key"
+                FAILED=1
+            else
+                echo "[OK]: Secret '${SECRET_NAME}' contains FALCONCTL_OPT_PROVISIONING_TOKEN"
+            fi
+        fi
+        echo ""
+        {{- end }}
+
+        # Summary
+        echo "=== Test Summary ==="
+        if [ "${FAILED}" -eq 1 ]; then
+            echo "[FAIL]: Some CSI integration tests failed"
+            exit 1
+        else
+            echo "[PASS]: All CSI integration tests passed"
+            exit 0
+        fi
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+  serviceAccountName: {{ include "falcon-kac.fullname" . }}-test-sa
+  restartPolicy: Never
+{{- end -}}

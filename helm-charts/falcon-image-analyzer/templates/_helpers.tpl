@@ -83,6 +83,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
+Labels for test resources — excludes selector labels to prevent adoption by DaemonSet/Deployment.
+*/}}
+{{- define "falcon-image-analyzer.testLabels" -}}
+helm.sh/chart: {{ include "falcon-image-analyzer.chart" . }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
 Selector labels
 */}}
 {{- define "falcon-image-analyzer.selectorLabels" -}}
@@ -273,6 +284,38 @@ false
 {{- end -}}
 
 {{/*
+Get the name of the Kubernetes secret that will be created by the CSI driver.
+This is separate from falconSecret.secretName to allow independent configuration.
+*/}}
+{{- define "falcon-image-analyzer.csiSecretName" -}}
+{{- $csiSecretName := .Values.secretsStore.secretName | default .Values.global.secretsStore.secretName -}}
+{{- if $csiSecretName -}}
+{{- $csiSecretName -}}
+{{- else -}}
+{{- printf "%s-csi" (include "falcon-image-analyzer.fullname" .) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Returns true when Secrets Store CSI is enabled.
+Component-level setting overrides global setting.
+*/}}
+{{- define "falcon-image-analyzer.csiEnabled" -}}
+{{- if eq .Values.secretsStore.enabled false -}}
+  {{- /* Explicitly disabled - don't check global */}}
+{{- else if or .Values.secretsStore.enabled .Values.global.secretsStore.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Returns the effective CSI provider (local overrides global).
+*/}}
+{{- define "falcon-image-analyzer.csiProvider" -}}
+{{- .Values.secretsStore.provider | default .Values.global.secretsStore.provider -}}
+{{- end -}}
+
+{{/*
 Get container registry pull secret from global value if it exists
 */}}
 {{- define "falcon-image-analyzer.imagePullSecret" -}}
@@ -309,7 +352,7 @@ OpenShift SCC name. Uses openshift.sccName if set, otherwise defaults to the ful
 OpenShift mode enabled — true if either chart-level or global is true.
 */}}
 {{- define "falcon-image-analyzer.openshiftEnabled" -}}
-{{- or .Values.openshift.enabled (default false .Values.global.openshift.enabled) -}}
+{{- or .Values.openshift.enabled .Values.global.openshift.enabled -}}
 {{- end -}}
 
 {{/*
@@ -326,10 +369,11 @@ Call this at the top of your main templates to validate all credential inputs.
 {{- define "falcon-image-analyzer.validateCredentials" -}}
 {{- $errors := list -}}
 
-{{- /* Check if credentials are required (no external/global secret) */ -}}
+{{- /* Check if credentials are required (no external/global secret, and no CSI driver) */ -}}
 {{- $globalSecretEnabled := .Values.global.falconSecret.enabled | default false -}}
 {{- $existingSecret := .Values.crowdstrikeConfig.existingSecret | default "" | trim -}}
-{{- $needsCredentials := and (not $globalSecretEnabled) (not $existingSecret) -}}
+{{- $csiEnabled := include "falcon-image-analyzer.csiEnabled" . | eq "true" -}}
+{{- $needsCredentials := and (not $globalSecretEnabled) (not $existingSecret) (not $csiEnabled) -}}
 
 {{- /* Validate clientID and clientSecret are provided as a pair */ -}}
 {{- $clientId := .Values.crowdstrikeConfig.clientID | default "" | trim -}}

@@ -63,6 +63,9 @@ spec:
         {{ $key }}: {{ $value | quote }}
         {{- end }}
         {{- end }}
+        {{- with .Values.node.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
         {{ include "falcon-sensor.workloadDeployAllowlistLabel" . }}
     spec:
     {{- if and (len $imagePullSecretName) (len $registryConfigJson) }}
@@ -183,10 +186,26 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
+        {{- if include "falcon-sensor.csiEnabled" . | eq "true" }}
+          - name: FALCONCTL_OPT_CID
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "falcon-sensor.csiSecretName" . }}
+                key: FALCONCTL_OPT_CID
+                optional: true
+        {{- if .Values.secretsStore.provisioningTokenSecretName }}
+          - name: FALCONCTL_OPT_PROVISIONING_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "falcon-sensor.csiSecretName" . }}
+                key: FALCONCTL_OPT_PROVISIONING_TOKEN
+                optional: true
+        {{- end }}
+        {{- end }}
         envFrom:
         - configMapRef:
             name: {{ include "falcon-sensor.configMapName" . }}
-        {{- if (include "falcon-sensor.falconSecretEnabled" . | eq "true") }}
+        {{- if and (include "falcon-sensor.falconSecretEnabled" . | eq "true") (not (include "falcon-sensor.csiEnabled" . | eq "true")) }}
         - secretRef:
             name: {{ include "falcon-sensor.falconSecretName" . }}
         {{- end }}
@@ -195,6 +214,11 @@ spec:
             mountPath: /opt/CrowdStrike/falconstore
           - name: cs-config
             mountPath: /opt/CrowdStrike/config
+          {{- if (include "falcon-sensor.csiEnabled" .) | eq "true" }}
+          - name: csi-secrets
+            mountPath: /mnt/secrets-store
+            readOnly: true
+          {{- end }}
       volumes:
         - name: falconstore
           hostPath:
@@ -202,6 +226,14 @@ spec:
         - name: cs-config
           hostPath:
             path: /opt/CrowdStrike/config
+        {{- if (include "falcon-sensor.csiEnabled" .) | eq "true" }}
+        - name: csi-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ include "falcon-sensor.fullname" . }}-csi
+        {{- end }}
       serviceAccountName: {{ .Values.serviceAccount.name }}
       terminationGracePeriodSeconds: {{ .Values.node.terminationGracePeriod }}
     {{- if or .Values.node.daemonset.priorityClassName .Values.node.gke.autopilot }}

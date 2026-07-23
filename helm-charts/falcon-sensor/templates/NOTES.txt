@@ -6,6 +6,11 @@ the containerized sensor must be present in a container registry accessible from
 {{- if .Values.node.enabled }}
 CrowdStrike Falcon sensors will deploy across all nodes in your Kubernetes cluster after
 installing this Helm chart. The default image name to deploy a kernel sensor to a node is `falcon-node-sensor`.
+  {{- if .Values.node.backend }}
+
+    {{ "\033[33m" }}WARNING: node.backend is deprecated and will be ignored. The sensor automatically selects eBPF
+    mode and falls back to kernel mode on unsupported kernels. Remove node.backend from your values.{{ "\033[0m" }}
+  {{- end }}
 {{- end }}
 
 {{- if .Values.container.enabled }}

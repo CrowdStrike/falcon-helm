@@ -123,7 +123,7 @@ The following tables list the Falcon sensor configurable parameters and their de
 | `crowdstrikeConfig.cid`         required (unless using `existingSecret`)                                                                          | Customer ID (CID)                                                                                                                                              | None                                                                                                       |
 | `crowdstrikeConfig.dockerAPIToken`  optional                                                                                                       | Crowdstrike Artifactory Image Pull Token for pulling IAR image directly from  `[CROWDSTRIKE_IMAGE_REGISTRY] described below`                                   | None                                                                                                       |
 | `crowdstrikeConfig.existingSecret`      optional                                                                                                   | Name of an existing Kubernetes secret containing IAR credentials. The secret must have keys: `AGENT_CLIENT_ID`, `AGENT_CLIENT_SECRET`, `AGENT_CID`. When set, `clientID`, `clientSecret`, and `cid` values are ignored. | None                                                                                                       |
-| `crowdstrikeConfig.agentRegion`      required                                                                                                      | Region of the CrowdStrike API to connect to value should be one of `us-1/us-2/eu-1/gov1/gov2`                                                                  | None                                                                                                       |
+| `crowdstrikeConfig.agentRegion`      required                                                                                                      | Region of the CrowdStrike API to connect to value should be one of `us-1/us-2/us-3/eu-1/gov1/gov2`                                                                  | None                                                                                                       |
 | `crowdstrikeConfig.agentRuntime`             required ( if daemonset )                                                                             | The underlying runtime of the OS. docker/containerd/podman/crio. ONLY TO BE USED with `daemonset.enabled` = `true`                                             | None                                                                                                       |
 | `crowdstrikeConfig.agentRuntimeSocket`              optional                                                                                       | The unix socket path for the runtime socket. For example: `unix///var/run/docker.sock`. ONLY TO BE USED with ONLY TO BE USED with `daemonset.enabled` = `true` | None                                                                                                       |
 
@@ -170,7 +170,7 @@ For partial secrets, create an existing secret with only some keys (e.g., `AGENT
 
 The `[CROWDSTRIKE_IMAGE_REGISTRY]` can be replaced with below registries based on the environment ( `agentRegion` )
 
-- `us-1 or us-2 or eu-1` = `registry.crowdstrike.com`
+- `us-1 or us-2 or us-3 or eu-1` = `registry.crowdstrike.com`
 - `gov1` = `registry.laggar.gcw.crowdstrike.com`
 - `gov2` = `registry.us-gov-2.crowdstrike.mil`
 
@@ -180,6 +180,7 @@ The `[CROWDSTRIKE_IMAGE_REGISTRY]` can be replaced with below registries based o
 |:-------|:-------------------------------------------------------------------------------------------|
 | `us-1` | `registry.crowdstrike.com/falcon-imageanalyzer/release/falcon-imageanalyzer`               |
 | `us-2` | `registry.crowdstrike.com/falcon-imageanalyzer/release/falcon-imageanalyzer`               |
+| `us-3` | `registry.crowdstrike.com/falcon-imageanalyzer/release/falcon-imageanalyzer`               |
 | `eu-1` | `registry.crowdstrike.com/falcon-imageanalyzer/release/falcon-imageanalyzer`               |
 | `gov1` | `registry.laggar.gcw.crowdstrike.com/falcon-imageanalyzer/release/falcon-imageanalyzer`    |
 | `gov2` | `registry.us-gov-2.crowdstrike.mil/falcon-imageanalyzer/release/falcon-imageanalyzer`      |
@@ -226,7 +227,7 @@ crowdstrikeConfig:
   clientID: "xxxxxxxxxxx"
   clientSecret: "yyyyyyyyyyyy"
   clusterName: my-test-cluster
-  agentRegion: us-1 or us-2 or eu-1 or gov1 or gov2
+  agentRegion: us-1 or us-2 or us-3 or eu-1 or gov1 or gov2
   cid: MYCID-XY
   dockerAPIToken: asdfsfsdfsfsd ( Crowdstrike Artifacotry Token for IAR Image )
 
@@ -266,7 +267,7 @@ crowdstrikeConfig:
   clientID: "xxxxxxxxxxx"
   clientSecret: "yyyyyyyyyyyy"
   clusterName: my-test-cluster
-  agentRegion: us-1 or us-2 or eu-1 or gov1 or gov2
+  agentRegion: us-1 or us-2 or us-3 or eu-1 or gov1 or gov2
   agentRuntime: containerd or crio or podman or docker
   cid: MYCID-XY
   dockerAPIToken: asdfsfsdfsfsd ( Crowdstrike Artifacotry Token for IAR Image )
@@ -291,6 +292,7 @@ If your network requires it, configure your allowlists with your assigned CrowdS
 |:----:|:--:|:---------------------------------------------------:|----------------------------------------|
 | US-1 | https://api.crowdstrike.com |    https://container-upload.us-1.crowdstrike.com    | https://api.crowdstrike.com            |
 | US-2 | https://api.us-2.crowdstrike.com |    https://container-upload.us-2.crowdstrike.com    | https://api.us-2.crowdstrike.com       |
+| US-3 | https://api.us-3.crowdstrike.com |    https://container-upload.us-3.crowdstrike.com    | https://api.us-3.crowdstrike.com       |
 | EU-1 | https://api.eu-1.crowdstrike.com |    https://container-upload.eu-1.crowdstrike.com    | https://api.eu-1.crowdstrike.com       |
 | US-GOV-1 | https://api.laggar.gcw.crowdstrike.com | https://container-upload.laggar.gcw.crowdstrike.com | https://api.laggar.gcw.crowdstrike.com |
 | US-GOV-2 | https://api.us-gov-2.crowdstrike.mil |  https://container-upload.us-gov-2.crowdstrike.mil  | https://api.us-gov-2.crowdstrike.mil   |
@@ -301,6 +303,7 @@ If your network requires it, configure your allowlists with your assigned CrowdS
 |:----:|:--:|:--------------------------------------:|
 | US-1 | https://api.crowdstrike.com |      https://api.crowdstrike.com       |
 | US-2 | https://api.us-2.crowdstrike.com |    https://api.us-2.crowdstrike.com    |
+| US-3 | https://api.us-3.crowdstrike.com |    https://api.us-3.crowdstrike.com    |
 | EU-1 | https://api.eu-1.crowdstrike.com |    https://api.eu-1.crowdstrike.com    |
 | US-GOV-1 | https://api.laggar.gcw.crowdstrike.com | https://api.laggar.gcw.crowdstrike.com |
 | US-GOV-2 | https://api.us-gov-2.crowdstrike.mil |  https://api.us-gov-2.crowdstrike.mil  |

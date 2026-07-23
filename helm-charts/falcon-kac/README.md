@@ -68,6 +68,7 @@ cloud's network addresses:
 |-------------------|--------------------------------------------------------------------------|
 | US-1              | ts01-b.cloudsink.net<br/>lfodown01-b.cloudsink.net                       |
 | US-2              | ts01-gyr-maverick.cloudsink.net<br/>lfodown01-gyr-maverick.cloudsink.net |
+| US-3              | ts01-us3.cloudsink.net<br/>lfodown01-us3.cloudsink.net                   |
 | EU-1              | ts01-lanner-lion.cloudsink.net<br/>lfodown01-lanner-lion.cloudsink.net   |
 | US-GOV-1          | ts01-laggar-gcw.cloudsink.net<br/>lfodown01-laggar-gcw.cloudsink.net     |
 

@@ -1,0 +1,87 @@
+{{- if .Values.testing.enabled -}}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "falcon-image-analyzer.fullname" . }}-test-helm-chart-env"
+  namespace: {{ include "falcon-image-analyzer.namespace" . }}
+  labels:
+    {{- include "falcon-image-analyzer.testLabels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test-success
+    sensor.falcon-system.crowdstrike.com/injection: disabled
+spec:
+  containers:
+    - name: kubectl
+      image: docker.io/bitnami/kubectl
+      imagePullPolicy: IfNotPresent
+      command:
+      - /bin/sh
+      - -c
+      - |
+        FAILED=0
+        EXPECTED_CHART="{{ include "falcon-image-analyzer.chart" . }}"
+
+        echo "--- Waiting for Image Analyzer pods to initialize ---"
+        {{- if .Values.daemonset.enabled }}
+        kubectl rollout status daemonset \
+          "{{ include "falcon-image-analyzer.fullname" . }}" \
+          -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+          --timeout=300s
+        {{- else }}
+        kubectl wait deployment \
+          "{{ include "falcon-image-analyzer.fullname" . }}" \
+          -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+          --for=condition=Available \
+          --timeout=300s
+        {{- end }}
+
+        PODS=$(kubectl get pods -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+          -l "app.kubernetes.io/name={{ include "falcon-image-analyzer.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" \
+          -o json 2>/dev/null | jq -r '.items[] | select(.metadata.annotations["helm.sh/hook"] == null) | .metadata.name')
+        if [ -z "${PODS}" ]; then
+            echo "[FAIL]: No Image Analyzer pods found"
+            exit 1
+        fi
+
+        echo "--- Checking HELM_CHART env var in Image Analyzer pod spec ---"
+        for POD in ${PODS}; do
+            ENV_NAME=$(kubectl get pod "${POD}" \
+              -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+              -o jsonpath='{.spec.containers[0].env[?(@.name=="HELM_CHART")].name}' 2>&1)
+            if [ "${ENV_NAME}" != "HELM_CHART" ]; then
+                echo "[FAIL]: Pod '${POD}' does not have HELM_CHART env var defined"
+                FAILED=1
+                continue
+            fi
+            echo "[OK]: Pod '${POD}' has HELM_CHART env var defined in spec"
+
+            # Verify the fieldRef will resolve to the expected helm.sh/chart label value
+            CHART_LABEL=$(kubectl get pod "${POD}" \
+              -n "{{ include "falcon-image-analyzer.namespace" . }}" \
+              -o jsonpath="{.metadata.labels.helm\.sh/chart}" 2>&1)
+            if [ "${CHART_LABEL}" != "${EXPECTED_CHART}" ]; then
+                echo "[FAIL]: Pod '${POD}' helm.sh/chart label is '${CHART_LABEL}', expected '${EXPECTED_CHART}'"
+                FAILED=1
+            else
+                echo "[OK]: Pod '${POD}' helm.sh/chart='${CHART_LABEL}' matches expected value"
+            fi
+        done
+
+        if [ "${FAILED}" -eq 1 ]; then
+            exit 1
+        fi
+        exit 0
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        seccompProfile:
+          type: RuntimeDefault
+        capabilities:
+          drop:
+            - ALL
+  serviceAccountName: {{ include "falcon-image-analyzer.fullname" . }}-test-sa
+  restartPolicy: Never
+{{- end -}}

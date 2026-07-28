@@ -1,0 +1,90 @@
+{{- if .Values.testing.enabled -}}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "falcon-kac.fullname" . }}-test-helm-chart-env"
+  namespace: {{ include "falcon-kac.namespace" . }}
+  labels:
+    {{- include "falcon-kac.testLabels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test-success
+    sensor.falcon-system.crowdstrike.com/injection: disabled
+spec:
+  containers:
+    - name: kubectl
+      image: docker.io/bitnami/kubectl
+      imagePullPolicy: IfNotPresent
+      command:
+      - /bin/sh
+      - -c
+      - |
+        FAILED=0
+        EXPECTED_CHART="{{ include "falcon-kac.chart" . }}"
+
+        echo "--- Waiting for KAC pods to initialize ---"
+        kubectl wait deployment \
+          "{{ include "falcon-kac.name" . }}" \
+          -n "{{ include "falcon-kac.namespace" . }}" \
+          --for=condition=Available \
+          --timeout=300s
+
+        PODS=$(kubectl get pods -n "{{ include "falcon-kac.namespace" . }}" \
+          -l "app={{ include "falcon-kac.name" . }}" \
+          -o json 2>/dev/null | jq -r '.items[] | select(.metadata.annotations["helm.sh/hook"] == null) | .metadata.name')
+        if [ -z "${PODS}" ]; then
+            echo "[FAIL]: No KAC pods found"
+            exit 1
+        fi
+
+        echo "--- Checking HELM_CHART env var in all KAC containers ---"
+        for POD in ${PODS}; do
+            # falcon-client is containers[0], falcon-watcher is containers[1], falcon-ac is containers[2]
+            for IDX in 0 1 2; do
+                CONTAINER_NAME=$(kubectl get pod "${POD}" \
+                  -n "{{ include "falcon-kac.namespace" . }}" \
+                  -o jsonpath="{.spec.containers[${IDX}].name}" 2>&1)
+                if [ -z "${CONTAINER_NAME}" ]; then
+                    continue
+                fi
+
+                ENV_NAME=$(kubectl get pod "${POD}" \
+                  -n "{{ include "falcon-kac.namespace" . }}" \
+                  -o jsonpath="{.spec.containers[${IDX}].env[?(@.name==\"HELM_CHART\")].name}" 2>&1)
+                if [ "${ENV_NAME}" != "HELM_CHART" ]; then
+                    echo "[FAIL]: Pod '${POD}' container '${CONTAINER_NAME}' does not have HELM_CHART env var defined"
+                    FAILED=1
+                    continue
+                fi
+                echo "[OK]: Pod '${POD}' container '${CONTAINER_NAME}' has HELM_CHART env var defined in spec"
+            done
+
+            # Verify the fieldRef will resolve to the expected helm.sh/chart label value
+            CHART_LABEL=$(kubectl get pod "${POD}" \
+              -n "{{ include "falcon-kac.namespace" . }}" \
+              -o jsonpath="{.metadata.labels.helm\.sh/chart}" 2>&1)
+            if [ "${CHART_LABEL}" != "${EXPECTED_CHART}" ]; then
+                echo "[FAIL]: Pod '${POD}' helm.sh/chart label is '${CHART_LABEL}', expected '${EXPECTED_CHART}'"
+                FAILED=1
+            else
+                echo "[OK]: Pod '${POD}' helm.sh/chart='${CHART_LABEL}' matches expected value"
+            fi
+        done
+
+        if [ "${FAILED}" -eq 1 ]; then
+            exit 1
+        fi
+        exit 0
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        seccompProfile:
+          type: RuntimeDefault
+        capabilities:
+          drop:
+            - ALL
+  serviceAccountName: {{ include "falcon-kac.fullname" . }}-test-sa
+  restartPolicy: Never
+{{- end -}}

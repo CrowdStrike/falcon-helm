@@ -138,6 +138,10 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
+        - name: HELM_CHART
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['helm.sh/chart']
         {{- if .Values.falconImageAnalyzerNamespace }}
         - name: __CS_IAR_NAMESPACE
           value: {{ .Values.falconImageAnalyzerNamespace | quote }}
@@ -235,6 +239,10 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
+        - name: HELM_CHART
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['helm.sh/chart']
         {{- if (include "falcon-kac.csiEnabled" .) | eq "true" }}
         - name: FALCONCTL_OPT_CID
           valueFrom:
@@ -298,8 +306,12 @@ spec:
         - mountPath: /var/falcon-watcher
           name: crowdstrike-falcon-vol2
       - name: falcon-ac
-        {{- if (include "falcon-kac.csiEnabled" .) | eq "true" }}
         env:
+        - name: HELM_CHART
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['helm.sh/chart']
+        {{- if (include "falcon-kac.csiEnabled" .) | eq "true" }}
         - name: FALCONCTL_OPT_CID
           valueFrom:
             secretKeyRef:

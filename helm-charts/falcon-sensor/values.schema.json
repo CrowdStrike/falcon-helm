@@ -20,7 +20,7 @@
                         "null",
                         "string"
                     ],
-                    "enum": [null, "", "us-1", "us-2", "eu-1", "us-gov-1", "us-gov-2"]
+                    "enum": [null, "", "us-1", "us-2", "us-3", "eu-1", "us-gov-1", "us-gov-2"]
                 },
                 "trace": {
                     "type": [

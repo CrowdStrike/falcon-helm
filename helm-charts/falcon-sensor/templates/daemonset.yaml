@@ -144,10 +144,6 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
-          - name: HELM_CHART
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.labels['helm.sh/chart']
       containers:
       - name: falcon-node-sensor
         image: "{{ include "falcon-sensor.image" . }}"
@@ -188,10 +184,6 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
-          - name: HELM_CHART
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.labels['helm.sh/chart']
         {{- if include "falcon-sensor.csiEnabled" . | eq "true" }}
           - name: FALCONCTL_OPT_CID
             valueFrom:

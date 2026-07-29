@@ -41,6 +41,8 @@ data:
   {{- end }}
   {{- end }}
 
+  HELM_CHART: {{ include "falcon-sensor.chart" . | quote }}
+
   {{- if .Values.container.enabled }}
   CP_NAMESPACE: {{ include "falcon-sensor.namespace" . }}
   FALCON_IMAGE_PULL_POLICY: "{{ .Values.container.image.pullPolicy }}"

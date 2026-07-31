@@ -464,8 +464,8 @@
                 },
                 "provider": {
                     "type": "string",
-                    "description": "CSI provider: azure or vault",
-                    "enum": ["", "azure", "vault"]
+                    "description": "CSI provider: azure",
+                    "enum": ["", "azure"]
                 },
                 "secretName": {
                     "type": "string",
@@ -477,17 +477,6 @@
                         "vaultName": { "type": "string" },
                         "tenantID": { "type": "string" },
                         "clientID": { "type": "string" }
-                    }
-                },
-                "vault": {
-                    "type": "object",
-                    "properties": {
-                        "address": { "type": "string" },
-                        "roleName": { "type": "string" },
-                        "secretPath": { "type": "string" },
-                        "cidSecretKey": { "type": "string" },
-                        "provisioningTokenSecretKey": { "type": "string" },
-                        "additionalParameters": { "type": "object" }
                     }
                 },
                 "provisioningTokenSecretName": {

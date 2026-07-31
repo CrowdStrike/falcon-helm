@@ -62,10 +62,11 @@ The Falcon Helm chart has been tested to deploy on the following Kubernetes dist
 
 | Helm Chart Version | Falcon Sensor Version | Notes                                                                                   |
 |:-------------------|:----------------------|:----------------------------------------------------------------------------------------|
-| `1.36.0`           | `>= 7.35`             | —                                                                                       |
-| `1.35.0`           | `>= 7.35`             | Added Falcon Data Protection for Cloud support for self-managed Kubernetes clusters.    |
-| `1.34.2`           | `>= 7.31`             | —                                                                                       |
-| `1.34.1`           | `>= 7.31`             | falcon-sensor images now use a non-regionalized unified image repo, starting with 7.31. |
+| `1.37.0`           | `>= 7.40`             | Deprecated `backend` option. Added new CrowdStrike config volume.                       |
+| `1.36.0`           | `>= 7.35, < 7.40`     | —                                                                                       |
+| `1.35.0`           | `>= 7.35, < 7.40`     | Added Falcon Data Protection for Cloud support for self-managed Kubernetes clusters.    |
+| `1.34.2`           | `>= 7.31, < 7.40`     | —                                                                                       |
+| `1.34.1`           | `>= 7.31, < 7.40`     | falcon-sensor images now use a non-regionalized unified image repo, starting with 7.31. |
 
 ### Helm (falcon-sensor) × Falcon Container Sensor
 
@@ -73,6 +74,7 @@ The Falcon Helm chart has been tested to deploy on the following Kubernetes dist
 
 | Helm Chart Version | Falcon Container Sensor Version | Notes                                                                                      |
 |:-------------------|:--------------------------------|:-------------------------------------------------------------------------------------------|
+| `1.37.0`           | `>= 7.37`                       | —                                                                                          |
 | `1.36.0`           | `>= 7.37`                       | Added AI-DR support.                                                                       |
 | `1.35.0`           | `>= 7.31`                       | —                                                                                          |
 | `1.34.2`           | `>= 7.31`                       | falcon-container images now use a non-regionalized unified image repo, starting with 7.33. |

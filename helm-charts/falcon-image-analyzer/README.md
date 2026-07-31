@@ -49,6 +49,7 @@ The Falcon Image Analyzer Helm chart has been tested to deploy on the following 
 
 | Helm Chart Version | Falcon Image Analyzer Version | Notes                                                                                            |
 |:-------------------|:------------------------------|:-------------------------------------------------------------------------------------------------|
+| `1.2.0`            | `>= 1.0.24`                   | —                                                                                                |
 | `1.1.20`           | `>= 1.0.24`                   | falcon-imageanalyzer images now use a non-regionalized unified image repo, starting with 1.0.24. |
 | `1.1.19`           | `>= 1.0.21`                   | —                                                                                                |
 | `1.1.18`           | `>= 1.0.21`                   | —                                                                                                |

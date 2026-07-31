@@ -52,11 +52,12 @@ The Falcon Kubernetes Admission Controller has been deployed and tested on these
 
 ## Helm Chart Support for Falcon Admission Controller Versions
 
-| Helm Chart Version | Falcon Admission Controller Version | Notes                                                                                                                                                                                   |
-|:-------------------|:------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `1.6.0`            | `>= 7.33`                           | Added KAC extended resource monitoring capabilities which require additional RBAC permissions.<br/>falcon-kac images now use a non-regionalized unified image repo, starting with 7.33. |
-| `1.5.2`            | `<= 7.32`                           | Added `falconImageAnalyzerNamespace` param to support communication with Falcon Image Analyzer.                                                                                         |
-| `1.5.1`            | `<= 7.32`                           | —                                                                                                                                                                                       |
+| Helm Chart Version | Falcon KAC Version | Notes                                                                                                                                                                                   |
+|:-------------------|:-------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `1.7.0`            | `>= 7.33`          | Fixes missing endpointslices permissions                                                                                                                                                |
+| `1.6.0`            | `>= 7.33`          | Added KAC extended resource monitoring capabilities which require additional RBAC permissions.<br/>falcon-kac images now use a non-regionalized unified image repo, starting with 7.33. |
+| `1.5.2`            | `<= 7.32`          | Added `falconImageAnalyzerNamespace` param to support communication with Falcon Image Analyzer.                                                                                         |
+| `1.5.1`            | `<= 7.32`          | —                                                                                                                                                                                       |
 
 > [!IMPORTANT]
 > Falcon KAC will have multi-arch images starting with version `7.26.x`. Falcon KAC helm chart versions 1.4.x+ adds

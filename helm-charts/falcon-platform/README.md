@@ -22,6 +22,7 @@ unified deployment and configuration.
   - [Global Configuration](#global-configuration)
   - [Component-Specific Configuration](#component-specific-configuration)
   - [Using Existing Kubernetes Secrets](#using-existing-kubernetes-secrets)
+  - [Secrets Store CSI Driver Integration](#secrets-store-csi-driver-integration)
 - [Upgrade Strategy](#upgrade-strategy)
   - [Install/Reinstall a Single Component](#installreinstall-a-single-component)
   - [Upgrade the Falcon Platform Helm Chart Version](#upgrade-the-falcon-platform-helm-chart-version)
@@ -530,8 +531,6 @@ helm install falcon-platform crowdstrike/falcon-platform --version 1.0.0 -n falc
   --set falcon-image-analyzer.crowdstrikeConfig.agentRuntime=$IAR_AGENT_RUNTIME \
   --set falcon-image-analyzer.crowdstrikeConfig.clusterName=$CLUSTER_NAME
 ```
-
-## Upgrade Strategy
 
 ### Secrets Store CSI Driver Integration
 

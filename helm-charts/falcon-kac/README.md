@@ -20,14 +20,16 @@ Kubernetes cluster.
   - [Install Falcon KAC Helm Chart](#install-falcon-kac-helm-chart)
   - [Update Falcon KAC](#update-falcon-kac)
   - [Uninstall Falcon KAC](#uninstall-falcon-kac)
-- [Falcon Configuration Options](#falcon-configuration-options)
+- [Configuration Options](#configuration-options)
   - [Image Configuration](#image-configuration)
-  - [Falcon Sensor](#falcon-sensor)
+  - [Falcon Configuration Options](#falcon-configuration-options)
+  - [Secret Management](#secret-management)
+    - [Using Existing Kubernetes Secrets](#using-existing-kubernetes-secrets)
+  - [Secrets Store CSI Driver Integration](#secrets-store-csi-driver-integration)
   - [Admission Control](#admission-control)
   - [Cluster Visibility](#cluster-visibility)
   - [Webhook Configuration](#webhook-configuration)
   - [Image Analyzer Integration](#image-analyzer-integration)
-  - [Secret Management](#secret-management)
   - [Networking](#networking)
   - [Certificate Management](#certificate-management)
   - [Deployment Configuration](#deployment-configuration)
@@ -52,7 +54,6 @@ The Falcon Kubernetes Admission Controller has been deployed and tested on these
 
 | Helm Chart Version | Falcon Admission Controller Version | Notes                                                                                                                                                                                   |
 |:-------------------|:------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `1.6.1`            | `>= 7.33`                           | —                                                                                                                                                                                       |
 | `1.6.0`            | `>= 7.33`                           | Added KAC extended resource monitoring capabilities which require additional RBAC permissions.<br/>falcon-kac images now use a non-regionalized unified image repo, starting with 7.33. |
 | `1.5.2`            | `<= 7.32`                           | Added `falconImageAnalyzerNamespace` param to support communication with Falcon Image Analyzer.                                                                                         |
 | `1.5.1`            | `<= 7.32`                           | —                                                                                                                                                                                       |
@@ -239,7 +240,7 @@ Then proceed with the helm upgrade command including the `--set clusterName=<you
   kubectl delete ns falcon-kac
   ```
 
-# Falcon Configuration Options
+# Configuration Options
 
 The following sections list all configurable Falcon KAC parameters grouped by function.
 
@@ -256,7 +257,7 @@ Settings that control which container image is pulled and how it is authenticate
 | `image.pullSecrets`        | List of existing Kubernetes image pull secret names                                                          | None          |
 | `image.registryConfigJSON` | Base64-encoded Docker `config.json` used to create an image pull secret. Conflicts with `image.pullSecrets`. | None          |
 
-## Falcon Sensor
+## Falcon Configuration Options
 
 Core sensor identity and connectivity settings passed to `falconctl`.
 
@@ -272,6 +273,114 @@ Core sensor identity and connectivity settings passed to `falconctl`.
 | `falcon.tags`               | Comma-separated list of tags for sensor grouping     | None                                               |
 | `falcon.provisioning_token` | Provisioning token value                             | None                                               |
 | `clusterName`               | Manually set cluster name when auto-discovery fails. | None (auto-discovery used)                         |
+
+## Secret Management
+
+Options for supplying sensitive Falcon values (CID, etc.) via a Kubernetes Secret instead of plain values.
+
+| Parameter                 | Description                                                                                                            | Default |
+|:--------------------------|:-----------------------------------------------------------------------------------------------------------------------|:--------|
+| `falconSecret.enabled`    | Use an existing Kubernetes secret to supply sensitive Falcon values. Must be `true` when `falcon.cid` is not set.      | `false` |
+| `falconSecret.secretName` | Name of the existing secret. Must be in the same namespace as the KAC deployment and must contain `FALCONCTL_OPT_CID`. | None    |
+
+### Using Existing Kubernetes Secrets
+
+Instead of specifying the CID directly in Helm values, you can use an existing Kubernetes secret.
+
+The secret must be in the same namespace as the KAC deployment and must contain the following keys:
+- `FALCONCTL_OPT_CID`: Falcon Customer ID (CID) — required
+- `FALCONCTL_OPT_PROVISIONING_TOKEN`: Falcon provisioning token — optional
+
+Create the namespace and secret before installing:
+
+```bash
+kubectl create namespace falcon-kac
+
+kubectl create secret generic $FALCON_SECRET_NAME -n falcon-kac \
+  --from-literal=FALCONCTL_OPT_CID=$FALCON_CID
+```
+
+Then reference the secret during installation:
+
+```bash
+helm install falcon-kac crowdstrike/falcon-kac \
+  -n falcon-kac --create-namespace \
+  --set falconSecret.enabled=true \
+  --set falconSecret.secretName=$FALCON_SECRET_NAME \
+  --set image.repository=$KAC_IMAGE_REPO \
+  --set image.tag=$KAC_IMAGE_TAG
+```
+
+> [!NOTE]
+> When `falconSecret.enabled` is `true`, `falcon.cid` must not be set. These are mutually exclusive.
+
+## Secrets Store CSI Driver Integration
+
+The chart supports sourcing `FALCONCTL_OPT_CID` (and optionally `FALCONCTL_OPT_PROVISIONING_TOKEN`) from external secret stores via the [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/). Supported providers include:
+- [Azure Key Vault](https://azure.microsoft.com/en-us/products/key-vault) via the [Azure Key Vault provider](https://azure.github.io/secrets-store-csi-driver-provider-azure/)
+
+### Configuration Parameters
+
+| Parameter                                       | Description                                                                                                                                                                                        | Default              |
+|:------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------|
+| `secretsStore.enabled`                          | Enable Secrets Store CSI Driver integration. Mutually exclusive with `falcon.cid` and `falconSecret.enabled`.                                                                                      | `false`              |
+| `secretsStore.provider`                         | Secrets Store CSI Driver provider (`azure`)                                                                                                                                                        | None                 |
+| `secretsStore.secretName`                       | Name of the Kubernetes secret created by the CSI driver to sync secrets into. Defaults to `<release-fullname>-csi` if empty.                                                                       | None                 |
+| `secretsStore.azure.vaultName`                  | Azure Key Vault name                                                                                                                                                                               | None                 |
+| `secretsStore.azure.tenantID`                   | Azure Tenant ID                                                                                                                                                                                    | None                 |
+| `secretsStore.azure.clientID`                   | Azure Workload Identity client ID. Only required if multiple managed identities are assigned to the node.                                                                                          | None                 |
+| `secretsStore.provisioningTokenSecretName`      | Name of the secrets store secret containing `FALCONCTL_OPT_PROVISIONING_TOKEN`. Leave empty to omit.                                                                                              | None                 |
+
+### Prerequisites
+
+**For Azure Key Vault:**
+
+The following must be installed and configured on your AKS cluster before enabling this feature:
+
+- [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/getting-started/installation)
+- [Azure Key Vault Provider for Secrets Store CSI Driver](https://azure.github.io/secrets-store-csi-driver-provider-azure/docs/getting-started/installation/)
+- [Azure Workload Identity](https://azure.github.io/azure-workload-identity/docs/installation.html) webhook installed on the cluster
+- AKS cluster with OIDC issuer enabled (`az aks update --enable-oidc-issuer --name <cluster> --resource-group <rg>`)
+- A user-assigned managed identity with `Key Vault Secrets User` role on the vault
+- A federated credential binding the managed identity to the chart's ServiceAccount in the KAC namespace
+
+### Required secrets in Azure Key Vault
+
+Create the following secrets in your Azure Key Vault before enabling the integration:
+
+| Secret name (default)       | Required | Value                          |
+|:----------------------------|:---------|:-------------------------------|
+| `falcon-cid`                | Yes      | CrowdStrike Customer ID (CID)  |
+| `falcon-provisioning-token` | No       | Provisioning token             |
+
+The CID secret must be named `falcon-cid` in the secrets store. The provisioning token secret name is configurable via `secretsStore.provisioningTokenSecretName`.
+
+### Configuration
+
+**Azure Key Vault example:**
+
+```yaml
+secretsStore:
+  enabled: true
+  provider: azure
+  azure:
+    vaultName: "my-keyvault"
+    tenantID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    # clientID is optional - only required if multiple managed identities are assigned
+    clientID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  provisioningTokenSecretName: ""  # leave empty to omit
+
+serviceAccount:
+  annotations:
+    azure.workload.identity/client-id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# Add the Workload Identity label to KAC pods
+labels:
+  azure.workload.identity/use: "true"
+```
+
+> [!NOTE]
+> `secretsStore.enabled` cannot be combined with `falcon.cid` or `falconSecret.enabled`. These are mutually exclusive secret sources.
 
 ## Admission Control
 
@@ -308,15 +417,6 @@ Parameters for integrating KAC with other CrowdStrike components deployed in the
 | Parameter                      | Description                                                                                    | Default                 |
 |:-------------------------------|:-----------------------------------------------------------------------------------------------|:------------------------|
 | `falconImageAnalyzerNamespace` | Namespace where the Falcon Image Analyzer is deployed. Used for cross-component communication. | `falcon-image-analyzer` |
-
-## Secret Management
-
-Options for supplying sensitive Falcon values (CID, etc.) via a Kubernetes Secret instead of plain values.
-
-| Parameter                 | Description                                                                                                            | Default |
-|:--------------------------|:-----------------------------------------------------------------------------------------------------------------------|:--------|
-| `falconSecret.enabled`    | Use an existing Kubernetes secret to supply sensitive Falcon values. Must be `true` when `falcon.cid` is not set.      | `false` |
-| `falconSecret.secretName` | Name of the existing secret. Must be in the same namespace as the KAC deployment and must contain `FALCONCTL_OPT_CID`. | None    |
 
 ## Networking
 
@@ -386,71 +486,3 @@ CPU and memory resource requests and limits for each KAC container. Review actua
 | `openshift.enabled`   | Enable OpenShift compatibility mode                                                                         | `false`               |
 | `openshift.createSCC` | Create a `SecurityContextConstraints` resource granting the Deployment service account host network access. | `true`                |
 | `openshift.sccName`   | Name of the SCC to create or bind. Set `createSCC: false` and provide a name to reference an existing SCC.  | `""` (auto-generated) |
-
-## Secrets Store CSI Driver Integration
-
-The chart supports sourcing `FALCONCTL_OPT_CID` (and optionally `FALCONCTL_OPT_PROVISIONING_TOKEN`) from external secret stores via the [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/). Supported providers include:
-- [Azure Key Vault](https://azure.microsoft.com/en-us/products/key-vault) via the [Azure Key Vault provider](https://azure.github.io/secrets-store-csi-driver-provider-azure/)
-
-### Configuration Parameters
-
-| Parameter                                       | Description                                                                                                                                                                                        | Default              |
-|:------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------|
-| `secretsStore.enabled`                          | Enable Secrets Store CSI Driver integration. Mutually exclusive with `falcon.cid` and `falconSecret.enabled`.                                                                                      | `false`              |
-| `secretsStore.provider`                         | Secrets Store CSI Driver provider (`azure`)                                                                                                                                                        | None                 |
-| `secretsStore.secretName`                       | Name of the Kubernetes secret created by the CSI driver to sync secrets into. Defaults to `<release-fullname>-csi` if empty.                                                                       | None                 |
-| `secretsStore.azure.vaultName`                  | Azure Key Vault name                                                                                                                                                                               | None                 |
-| `secretsStore.azure.tenantID`                   | Azure Tenant ID                                                                                                                                                                                    | None                 |
-| `secretsStore.azure.clientID`                   | Azure Workload Identity client ID. Only required if multiple managed identities are assigned to the node.                                                                                          | None                 |
-| `secretsStore.provisioningTokenSecretName`      | Name of the secrets store secret containing `FALCONCTL_OPT_PROVISIONING_TOKEN`. Leave empty to omit.                                                                                              | None                 |
-
-### Prerequisites
-
-**For Azure Key Vault:**
-
-The following must be installed and configured on your AKS cluster before enabling this feature:
-
-- [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/getting-started/installation)
-- [Azure Key Vault Provider for Secrets Store CSI Driver](https://azure.github.io/secrets-store-csi-driver-provider-azure/docs/getting-started/installation/)
-- [Azure Workload Identity](https://azure.github.io/azure-workload-identity/docs/installation.html) webhook installed on the cluster
-- AKS cluster with OIDC issuer enabled (`az aks update --enable-oidc-issuer --name <cluster> --resource-group <rg>`)
-- A user-assigned managed identity with `Key Vault Secrets User` role on the vault
-- A federated credential binding the managed identity to the chart's ServiceAccount in the KAC namespace
-
-### Required secrets in Azure Key Vault
-
-Create the following secrets in your Azure Key Vault before enabling the integration:
-
-| Secret name (default)       | Required | Value                          |
-|:----------------------------|:---------|:-------------------------------|
-| `falcon-cid`                | Yes      | CrowdStrike Customer ID (CID)  |
-| `falcon-provisioning-token` | No       | Provisioning token             |
-
-The CID secret must be named `falcon-cid` in the secrets store. The provisioning token secret name is configurable via `secretsStore.provisioningTokenSecretName`.
-
-### Configuration
-
-**Azure Key Vault example:**
-
-```yaml
-secretsStore:
-  enabled: true
-  provider: azure
-  azure:
-    vaultName: "my-keyvault"
-    tenantID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-    # clientID is optional - only required if multiple managed identities are assigned
-    clientID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-  provisioningTokenSecretName: ""  # leave empty to omit
-
-serviceAccount:
-  annotations:
-    azure.workload.identity/client-id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-
-# Add the Workload Identity label to KAC pods
-labels:
-  azure.workload.identity/use: "true"
-```
-
-> [!NOTE]
-> `secretsStore.enabled` cannot be combined with `falcon.cid` or `falconSecret.enabled`. These are mutually exclusive secret sources.

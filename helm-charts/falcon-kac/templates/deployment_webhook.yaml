@@ -269,14 +269,14 @@ spec:
         image: {{ include "falcon-kac.image" . }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         livenessProbe:
-          failureThreshold: 3
+          failureThreshold: 5
           httpGet:
             path: /livez
             port: {{ .Values.watcherPort }}
             scheme: HTTP
-          periodSeconds: 10
+          periodSeconds: 30
           successThreshold: 1
-          timeoutSeconds: 1
+          timeoutSeconds: 2
         ports:
         - containerPort: {{ .Values.watcherPort }}
           name: healthcheck
@@ -295,9 +295,10 @@ spec:
             path: /startz
             port: {{ .Values.watcherPort }}
             scheme: HTTP
-          periodSeconds: 2
+          initialDelaySeconds: 15
+          periodSeconds: 10
           successThreshold: 1
-          timeoutSeconds: 1
+          timeoutSeconds: 2
         volumeMounts:
         - mountPath: /tmp
           name: crowdstrike-falcon-vol0

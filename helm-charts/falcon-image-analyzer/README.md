@@ -193,7 +193,7 @@ crowdstrikeConfig:
   clusterName: my-test-cluster
   agentRegion: us-1 or us-2 or us-3 or eu-1 or gov1 or gov2
   cid: MYCID-XY
-  dockerAPIToken: asdfsfsdfsfsd ( Crowdstrike Artifacotry Token for IAR Image )
+  dockerAPIToken: asdfsfsdfsfsd ( Crowdstrike Artifactory Token for IAR Image )
 
 ```
 
@@ -234,7 +234,7 @@ crowdstrikeConfig:
   agentRegion: us-1 or us-2 or us-3 or eu-1 or gov1 or gov2
   agentRuntime: containerd or crio or podman or docker
   cid: MYCID-XY
-  dockerAPIToken: asdfsfsdfsfsd ( Crowdstrike Artifacotry Token for IAR Image )
+  dockerAPIToken: asdfsfsdfsfsd ( Crowdstrike Artifactory Token for IAR Image )
 
 ```
 

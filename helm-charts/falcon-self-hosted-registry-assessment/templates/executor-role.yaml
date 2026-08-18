@@ -1,7 +1,8 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
   name: {{ include "ra-self-hosted-executor.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
   {{- include "ra-self-hosted.labels-executor" . | nindent 4 }}
 rules:
@@ -9,7 +10,6 @@ rules:
     - ""
     resources:
     - secrets
-    - namespaces
     verbs:
     - get
     - watch

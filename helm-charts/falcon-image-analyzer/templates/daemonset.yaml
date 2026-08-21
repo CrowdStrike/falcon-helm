@@ -134,6 +134,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.hostIP
+            - name: HELM_CHART
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['helm.sh/chart']
           {{- $shouldCreateCid := include "falcon-image-analyzer.falconCid" . | trim -}}
           {{- $shouldCreateClientCreds := include "falcon-image-analyzer.shouldCreateClientCredsInSecret" . | trim | eq "true" -}}
           {{- $hasExistingSecret := include "falcon-image-analyzer.falconSecretName" . }}

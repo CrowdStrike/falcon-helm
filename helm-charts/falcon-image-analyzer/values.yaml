@@ -101,7 +101,7 @@ secretsStore:
   # Component-level setting overrides global setting.
   enabled:
 
-  # Provider: azure | vault
+  # Provider: azure
   provider: ""
 
   # Name of the Kubernetes secret that will be created by the CSI driver.
@@ -117,39 +117,6 @@ secretsStore:
     vaultName: ""
     tenantID: ""
     clientID: ""  # optional: workload identity client ID
-
-  # HashiCorp Vault
-  # Required when provider: vault
-  # Auth: By default, uses Kubernetes auth. For other auth methods (JWT, AppRole, AWS IAM, etc.),
-  #       use additionalParameters to configure the auth method.
-  vault:
-    # REQUIRED: Vault server address
-    address: ""       # e.g. https://vault.example.com
-
-    # REQUIRED for Kubernetes auth: Kubernetes auth role name
-    # Optional for other auth methods (configure via additionalParameters instead)
-    roleName: ""
-
-    # REQUIRED: Full Vault API path including /data/ for KV v2
-    # Example KV v2: "secret/data/crowdstrike"
-    # Example KV v1: "secret/crowdstrike"
-    # Note: The vault kv CLI auto-adds /data/, but the API requires it explicitly
-    secretPath: ""
-
-    # Secret key names in Vault
-    clientIdSecretKey: "client_id"  # Key name for the client ID in Vault
-    clientSecretSecretKey: "client_secret"  # Key name for the client secret in Vault
-    cidSecretKey: "cid"  # Key name for the CID in Vault
-
-    # Additional provider-specific parameters (optional)
-    # Add any extra Vault CSI provider parameters here as key-value pairs
-    # See: https://github.com/hashicorp/secrets-store-csi-driver-provider-vault
-    # Common examples:
-    #   vaultNamespace: "admin"              # Vault Enterprise namespace
-    #   vaultCACertSecret: "vault-ca-cert"   # Custom CA cert for TLS
-    #   vaultKubernetesMountPath: "k8s"     # Custom Kubernetes auth mount path
-    #   vaultTLSServerName: "vault.example.com"  # SNI for TLS verification
-    additionalParameters: {}
 
 # GCP GKE workload identity init container
 gcp:
@@ -333,14 +300,6 @@ global:
       vaultName: ""
       tenantID: ""
       clientID: ""
-    vault:
-      address: ""
-      roleName: ""
-      secretPath: ""  # Full Vault API path - include /data/ for KV v2 (e.g., "secret/data/crowdstrike")
-      clientIdSecretKey: "client_id"
-      clientSecretSecretKey: "client_secret"
-      cidSecretKey: "cid"
-      additionalParameters: {}
 
 # Deploys the test suite during install for testing purposes.
 testing:

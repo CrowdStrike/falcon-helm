@@ -1,0 +1,68 @@
+{{- if .Values.testing.enabled -}}
+{{- if .Values.node.enabled }}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "falcon-sensor.fullname" . }}-test-helm-chart-env"
+  namespace: {{ include "falcon-sensor.namespace" . }}
+  labels:
+    {{- include "falcon-sensor.testLabels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test-success
+    sensor.falcon-system.crowdstrike.com/injection: disabled
+spec:
+  containers:
+    - name: kubectl
+      image: docker.io/bitnami/kubectl
+      imagePullPolicy: IfNotPresent
+      command:
+      - /bin/sh
+      - -c
+      - |
+        FAILED=0
+        EXPECTED_CHART="{{ include "falcon-sensor.chart" . }}"
+        CM_NAME="{{ include "falcon-sensor.configMapName" . }}"
+
+        echo "--- Checking HELM_CHART key in ConfigMap ---"
+        HELM_CHART_VALUE=$(kubectl get configmap "${CM_NAME}" \
+          -n "{{ include "falcon-sensor.namespace" . }}" \
+          -o jsonpath='{.data.HELM_CHART}' 2>&1)
+        if [ -z "${HELM_CHART_VALUE}" ]; then
+            echo "[FAIL]: ConfigMap '${CM_NAME}' does not have HELM_CHART key"
+            FAILED=1
+        elif [ "${HELM_CHART_VALUE}" != "${EXPECTED_CHART}" ]; then
+            echo "[FAIL]: ConfigMap HELM_CHART is '${HELM_CHART_VALUE}', expected '${EXPECTED_CHART}'"
+            FAILED=1
+        else
+            echo "[OK]: ConfigMap '${CM_NAME}' HELM_CHART='${HELM_CHART_VALUE}'"
+        fi
+
+        echo "--- Checking ConfigMap is mounted via envFrom in DaemonSet ---"
+        DS_NAME="{{ include "falcon-sensor.fullname" . }}"
+        CM_REF=$(kubectl get daemonset "${DS_NAME}" \
+          -n "{{ include "falcon-sensor.namespace" . }}" \
+          -o jsonpath='{.spec.template.spec.containers[0].envFrom[?(@.configMapRef.name=="'"${CM_NAME}"'")].configMapRef.name}' 2>&1)
+        if [ "${CM_REF}" != "${CM_NAME}" ]; then
+            echo "[FAIL]: DaemonSet '${DS_NAME}' container does not mount ConfigMap '${CM_NAME}' via envFrom"
+            FAILED=1
+        else
+            echo "[OK]: DaemonSet '${DS_NAME}' mounts ConfigMap '${CM_NAME}' via envFrom"
+        fi
+
+        if [ "${FAILED}" -eq 1 ]; then
+            exit 1
+        fi
+        exit 0
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+  serviceAccountName: {{ include "falcon-sensor.fullname" . }}-test-sa
+  restartPolicy: Never
+{{- end -}}
+{{- end -}}

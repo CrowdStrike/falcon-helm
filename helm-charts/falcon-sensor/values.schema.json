@@ -20,7 +20,7 @@
                         "null",
                         "string"
                     ],
-                    "enum": [null, "", "us-1", "us-2", "eu-1", "us-gov-1", "us-gov-2"]
+                    "enum": [null, "", "us-1", "us-2", "us-3", "eu-1", "us-gov-1", "us-gov-2"]
                 },
                 "trace": {
                     "type": [
@@ -602,8 +602,8 @@
                 },
                 "provider": {
                     "type": "string",
-                    "description": "CSI provider: azure or vault",
-                    "enum": ["", "azure", "vault"]
+                    "description": "CSI provider: azure",
+                    "enum": ["", "azure"]
                 },
                 "secretName": {
                     "type": "string",
@@ -615,17 +615,6 @@
                         "vaultName": { "type": "string" },
                         "tenantID": { "type": "string" },
                         "clientID": { "type": "string" }
-                    }
-                },
-                "vault": {
-                    "type": "object",
-                    "properties": {
-                        "address": { "type": "string" },
-                        "roleName": { "type": "string" },
-                        "secretPath": { "type": "string" },
-                        "cidSecretKey": { "type": "string" },
-                        "provisioningTokenSecretKey": { "type": "string" },
-                        "additionalParameters": { "type": "object" }
                     }
                 },
                 "provisioningTokenSecretName": {

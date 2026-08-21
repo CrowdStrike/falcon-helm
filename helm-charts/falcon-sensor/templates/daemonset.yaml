@@ -178,9 +178,7 @@ spec:
               - CHOWN
               - NET_ADMIN
         {{- end }}
-        {{- if (eq .Values.node.backend "bpf") }}
         {{- include "falcon-sensor.daemonsetResources" . | nindent 8 }}
-        {{- end }}
         env:
           - name: POD_NODE_NAME
             valueFrom:

@@ -57,7 +57,7 @@ global:
   # Requires secrets-store-csi-driver and the appropriate provider addon on the cluster.
   secretsStore:
     enabled: false
-    # provider: azure | vault
+    # provider: azure
     provider: ""
 
     # Name of the Kubernetes secret that will be created by the CSI driver.
@@ -72,40 +72,6 @@ global:
       vaultName: ""
       tenantID: ""
       clientID: ""  # optional: workload identity client ID
-
-    # HashiCorp Vault
-    # Required when provider: vault
-    # Auth: configure Vault Kubernetes auth role to allow the chart's ServiceAccount
-    vault:
-      # REQUIRED: Vault server address
-      address: ""       # e.g. https://vault.example.com
-
-      # REQUIRED: Kubernetes auth role name
-      roleName: ""
-
-      # REQUIRED: Full Vault API path including /data/ for KV v2
-      # Example KV v2: "secret/data/crowdstrike"
-      # Example KV v1: "secret/crowdstrike"
-      # Note: The vault kv CLI auto-adds /data/, but the API requires it explicitly
-      secretPath: ""
-
-      # Secret key names in Vault (for falcon-sensor and falcon-kac)
-      cidSecretKey: "cid"
-      provisioningTokenSecretKey: "provisioning_token"
-
-      # Secret key names in Vault (for falcon-image-analyzer)
-      clientIdSecretKey: "client_id"
-      clientSecretSecretKey: "client_secret"
-
-      # Additional provider-specific parameters (optional)
-      # Add any extra Vault CSI provider parameters here as key-value pairs
-      # See: https://github.com/hashicorp/secrets-store-csi-driver-provider-vault
-      # Common examples:
-      #   vaultNamespace: "admin"              # Vault Enterprise namespace
-      #   vaultCACertSecret: "vault-ca-cert"   # Custom CA cert for TLS
-      #   vaultKubernetesMountPath: "k8s"     # Custom Kubernetes auth mount path
-      #   vaultTLSServerName: "vault.example.com"  # SNI for TLS verification
-      additionalParameters: {}
 
 # Enable/disable individual components
 # Set enabled: true to deploy, enabled: false to skip

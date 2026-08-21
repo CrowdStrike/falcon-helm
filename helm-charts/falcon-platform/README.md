@@ -22,6 +22,7 @@ unified deployment and configuration.
   - [Global Configuration](#global-configuration)
   - [Component-Specific Configuration](#component-specific-configuration)
   - [Using Existing Kubernetes Secrets](#using-existing-kubernetes-secrets)
+  - [Secrets Store CSI Driver Integration](#secrets-store-csi-driver-integration)
 - [Upgrade Strategy](#upgrade-strategy)
   - [Install/Reinstall a Single Component](#installreinstall-a-single-component)
   - [Upgrade the Falcon Platform Helm Chart Version](#upgrade-the-falcon-platform-helm-chart-version)
@@ -64,12 +65,25 @@ The table below shows the subchart versions bundled with each falcon-platform re
 
 | falcon-platform | falcon-sensor | falcon-kac | falcon-image-analyzer |
 |:----------------|:--------------|:-----------|:----------------------|
+| `1.5.0`         | `1.37.0`      | `1.7.0`    | `1.2.0`               |
 | `1.4.0`         | `1.36.0`      | `1.6.0`    | `1.1.20`              |
 | `1.3.0`         | `1.35.0`      | `1.6.0`    | `1.1.20`              |
 | `1.2.0`         | `1.34.2`      | `1.6.0`    | `1.1.18`              |
 | `1.1.0`         | `1.34.1`      | `1.5.2`    | `1.1.17`              |
 | `1.0.0`         | `1.34.1`      | `1.5.1`    | `1.1.16`              |
 
+
+<details>
+<summary><b>falcon-platform 1.5.0</b></summary>
+
+| Component                 | Helm Version | Sensor Version | Notes                                                          |
+|:--------------------------|:-------------|:---------------|:---------------------------------------------------------------|
+| falcon-sensor (node)      | `1.37.0`     | `>= 7.40`      | Deprecated backend option. Added new CrowdStrike config volume |
+| falcon-sensor (container) | `1.37.0`     | `>= 7.37`      | —                                                              |
+| falcon-kac                | `1.7.0`      | `>= 7.33`      | Fixes missing endpointslices permissions                       |
+| falcon-image-analyzer     | `1.2.0`      | `>= 1.0.24`    | —                                                              |
+
+</details>
 
 <details>
 <summary><b>falcon-platform 1.4.0</b></summary>
@@ -336,19 +350,11 @@ Global settings apply to all components unless component specific values are set
 | global.openshift.enabled            | false   | Enable OpenShift compatibility mode for all Falcon components                                      |
 | global.openshift.createSCC          | true    | Create SecurityContextConstraints resources. Set to `false` to manage SCCs outside of Helm         |
 | global.secretsStore.enabled         | false   | Enable Secrets Store CSI Driver as the secret source for all components. See [Secrets Store CSI Driver Integration](#secrets-store-csi-driver-integration). |
-| global.secretsStore.provider        | ""      | Secrets Store CSI Driver provider (`azure`, `vault`)                                 |
+| global.secretsStore.provider        | ""      | Secrets Store CSI Driver provider (`azure`)                                          |
 | global.secretsStore.azure.vaultName | ""      | Azure Key Vault name shared across all components                                                  |
 | global.secretsStore.azure.tenantID  | ""      | Azure Tenant ID shared across all components                                                       |
 | global.secretsStore.azure.clientID  | ""      | Azure Workload Identity client ID (optional; required only when multiple managed identities are assigned) |
 | global.secretsStore.secretName      | ""      | Name of the Kubernetes secret created by the CSI driver (overridable per component)               |
-| global.secretsStore.vault.address   | ""      | HashiCorp Vault server address (e.g. `https://vault.example.com`). Required when `provider: vault`. |
-| global.secretsStore.vault.roleName  | ""      | Vault Kubernetes auth role name. Required for Kubernetes auth; optional for other auth methods.   |
-| global.secretsStore.vault.secretPath | ""     | Full Vault API path to the secret (include `/data/` for KV v2, e.g. `secret/data/crowdstrike`). Required when `provider: vault`. |
-| global.secretsStore.vault.cidSecretKey | `cid` | Key name for the CID value in the Vault secret.                                                   |
-| global.secretsStore.vault.provisioningTokenSecretKey | `provisioning_token` | Key name for the provisioning token value in the Vault secret.            |
-| global.secretsStore.vault.clientIdSecretKey | `client_id` | Key name for the client ID value in the Vault secret (falcon-image-analyzer only).          |
-| global.secretsStore.vault.clientSecretSecretKey | `client_secret` | Key name for the client secret value in the Vault secret (falcon-image-analyzer only). |
-| global.secretsStore.vault.additionalParameters | None | Additional Vault CSI provider parameters (e.g. for alternate auth methods).                  |
 
 > [!NOTE]
 Any existing secrets for `falconSecret` or `containerRegistry.pullSecret` must exist in the namespace dedicated to the respective Falcon component before installing the Helm chart. For example, you must already have an existing secret matching `global.falconSecret.secretName` in the `falcon-sensor` default namespace, or custom namespace you choose for your `falcon-sensor.namespaceOverride`.
@@ -539,13 +545,10 @@ helm install falcon-platform crowdstrike/falcon-platform --version 1.0.0 -n falc
   --set falcon-image-analyzer.crowdstrikeConfig.clusterName=$CLUSTER_NAME
 ```
 
-## Upgrade Strategy
-
 ### Secrets Store CSI Driver Integration
 
 The Falcon Platform supports sourcing credentials from external secret stores via the [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/). Supported providers include:
 - [Azure Key Vault](https://azure.microsoft.com/en-us/products/key-vault) via the [Azure Key Vault provider](https://azure.github.io/secrets-store-csi-driver-provider-azure/)
-- [HashiCorp Vault](https://developer.hashicorp.com/vault) via the [Vault provider](https://developer.hashicorp.com/vault/docs/platform/k8s/csi)
 
 For Azure Key Vault, the vault name, tenant ID, and optional workload identity client ID can be configured once under `global.secretsStore` and shared across all components. Per-component values override globals when both are set.
 
@@ -562,15 +565,6 @@ For Azure Key Vault, the vault name, tenant ID, and optional workload identity c
 - AKS cluster with OIDC issuer enabled
 - A user-assigned managed identity with `Key Vault Secrets User` role on the vault, with federated credentials bound to each component's ServiceAccount in its respective namespace
 
-**For HashiCorp Vault:**
-
-- [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/getting-started/installation)
-- [Vault Provider for Secrets Store CSI Driver](https://developer.hashicorp.com/vault/docs/platform/k8s/csi/installation)
-- HashiCorp Vault server with an appropriate auth method configured (Kubernetes auth, JWT/OIDC, AppRole, AWS IAM, Azure, GCP, etc.)
-- Vault policy granting read access to the secret paths
-- For Kubernetes auth: Vault Kubernetes auth role bound to each component's ServiceAccount in its respective namespace
-- For other auth methods: Configure via component-specific `secretsStore.vault.additionalParameters` (see individual chart documentation)
-
 #### Required secrets per component
 
 **Azure Key Vault** (fixed secret names):
@@ -584,20 +578,6 @@ For Azure Key Vault, the vault name, tenant ID, and optional workload identity c
 | falcon-image-analyzer  | `falcon-client-id`              | `AGENT_CLIENT_ID`                   |
 | falcon-image-analyzer  | `falcon-client-secret`          | `AGENT_CLIENT_SECRET`               |
 | falcon-image-analyzer  | `falcon-cid` (only if `crowdstrikeConfig.cid` / `global.falcon.cid` not set) | `AGENT_CID` |
-
-**HashiCorp Vault** (customizable secret key names):
-
-| Component              | Secret key (default)            | Env var mapped                      |
-|:-----------------------|:--------------------------------|:------------------------------------|
-| falcon-sensor          | `cid`                           | `FALCONCTL_OPT_CID`                 |
-| falcon-sensor          | `provisioning_token` (optional, configurable) | `FALCONCTL_OPT_PROVISIONING_TOKEN`  |
-| falcon-kac             | `cid`                           | `FALCONCTL_OPT_CID`                 |
-| falcon-kac             | `provisioning_token` (optional, configurable) | `FALCONCTL_OPT_PROVISIONING_TOKEN`  |
-| falcon-image-analyzer  | `client_id`                     | `AGENT_CLIENT_ID`                   |
-| falcon-image-analyzer  | `client_secret`                 | `AGENT_CLIENT_SECRET`               |
-| falcon-image-analyzer  | `cid` (only if `crowdstrikeConfig.cid` / `global.falcon.cid` not set) | `AGENT_CID` |
-
-See individual component chart documentation for customizing Vault secret key names.
 
 #### Example configuration
 
@@ -645,40 +625,6 @@ falcon-image-analyzer:
 To use a custom provisioning token secret name for `falcon-sensor` or `falcon-kac`, set `secretsStore.provisioningTokenSecretName`.
 
 Each component can still override `vaultName`, `tenantID`, or `clientID` individually if needed — per-component values take precedence over globals.
-
-**HashiCorp Vault (Kubernetes auth):**
-
-For HashiCorp Vault with Kubernetes auth, configure the Vault address and role per component. Settings can be configured globally or at the component level, with component-level values taking precedence over global settings.
-
-```yaml
-global:
-  secretsStore:
-    enabled: true
-    provider: vault
-
-falcon-sensor:
-  secretsStore:
-    vault:
-      address: "https://vault.example.com"
-      roleName: "falcon-sensor"
-      secretPath: "secret/data/crowdstrike"
-
-falcon-kac:
-  secretsStore:
-    vault:
-      address: "https://vault.example.com"
-      roleName: "falcon-kac"
-      secretPath: "secret/data/crowdstrike"
-
-falcon-image-analyzer:
-  secretsStore:
-    vault:
-      address: "https://vault.example.com"
-      roleName: "falcon-image-analyzer"
-      secretPath: "secret/data/crowdstrike"
-```
-
-For alternative Vault auth methods (JWT, AppRole, AWS IAM, etc.), use `additionalParameters` in each component's configuration. See the individual component chart documentation for details.
 
 ## Upgrade Strategy
 

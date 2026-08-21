@@ -138,6 +138,10 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
+        - name: HELM_CHART
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['helm.sh/chart']
         {{- if .Values.falconImageAnalyzerNamespace }}
         - name: __CS_IAR_NAMESPACE
           value: {{ .Values.falconImageAnalyzerNamespace | quote }}
@@ -235,6 +239,10 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
+        - name: HELM_CHART
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['helm.sh/chart']
         {{- if (include "falcon-kac.csiEnabled" .) | eq "true" }}
         - name: FALCONCTL_OPT_CID
           valueFrom:
@@ -261,14 +269,14 @@ spec:
         image: {{ include "falcon-kac.image" . }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         livenessProbe:
-          failureThreshold: 3
+          failureThreshold: 5
           httpGet:
             path: /livez
             port: {{ .Values.watcherPort }}
             scheme: HTTP
-          periodSeconds: 10
+          periodSeconds: 30
           successThreshold: 1
-          timeoutSeconds: 1
+          timeoutSeconds: 2
         ports:
         - containerPort: {{ .Values.watcherPort }}
           name: healthcheck
@@ -287,9 +295,10 @@ spec:
             path: /startz
             port: {{ .Values.watcherPort }}
             scheme: HTTP
-          periodSeconds: 2
+          initialDelaySeconds: 15
+          periodSeconds: 10
           successThreshold: 1
-          timeoutSeconds: 1
+          timeoutSeconds: 2
         volumeMounts:
         - mountPath: /tmp
           name: crowdstrike-falcon-vol0
@@ -298,8 +307,12 @@ spec:
         - mountPath: /var/falcon-watcher
           name: crowdstrike-falcon-vol2
       - name: falcon-ac
-        {{- if (include "falcon-kac.csiEnabled" .) | eq "true" }}
         env:
+        - name: HELM_CHART
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['helm.sh/chart']
+        {{- if (include "falcon-kac.csiEnabled" .) | eq "true" }}
         - name: FALCONCTL_OPT_CID
           valueFrom:
             secretKeyRef:

@@ -14,6 +14,7 @@ more.
   - [Add The Crowdstrike Falcon Helm Repo](#add-the-crowdstrike-falcon-helm-repository)
   - [Update Helm Repo](#update-the-local-helm-repository-cache)
 - [Configuration Options](#falcon-configuration-options)
+  - [Using Existing Kubernetes Secrets](#using-existing-kubernetes-secrets)
   - [Allow traffic to CrowdStrike servers](#allow-traffic-to-crowdstrike-servers)
 - [Installation on Kubernetes Cluster](#installing-on-kubernetes-cluster-nodes)
   - [Installing using Helm Chart](#install-using-helm-chart)
@@ -22,6 +23,7 @@ more.
   - [OpenShift Compatibility](#openshift-compatibility)
   - [Temp Mounts](#temp-volume-mount)
   - [IAM Roles](#aws-iam-roles-for-service-accounts)
+  - [Secrets Store CSI Driver Integration](#secrets-store-csi-driver-integration)
   - [Authentication for Private Registries](#authentication-for-private-registries)
   - [Proxy Usage](#proxy-usage)
   - [Pod Eviction Issue](#pod-eviction)
@@ -33,7 +35,7 @@ more.
 - [Uninstalling IAR](#uninstall-helm-chart)
 
 
-## Kubernetes cluster compatibility
+## Kubernetes Cluster Compatibility
 
 The Falcon Image Analyzer Helm chart has been tested to deploy on the following Kubernetes distributions:
 
@@ -47,7 +49,8 @@ The Falcon Image Analyzer Helm chart has been tested to deploy on the following 
 
 | Helm Chart Version | Falcon Image Analyzer Version | Notes                                                                                                        |
 |:-------------------|:------------------------------|:-------------------------------------------------------------------------------------------------------------|
-| `1.1.21`           | `>= 1.0.26`                   | falcon-imageanalyzer will connect to kubernetes-admission-controller (KAC) or the falcon-cluster-guard agent |
+| `1.2.1`            | `>= 1.0.26`                   | falcon-imageanalyzer will connect to kubernetes-admission-controller (KAC) or the falcon-cluster-guard agent |
+| `1.2.0`            | `>= 1.0.24`                   | —                                                                                                            |
 | `1.1.20`           | `>= 1.0.24`                   | falcon-imageanalyzer images now use a non-regionalized unified image repo, starting with 1.0.24.             |
 | `1.1.19`           | `>= 1.0.21`                   | —                                                                                                            |
 | `1.1.18`           | `>= 1.0.21`                   | —                                                                                                            |
@@ -115,12 +118,12 @@ The following tables list the Falcon sensor configurable parameters and their de
 | `exclusions.registry`                  optional   ( available in falcon-imageanalyzer >= 1.0.8 and Helm Chart v >= 1.1.3)                          | Set the value as a comma separate list of registries to be excluded. all images in that registry(s) will be excluded                                                                                                     | ""                                                                               |
 | `exclusions.imageName`                  optional   ( available in falcon-imageanalyzer >= 1.0.23 and Helm Chart v >= 1.1.19)                       | Set the value as a comma separate list of fully qualified image names.                                                                                                                                                   | ""                                                                               |
 | `log.output`                  optional   ( available  Helm Chart v >= 1.1.7 & falcon-imageanalyzer >= 1.0.12)                                      | Set the value to for log output terminal. `2=stderr` and `1=stdout`                                                                                                                                                      | 2 ( stderr )                                                                     |
-| `log.verbosity`                 optional   ( available  Helm Chart v >= 1.1.21 & falcon-imageanalyzer >= 1.0.26)                                   | Set the value to for log verbosity. `info` `debug` `warn` `error`                                                                                                                                                        | info                                                                             |
+| `log.verbosity`                 optional   ( available  Helm Chart v >= 1.2.1 & falcon-imageanalyzer >= 1.0.26)                                    | Set the value to for log verbosity. `info` `debug` `warn` `error`                                                                                                                                                        | info                                                                             |
 | `hostNetwork`                  optional   ( available  Helm Chart v >= 1.1.11)                                                                     | Set the value to `true` to use the hostNetwork instead of pod network                                                                                                                                                    | `false`                                                                          |
 | `dnsPolicy`                  optional   ( available  Helm Chart v >= 1.1.11)                                                                       | Set the value to any supported value from https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy                                                                                      | ``  no value implies `Default`                                                   |
 | ~~`scanStats.enabled`~~                 optional   (**Deprecated in 1.1.17+** . available  Helm Chart v >= 1.1.8 & falcon-imageanalyzer >= 1.0.13) | Set `enabled` to true for agent to send scan error and stats to cloud                                                                                                                                                    | `true`                                                                           |
 | `crowdstrikeConfig.clusterName`     optional                                                                                                       | Cluster name                                                                                                                                                                                                             | None                                                                             |
-| ~~`crowdstrikeConfig.enableDebug`~~ optional (**Deprecated in 1.1.21+** )                                                                          | Set to `true` for debug level log verbosity.                                                                                                                                                                             | false                                                                            |
+| ~~`crowdstrikeConfig.enableDebug`~~ optional (**Deprecated in 1.2.1+** )                                                                           | Set to `true` for debug level log verbosity.                                                                                                                                                                             | false                                                                            |
 | `crowdstrikeConfig.enableKlogs`   optional                                                                                                         | Set to `true` for kubernetes api log verbosity.                                                                                                                                                                          | false                                                                            |
 | `crowdstrikeConfig.clientID`    required (unless using `existingSecret` or `global.falconSecret`); must be paired with `clientSecret`              | CrowdStrike Falcon OAuth API Client ID. Must be provided together with `clientSecret` as a pair.                                                                                                                         | None                                                                             |
 | `crowdstrikeConfig.clientSecret`     required (unless using `existingSecret` or `global.falconSecret`); must be paired with `clientID`             | CrowdStrike Falcon OAuth API Client secret. Must be provided together with `clientID` as a pair.                                                                                                                         | None                                                                             |
@@ -132,45 +135,6 @@ The following tables list the Falcon sensor configurable parameters and their de
 | `crowdstrikeConfig.agentRuntimeSocket`              optional                                                                                       | The unix socket path for the runtime socket. For example: `unix///var/run/docker.sock`. ONLY TO BE USED with ONLY TO BE USED with `daemonset.enabled` = `true`                                                           | None                                                                             |
 
 
-
-### Using Existing Kubernetes Secrets
-
-You can provide credentials via Helm values, an existing Kubernetes secret, or a mix of both. This is useful for secret management tools like External Secrets Operator or Sealed Secrets.
-
-`crowdstrikeConfig.existingSecret` takes precedence over `global.falconSecret.secretName` when using the `falcon-platform` umbrella chart.
-
-#### Configuration Modes
-
-| Mode | Values Set | Secret Keys | Behavior |
-|------|-----------|-------------|----------|
-| **Full Values** | `cid`, `clientID`, `clientSecret` (as pair) | None | Chart creates secret with all three keys |
-| **Full Secret** | None (all empty) | `AGENT_CID`, `AGENT_CLIENT_ID`, `AGENT_CLIENT_SECRET` | Chart reads all from existing secret |
-| **Partial** | Any combination (clientID/clientSecret as pair) | Remaining keys | Chart creates secret for provided values, reads rest from existing secret |
-
-**Note:** `clientID` and `clientSecret` must always be provided together as a pair. You cannot provide one without the other.
-
-#### Example
-
-Create a secret with all credentials:
-
-```bash
-kubectl create secret generic falcon-credentials -n falcon-image-analyzer \
-  --from-literal=AGENT_CLIENT_ID=$FALCON_CLIENT_ID \
-  --from-literal=AGENT_CLIENT_SECRET=$FALCON_CLIENT_SECRET \
-  --from-literal=AGENT_CID=$FALCON_CID
-```
-
-Reference it during installation (leave credential values empty):
-
-```bash
-helm install falcon-imageanalyzer crowdstrike/falcon-image-analyzer -n falcon-image-analyzer \
-  --set crowdstrikeConfig.existingSecret=falcon-credentials \
-  --set deployment.enabled=true \
-  --set image.repository=$IAR_REGISTRY \
-  --set image.tag=$IAR_IMAGE_TAG
-```
-
-For partial secrets, create an existing secret with only some keys (e.g., `AGENT_CLIENT_ID` and `AGENT_CLIENT_SECRET`), then provide the remaining credentials (e.g., `cid`) via Helm values. The chart creates a secret for the provided values and mounts both secrets to the workload without key conflicts.
 
 The `[CROWDSTRIKE_IMAGE_REGISTRY]` can be replaced with below registries based on the environment ( `agentRegion` )
 
@@ -231,7 +195,7 @@ crowdstrikeConfig:
   clientID: "xxxxxxxxxxx"
   clientSecret: "yyyyyyyyyyyy"
   clusterName: my-test-cluster
-  agentRegion: us-1 or us-2 or eu-1 or gov1 or gov2
+  agentRegion: us-1 or us-2 or us-3 or eu-1 or gov1 or gov2
   cid: MYCID-XY
   dockerAPIToken: asdfsfsdfsfsd ( Crowdstrike Artifacotry Token for IAR Image )
 
@@ -271,7 +235,7 @@ crowdstrikeConfig:
   clientID: "xxxxxxxxxxx"
   clientSecret: "yyyyyyyyyyyy"
   clusterName: my-test-cluster
-  agentRegion: us-1 or us-2 or eu-1 or gov1 or gov2
+  agentRegion: us-1 or us-2 or us-3 or eu-1 or gov1 or gov2
   agentRuntime: containerd or crio or podman or docker
   cid: MYCID-XY
   dockerAPIToken: asdfsfsdfsfsd ( Crowdstrike Artifacotry Token for IAR Image )
@@ -282,6 +246,46 @@ If the IAR image is already pulled in advance and pushed to another customer pri
 of `[CROWDSTRIKE_IMAGE_REGISTRY]` and the secret for that should be passed in the
 `image.registryConfigJSON` with explanation above and `crowdstrikeConfig.dockerAPIToken` should NOT be used
 
+### Using Existing Kubernetes Secrets
+
+You can provide credentials via Helm values, an existing Kubernetes secret, or a mix of both. This is useful for secret management tools like External Secrets Operator or Sealed Secrets.
+
+`crowdstrikeConfig.existingSecret` takes precedence over `global.falconSecret.secretName` when using the `falcon-platform` umbrella chart.
+
+#### Configuration Modes
+
+| Mode | Values Set | Secret Keys | Behavior |
+|------|-----------|-------------|----------|
+| **Full Values** | `cid`, `clientID`, `clientSecret` (as pair) | None | Chart creates secret with all three keys |
+| **Full Secret** | None (all empty) | `AGENT_CID`, `AGENT_CLIENT_ID`, `AGENT_CLIENT_SECRET` | Chart reads all from existing secret |
+| **Partial** | Any combination (clientID/clientSecret as pair) | Remaining keys | Chart creates secret for provided values, reads rest from existing secret |
+
+**Note:** `clientID` and `clientSecret` must always be provided together as a pair. You cannot provide one without the other.
+
+#### Example
+
+Create the namespace and secret before installing:
+
+```bash
+kubectl create namespace falcon-image-analyzer
+
+kubectl create secret generic falcon-credentials -n falcon-image-analyzer \
+  --from-literal=AGENT_CLIENT_ID=$FALCON_CLIENT_ID \
+  --from-literal=AGENT_CLIENT_SECRET=$FALCON_CLIENT_SECRET \
+  --from-literal=AGENT_CID=$FALCON_CID
+```
+
+Reference it during installation (leave credential values empty):
+
+```bash
+helm install falcon-imageanalyzer crowdstrike/falcon-image-analyzer -n falcon-image-analyzer \
+  --set crowdstrikeConfig.existingSecret=falcon-credentials \
+  --set deployment.enabled=true \
+  --set image.repository=$IAR_REGISTRY \
+  --set image.tag=$IAR_IMAGE_TAG
+```
+
+For partial secrets, create an existing secret with only some keys (e.g., `AGENT_CLIENT_ID` and `AGENT_CLIENT_SECRET`), then provide the remaining credentials (e.g., `cid`) via Helm values. The chart creates a secret for the provided values and mounts both secrets to the workload without key conflicts.
 
 <!-- markdown-link-check-disable -->
 ### Allow traffic to CrowdStrike servers
@@ -498,32 +502,23 @@ and a trust-relationship as
 
 Here `falcon-image-analyzer` is the namespace of IAR and `imageanalyzer-falcon-image-analyzer` is the name of the iar Service Account
 
-## Secrets Store CSI Driver Integration
+### Secrets Store CSI Driver Integration
 
 The chart supports sourcing `AGENT_CLIENT_ID`, `AGENT_CLIENT_SECRET`, and `AGENT_CID` from external secret stores via the [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/). Supported providers include:
 - [Azure Key Vault](https://azure.microsoft.com/en-us/products/key-vault) via the [Azure Key Vault provider](https://azure.github.io/secrets-store-csi-driver-provider-azure/)
-- [HashiCorp Vault](https://developer.hashicorp.com/vault) via the [Vault provider](https://developer.hashicorp.com/vault/docs/platform/k8s/csi)
 
 This avoids storing sensitive values in Helm values or Kubernetes Secrets directly.
 
-### Configuration Parameters
+#### Configuration Parameters
 
 | Parameter                                  | Description                                                                                                                                                                                                                                                                     | Default         |
 |:-------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------|
 | `secretsStore.enabled`                     | Enable Secrets Store CSI Driver integration. Mutually exclusive with `crowdstrikeConfig.clientID`/`clientSecret` and `crowdstrikeConfig.existingSecret`.                                                                                                                       | `false`         |
-| `secretsStore.provider`                    | Secrets Store CSI Driver provider (`azure`, `vault`)                                                                                                                                                                                                                            | None            |
+| `secretsStore.provider`                    | Secrets Store CSI Driver provider (`azure`)                                                                                                                                                                                                                                     | None            |
 | `secretsStore.secretName`                  | Name of the Kubernetes secret created by the CSI driver to sync secrets into. Defaults to `<release-fullname>-csi` if empty.                                                                                                                                                   | None            |
 | `secretsStore.azure.vaultName`             | Azure Key Vault name                                                                                                                                                                                                                                                            | None            |
 | `secretsStore.azure.tenantID`              | Azure Tenant ID                                                                                                                                                                                                                                                                 | None            |
 | `secretsStore.azure.clientID`              | Azure Workload Identity client ID. Only required if multiple managed identities are assigned to the node.                                                                                                                                                                      | None            |
-| `secretsStore.vault.address`               | HashiCorp Vault server address (e.g. `https://vault.example.com`). Required when `provider: vault`.                                                                                                                                                                            | None            |
-| `secretsStore.vault.roleName`              | Vault Kubernetes auth role name. Required for Kubernetes auth; optional for other auth methods (configure via `additionalParameters`).                                                                                                                                         | None            |
-| `secretsStore.vault.secretPath`            | Full Vault API path to the secret (include `/data/` for KV v2, e.g. `secret/data/crowdstrike`). Required when `provider: vault`.                                                                                                                                              | None            |
-| `secretsStore.vault.clientIdSecretKey`     | Key name for the client ID value in the Vault secret.                                                                                                                                                                                                                          | `client_id`     |
-| `secretsStore.vault.clientSecretSecretKey` | Key name for the client secret value in the Vault secret.                                                                                                                                                                                                                      | `client_secret` |
-| `secretsStore.vault.cidSecretKey`          | Key name for the CID value in the Vault secret. Only used when CID is not set via `crowdstrikeConfig.cid` or `global.falcon.cid`.                                                                                                                                              | `cid`           |
-| `secretsStore.vault.additionalParameters`  | Additional Vault CSI provider parameters (e.g. for alternate auth methods). See [Vault CSI Provider auth methods](https://developer.hashicorp.com/vault/docs/platform/k8s/csi/configurations#authentication-methods).                                                         | None            |
-
 #### Prerequisites
 
 **For Azure Key Vault:**
@@ -549,30 +544,7 @@ Create the following secrets in your Azure Key Vault before enabling the integra
 
 The `falcon-client-id` and `falcon-client-secret` secret names are fixed. `falcon-cid` is only fetched from the secrets store when CID is not supplied via `crowdstrikeConfig.cid` or `global.falcon.cid` — if either is set, `AGENT_CID` is sourced from the ConfigMap instead and `falcon-cid` does not need to exist in the secrets store.
 
-**For HashiCorp Vault:**
-
-The following must be installed and configured before enabling this feature:
-
-- [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/getting-started/installation)
-- [Vault Provider for Secrets Store CSI Driver](https://developer.hashicorp.com/vault/docs/platform/k8s/csi/installation)
-- HashiCorp Vault server with an appropriate auth method configured (Kubernetes auth, JWT/OIDC, AppRole, AWS IAM, Azure, GCP, etc.)
-- Vault policy granting read access to the secret path
-- For Kubernetes auth: Vault Kubernetes auth role bound to the chart's ServiceAccount in the `falcon-image-analyzer` namespace
-- For other auth methods: Configure via `secretsStore.vault.additionalParameters` (see [Vault CSI Provider auth methods](https://developer.hashicorp.com/vault/docs/platform/k8s/csi/configurations#authentication-methods))
-
-#### Required secrets in HashiCorp Vault
-
-Create the following secrets in your Vault instance before enabling the integration:
-
-| Secret key (default)        | Required | Value                                    |
-|:----------------------------|:---------|:-----------------------------------------|
-| `client_id`                 | Yes      | CrowdStrike Falcon OAuth API Client ID   |
-| `client_secret`             | Yes      | CrowdStrike Falcon OAuth API Client Secret |
-| `cid`                       | Only if `crowdstrikeConfig.cid` and `global.falcon.cid` are not set | CrowdStrike Customer ID (CID) |
-
-The secret key names can be customized via `secretsStore.vault.clientIdSecretKey`, `secretsStore.vault.clientSecretSecretKey`, and `secretsStore.vault.cidSecretKey`.
-
-#### Configuration
+#### Configuration Example
 
 **Azure Key Vault example:**
 
@@ -593,21 +565,6 @@ serviceAccount:
 # Add the Workload Identity label to the pod
 podLabels:
   azure.workload.identity/use: "true"
-```
-
-**HashiCorp Vault example:**
-
-```yaml
-secretsStore:
-  enabled: true
-  provider: vault
-  vault:
-    address: "https://vault.example.com"
-    roleName: "falcon-image-analyzer"            # Kubernetes auth role name
-    secretPath: "secret/data/crowdstrike"        # Full path including /data/ for KV v2
-    clientIdSecretKey: "client_id"               # Optional, defaults to "client_id"
-    clientSecretSecretKey: "client_secret"       # Optional, defaults to "client_secret"
-    cidSecretKey: "cid"                          # Optional, defaults to "cid"
 ```
 
 > [!NOTE]

@@ -58,7 +58,7 @@ The Falcon Image Analyzer Helm chart has been tested to deploy on the following 
 
 
 ## New updates in current release
-### Helm (1.0.21) + iar 1.0.26
+### Helm (1.2.1) + iar 1.0.26
 - Adding support for Falcon-Cluster-Guard ( future agent )
 - Adding `log.verbosity` param to control log verbosity. this will supersede the old `crowdstrikeConfig.enableDebug` param.
 - Add Support for US3 Cloud 

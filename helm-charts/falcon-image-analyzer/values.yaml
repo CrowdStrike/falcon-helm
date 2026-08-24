@@ -157,6 +157,9 @@ exclusions:
 # NOTE That setting this to true will also set the dnsPolicy: "ClusterFirstWithHostNet"
 hostNetwork: false
 
+# Define ImageAnalyzer POD DNS Policy, defaults to "ClusterFirstWithHostNet" when hostNetwork = true
+dnsPolicy:
+
 # OpenShift configuration.
 # NOTE: OpenShift is NOT A RECOMMENDED configuration. The official Red Hat certified operator
 # (https://catalog.redhat.com/en/software/container-stacks/detail/62f2d38f76d039249424703d) is the
@@ -172,8 +175,6 @@ openshift:
   # Set createSCC: false and provide a name here to reference an existing SCC.
   sccName: ""
 
-# Define ImageAnalyzer POD DNS Policy, defaults to "ClusterFirstWithHostNet" when hostNetwork = true
-dnsPolicy:
 
 # Use this param to provide the comma-separated registry secrets or auto discover the registry secrets.
 # if autoDiscoverCredentials is set to true then the provided credentials are ignored. Note that the secret
@@ -209,9 +210,10 @@ volumes:
 # 2 = stderr/default ( stderr is the normal output for logs )
 # any other value will be defaulted to stderr
 # https://stackoverflow.com/questions/4919093/should-i-log-messages-to-stderr-or-stdout/4919110#4919110 )
-
+# verbosity values on of "info", "debug", "warn", "error"
 log:
   output: 2
+  verbosity: "info"
 
 
 
@@ -229,6 +231,8 @@ iarAgentService:
   # Otherwise, keep this blank.
   domainName:
 
+
+#this is the default namespace list to check for kac
 kac:
   namespace : "falcon-kac"
 
@@ -244,7 +248,6 @@ crowdstrikeConfig:
   # Only Enable for extreme troubleshooting.
   enableKlogs: "false"
 
-  enableDebug: "false"
 
   # CrowdStrike API credentials - clientID and clientSecret must be provided as a pair
   # Either provide both here (chart creates secret) or leave both empty (use existingSecret)

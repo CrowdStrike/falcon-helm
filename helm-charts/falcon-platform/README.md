@@ -65,6 +65,7 @@ The table below shows the subchart versions bundled with each falcon-platform re
 
 | falcon-platform | falcon-sensor | falcon-kac | falcon-image-analyzer |
 |:----------------|:--------------|:-----------|:----------------------|
+| `1.5.1`         | `1.37.0`      | `1.7.0`    | `1.2.1`               |
 | `1.5.0`         | `1.37.0`      | `1.7.0`    | `1.2.0`               |
 | `1.4.0`         | `1.36.0`      | `1.6.0`    | `1.1.20`              |
 | `1.3.0`         | `1.35.0`      | `1.6.0`    | `1.1.20`              |
@@ -72,6 +73,18 @@ The table below shows the subchart versions bundled with each falcon-platform re
 | `1.1.0`         | `1.34.1`      | `1.5.2`    | `1.1.17`              |
 | `1.0.0`         | `1.34.1`      | `1.5.1`    | `1.1.16`              |
 
+
+<details>
+<summary><b>falcon-platform 1.5.1</b></summary>
+
+| Component                 | Helm Version | Sensor Version | Notes                                                          |
+|:--------------------------|:-------------|:---------------|:---------------------------------------------------------------|
+| falcon-sensor (node)      | `1.37.0`     | `>= 7.40`      | Deprecated backend option. Added new CrowdStrike config volume |
+| falcon-sensor (container) | `1.37.0`     | `>= 7.37`      | —                                                              |
+| falcon-kac                | `1.7.0`      | `>= 7.33`      | Fixes missing endpointslices permissions                       |
+| falcon-image-analyzer     | `1.2.1`      | `>= 1.0.26`    | Added `log.verbosity`                                          |
+
+</details>
 
 <details>
 <summary><b>falcon-platform 1.5.0</b></summary>

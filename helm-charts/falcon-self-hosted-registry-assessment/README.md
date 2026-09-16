@@ -1304,15 +1304,18 @@ executor:
 
 #### Option 2: Bundled PostgreSQL
 
-Deploy a Bitnami PostgreSQL instance within your cluster, managed by this Helm chart. Set `postgresql.enabled` to `true` and configure authentication details.
+Deploy a PostgreSQL instance within your cluster, managed by this Helm chart. Set `postgresql.enabled` to `true` and configure authentication details.
 
-The bundled PostgreSQL subchart is pulled from the Bitnami **OCI registry** (`oci://registry-1.docker.io/bitnamicharts`) at chart version **18.7.6** (PostgreSQL 18.4), replacing the deprecated `https://charts.bitnami.com/bitnami` HTTP repository.
+The bundled PostgreSQL is a self-authored single-replica `StatefulSet` running the official `docker.io/library/postgres` image (PostgreSQL 18), pinned by digest and running non-root with a read-only root filesystem. It is managed entirely by this chart — there is no external subchart dependency.
 
 > [!NOTE]
-> The bundled PostgreSQL container image is pinned by digest rather than tag. In August 2025, Bitnami relocated versioned images out of `docker.io/bitnami/` (only `:latest` remains freely available there; versioned tags now require a paid subscription), so the chart pins the multi-arch index digest of `:latest` for immutability. If you override the image via `postgresql.image`, re-resolve the digest with `docker buildx imagetools inspect docker.io/bitnami/postgresql:latest`.
+> The bundled PostgreSQL container image is pinned by digest rather than tag, for immutability (FedRAMP/security-scan requirement). `postgresql.image.digest` is **required** when `postgresql.enabled=true`: an empty digest fails template rendering rather than falling back to a mutable tag. Resolve the digest with `docker buildx imagetools inspect docker.io/library/postgres:18 --format '{{json .Manifest}}' | jq -r '.digest'` and set it via `postgresql.image.digest`.
+
+> [!NOTE]
+> The bundled path is intended for evaluation and non-production use. It ships **no NetworkPolicy**, so any pod in the namespace can reach the PostgreSQL port; executor-to-database traffic uses `POSTGRES_SSLMODE=disable` over the in-cluster headless Service; and metrics/TLS are intentionally out of scope. For production — network isolation, encrypted transport, or a managed database lifecycle — use external PostgreSQL (Option 3). See [Bundled PostgreSQL security posture](#bundled-postgresql-security-posture).
 
 > [!WARNING]
-> This release upgrades the bundled PostgreSQL from version 16 to version 18. If you are upgrading an existing deployment that uses bundled PostgreSQL (`postgresql.enabled=true`) with persisted data, this is a breaking change that requires a manual database migration. See [Upgrade bundled PostgreSQL from version 16 to 18](#upgrade-bundled-postgresql-from-version-16-to-18). SQLite and external PostgreSQL deployments are not affected.
+> This release replaces the previous Bitnami PostgreSQL subchart with the self-authored StatefulSet on the official image. If you are upgrading an existing deployment that uses bundled PostgreSQL (`postgresql.enabled=true`) with persisted data, this is a breaking change that requires a manual database migration. See [Migrate bundled PostgreSQL from the Bitnami subchart to the official image](#migrate-bundled-postgresql-from-the-bitnami-subchart-to-the-official-image). SQLite and external PostgreSQL deployments are not affected.
 
 ```yaml
 executor:
@@ -1320,6 +1323,9 @@ executor:
 
 postgresql:
   enabled: true
+  image:
+    # Required: an empty digest fails rendering (no tag fallback).
+    digest: "sha256:<postgres-18-digest>"
   auth:
     username: rauser
     password: "your-secure-password-here"
@@ -1338,7 +1344,7 @@ postgresql:
 ```
 
 > [!TIP]
-> The bundled PostgreSQL is a good choice when your environment does not already have PostgreSQL infrastructure. The subchart handles deployment, persistence, and service creation automatically.
+> The bundled PostgreSQL is a good choice when your environment does not already have PostgreSQL infrastructure. The chart handles deployment, persistence, and service creation automatically.
 
 #### Option 3: External PostgreSQL
 
@@ -1392,14 +1398,13 @@ The secret must contain keys matching the names specified in `existingSecretKeys
 |:---------------------------------------------|:--------|:------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------|
 | `executor.storageEngine`                     |         | Database backend for the executor. One of `sqlite` or `postgres`.                                                                                     | `"sqlite"`             |
 | `storageEngine`                              |         | Global database backend setting. `executor.storageEngine` takes precedence if set.                                                                    | `"sqlite"`             |
-| `postgresql.enabled`                  |         | Deploy a Bitnami PostgreSQL subchart within the cluster.                                                                                              | `false`                |
+| `postgresql.enabled`                  |         | Deploy the bundled PostgreSQL StatefulSet within the cluster.                                                                                        | `false`                |
 | `postgresql.auth.username`            |         | Username for the bundled PostgreSQL instance.                                                                                                         | `"rauser"`             |
 | `postgresql.auth.password`            |         | Password for the bundled PostgreSQL instance.                                                                                                         | `""`                   |
 | `postgresql.auth.database`            |         | Database name for the bundled PostgreSQL instance.                                                                                                    | `"registry_assessment"`|
 | `postgresql.image.registry`           |         | Registry for the bundled PostgreSQL container image.                                                                                                  | `"docker.io"`          |
-| `postgresql.image.repository`         |         | Repository for the bundled PostgreSQL container image.                                                                                                | `"bitnami/postgresql"` |
-| `postgresql.image.tag`                |         | Tag for the bundled PostgreSQL container image. Overridden by `digest` when set.                                                                      | `"latest"`             |
-| `postgresql.image.digest`             |         | Digest pin for the bundled PostgreSQL container image. Takes precedence over `tag`. Re-resolve via `docker buildx imagetools inspect docker.io/bitnami/postgresql:latest`. | `"sha256:256bf40a…"`   |
+| `postgresql.image.repository`         |         | Repository for the bundled PostgreSQL container image.                                                                                                | `"library/postgres"`   |
+| `postgresql.image.digest`             |         | Digest pin for the bundled PostgreSQL container image. **Required** when `postgresql.enabled=true` — an empty digest fails rendering (no tag fallback). Resolve via `docker buildx imagetools inspect docker.io/library/postgres:18`. | `""` |
 | `externalPostgresql.host`                    |         | Hostname of the external PostgreSQL server.                                                                                                           | `""`                   |
 | `externalPostgresql.port`                    |         | Port of the external PostgreSQL server.                                                                                                               | `5432`                 |
 | `externalPostgresql.database`                |         | Database name on the external PostgreSQL server.                                                                                                      | `"registry_assessment"`|
@@ -1908,37 +1913,32 @@ As needed, you can change your configuration values or replace the SHRA containe
 
 After making changes to your `values_override.yaml` file, use the `helm upgrade` command shown in [Install the SHRA Helm Chart](#install-the-shra-helm-chart).
 
-### Upgrade bundled PostgreSQL from version 16 to 18
+### Migrate bundled PostgreSQL from the Bitnami subchart to the official image
 
-This release upgrades the bundled PostgreSQL from version 16 to version 18. PostgreSQL does not start against a data directory created by a different major version, so upgrading an existing deployment that uses bundled PostgreSQL (`postgresql.enabled=true`) with persisted data requires a manual migration. Without it, the database pod fails to start with a `database files are incompatible with server` error after the upgrade. Your data is not deleted, but the database does not come up until you migrate it.
+This release replaces the bundled PostgreSQL Bitnami subchart with a self-authored single-replica `StatefulSet` on the official `docker.io/library/postgres` image (PostgreSQL 18). The two use different data-directory layouts — the Bitnami subchart stored data under its own `/bitnami/...` path, while the official image stores it under `/var/lib/postgresql/data/pgdata`. Because of that, an existing Bitnami persistent volume is **not** reused in place: PostgreSQL will not start against the old layout, and the new StatefulSet provisions a fresh volume claim named `data-<release>-postgresql-0`. Upgrading an existing bundled deployment (`postgresql.enabled=true`) with persisted data therefore requires a one-time manual migration via `pg_dump` and restore.
 
 This applies only to deployments that use bundled PostgreSQL with an existing persistent volume. SQLite and external PostgreSQL deployments are not affected. Bundled PostgreSQL is intended for evaluation and non-production use; for production, use external PostgreSQL so you control the database lifecycle independently of the chart.
 
 The following steps migrate your data. Replace `<namespace>`, `<release>`, `<username>`, `<password>`, and `<database>` with the values for your deployment, and plan for SHRA executor downtime while you complete them.
 
-1. Before upgrading, back up the database from the running PostgreSQL 16 pod. Use `pg_dump` of your application database rather than `pg_dumpall`, because the bundled database user is not a superuser and cannot read cluster-wide role data:
+1. Before upgrading, back up the database from the running Bitnami PostgreSQL pod. Use `pg_dump` of your application database rather than `pg_dumpall`, because the bundled database user is not a superuser and cannot read cluster-wide role data. The dump file contains your database contents in plaintext — store it securely and delete it once the migration is verified:
    ```sh
    kubectl exec -n <namespace> <release>-postgresql-0 -- \
-     env PGPASSWORD=<password> pg_dump -U <username> -d <database> > shra-pg16-backup.sql
+     env PGPASSWORD=<password> pg_dump -U <username> -d <database> > shra-pg-backup.sql
    ```
-2. Run the `helm upgrade`. One of two things happens, and both are fine:
-   - **The pod fails to start** with a `database files are incompatible with server` error. This is the expected outcome when PostgreSQL 18 starts against the existing PostgreSQL 16 data directory.
-   - **The pod comes up `Running`.** Some storage provisioners bind a new, empty volume on upgrade instead of reattaching the existing one, so PostgreSQL 18 initializes a fresh data directory and starts cleanly.
-
-   A `Running` pod does **not** mean your PostgreSQL 16 data was upgraded in place — a major version cannot be upgraded in place. The `pg_dump` backup from the previous step is the source of truth for your data, and the steps below reset the volume and restore from that backup either way. To confirm the running major version:
+2. Delete the old Bitnami-managed database objects. `helm upgrade` **cannot** roll these over in place: the new chart's headless Service and StatefulSet differ from Bitnami's in fields Kubernetes treats as immutable — `Service.spec.clusterIP` (the new Service is headless, `clusterIP: None`, while Bitnami's primary Service has an allocated IP) and `StatefulSet.spec.selector` (the label selectors differ). Running the upgrade first fails with `spec.clusterIPs[0]: Invalid value: ["None"]: may not change once set` and `updates to statefulset spec for fields other than ... are forbidden`. Delete the objects so Helm recreates them cleanly on the next step. Because the Bitnami data volume is not reused (see above), also delete its claim so the new StatefulSet provisions a fresh, empty one:
    ```sh
-   kubectl exec -n <namespace> <release>-postgresql-0 -- postgres --version
-   ```
-3. Reset the bundled database storage so PostgreSQL 18 initializes a fresh data directory. Scale the database down first so its persistent volume claim can be released, delete the claim, then scale back up. The StatefulSet provisions a new, empty volume on scale-up:
-   ```sh
-   kubectl scale statefulset <release>-postgresql --replicas=0 -n <namespace>
+   kubectl delete statefulset <release>-postgresql -n <namespace>
    kubectl delete pvc data-<release>-postgresql-0 -n <namespace>
-   kubectl scale statefulset <release>-postgresql --replicas=1 -n <namespace>
+   kubectl delete service <release>-postgresql <release>-postgresql-hl -n <namespace>
    ```
-4. Restore the backup into the new instance once the PostgreSQL 18 pod is running. Use `psql` — **not** `pg_dump` — to load the dump; `pg_dump` only *exports* and will silently ignore the redirected file, leaving the database empty:
+3. Run the `helm upgrade` to roll out the new release. With the old objects removed, Helm creates the new headless Service, StatefulSet, and a fresh empty volume claim, and the official PostgreSQL 18 image initializes a new data directory under `/var/lib/postgresql/data/pgdata`.
+4. Restore the backup into the new instance once the PostgreSQL 18 pod is running. The Executor runs its schema migrations as soon as it connects, so if it is already running it will have created the (empty) tables in the new database — restoring a full dump on top of that produces harmless `already exists` / `duplicate key` errors on the schema objects (the row data still loads via `COPY`). To restore cleanly, scale the Executor to `0` first so the schema does not pre-exist, load the dump, then scale it back up (on restart it applies any pending migrations on top of the restored data). Use `psql` — **not** `pg_dump` — to load the dump; `pg_dump` only *exports* and will silently ignore the redirected file, leaving the database empty:
    ```sh
+   kubectl scale statefulset <release>-executor --replicas=0 -n <namespace>
    kubectl exec -i -n <namespace> <release>-postgresql-0 -- \
-     env PGPASSWORD=<password> psql -U <username> -d <database> < shra-pg16-backup.sql
+     env PGPASSWORD=<password> psql -U <username> -d <database> < shra-pg-backup.sql
+   kubectl scale statefulset <release>-executor --replicas=1 -n <namespace>
    ```
    `kubectl exec -i` may print a trailing `error reading from error stream: read message: %!w(<nil>)` line when stdin closes. This is a client-side kubectl artifact, not a database error, and can be ignored. Confirm the restore succeeded by inspecting the data instead — for example, list the restored tables:
    ```sh
@@ -1946,9 +1946,19 @@ The following steps migrate your data. Replace `<namespace>`, `<release>`, `<use
      env PGPASSWORD=<password> psql -U <username> -d <database> -c "\dt"
    ```
 
-If you cannot tolerate a major-version migration, move to external PostgreSQL (Option 3) before upgrading.
+If you cannot tolerate a data-directory migration, move to external PostgreSQL (Option 3) before upgrading.
+
+### Bundled PostgreSQL security posture
+
+The bundled PostgreSQL path is intended for **evaluation and non-production** use. Production deployments should use external PostgreSQL (Option 3) with your own controls.
+
+- **No NetworkPolicy.** The chart ships no NetworkPolicy for the bundled database, so any pod in the namespace can reach port 5432 on the PostgreSQL pod. If you require network isolation, use `externalPostgresql` with your own network controls, or add a NetworkPolicy as a future enhancement.
+- **No in-cluster TLS.** Executor-to-PostgreSQL traffic uses `POSTGRES_SSLMODE=disable` over the in-cluster headless ClusterIP Service (same namespace); in-cluster TLS is intentionally out of the bundled path. For encrypted transport, rely on a CNI/mesh that encrypts pod-to-pod traffic, or use `externalPostgresql` against a TLS-enforced database.
+- **Password handling.** Avoid supplying `postgresql.auth.password` via `--set` on production-adjacent clusters — it is visible in `helm get values` and CI logs. Prefer secret injection; support for an `existingSecret` is future work.
+- **Migration dumps.** The `pg_dump` files produced during migration contain your database contents in plaintext. Store them securely and delete them once the migration is verified.
 
 ## Uninstall SHRA
+
 
 To uninstall, run the following command:
 ```sh
@@ -2166,7 +2176,7 @@ The Chart's `values.yaml` file includes more comments and descriptions in-line f
 | `proxyConfig.NO_PROXY`                                                         |                                           | Hosts to exclude from proxying. Provide as a string of comma-separated values.                                                                                                                                                                                                                                                                                                                                                                            | ""                                  |
 | `storageEngine`                                                                |                                           | Global database backend for the executor. One of `sqlite` or `postgres`. Can be overridden by `executor.storageEngine`.                                                                                                                                                                                                                                                                                                                                   | "sqlite"                            |
 | `executor.storageEngine`                                                       |                                           | Database backend for the executor. One of `sqlite` or `postgres`. Takes precedence over `storageEngine`.                                                                                                                                                                                                                                                                                                                                                  | "sqlite"                            |
-| `postgresql.enabled`                                                    |                                           | Deploy a Bitnami PostgreSQL subchart within the cluster. Set to `true` to use the bundled PostgreSQL deployment.                                                                                                                                                                                                                                                                                                                                          | false                               |
+| `postgresql.enabled`                                                    |                                           | Deploy the bundled PostgreSQL StatefulSet within the cluster. Set to `true` to use the bundled PostgreSQL deployment.                                                                                                                                                                                                                                                                                                                                          | false                               |
 | `postgresql.auth.username`                                              |                                           | Username for the bundled PostgreSQL instance.                                                                                                                                                                                                                                                                                                                                                                                                             | "rauser"                            |
 | `postgresql.auth.password`                                              |                                           | Password for the bundled PostgreSQL instance. Required when `postgresql.enabled` is `true`.                                                                                                                                                                                                                                                                                                                                                        | ""                                  |
 | `postgresql.auth.database`                                              |                                           | Database name for the bundled PostgreSQL instance.                                                                                                                                                                                                                                                                                                                                                                                                        | "registry_assessment"               |

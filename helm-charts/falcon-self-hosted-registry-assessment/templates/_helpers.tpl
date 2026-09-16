@@ -240,3 +240,26 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- define "ra-self-hosted.postgresql.fullname" -}}
 {{- printf "%s-%s" .Release.Name "postgresql" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
+
+{{- define "ra-self-hosted.postgresql.image" -}}
+{{- if contains "sha256:" (.Values.postgresql.image.digest | default "") -}}
+{{- printf "%s/%s@%s" .Values.postgresql.image.registry .Values.postgresql.image.repository .Values.postgresql.image.digest -}}
+{{- else -}}
+{{- fail "postgresql.image.digest must be a sha256: digest when postgresql.enabled=true (no tag/:latest fallback is permitted)" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "ra-self-hosted.postgresql.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "ra-self-hosted.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: postgresql
+{{- end -}}
+
+{{- define "ra-self-hosted.postgresql.labels" -}}
+helm.sh/chart: {{ include "ra-self-hosted.chart" . }}
+{{ include "ra-self-hosted.postgresql.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end -}}

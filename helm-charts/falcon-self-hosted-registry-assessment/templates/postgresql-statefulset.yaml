@@ -1,0 +1,81 @@
+{{- if .Values.postgresql.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "ra-self-hosted.postgresql.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ra-self-hosted.postgresql.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: {{ include "ra-self-hosted.postgresql.fullname" . }}
+  selector:
+    matchLabels:
+      {{- include "ra-self-hosted.postgresql.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ra-self-hosted.postgresql.labels" . | nindent 8 }}
+    spec:
+      securityContext:
+        {{- .Values.podSecurityContext | toYaml | nindent 8 }}
+      # postgres needs no Kubernetes API access, so its ServiceAccount token is not projected.
+      automountServiceAccountToken: false
+      containers:
+        - name: postgresql
+          image: {{ include "ra-self-hosted.postgresql.image" . }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.postgresql.primary.service.ports.postgresql | default 5432 }}
+              name: postgresql
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ra-self-hosted.postgresql.fullname" . }}
+                  key: password
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.auth.username }}
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.auth.database }}
+            # PGDATA is a subdir of the mount so lost+found at the volume root does not block initdb.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: run
+              mountPath: /var/run/postgresql
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            {{- .Values.postgresql.primary.resources | toYaml | nindent 12 }}
+          securityContext:
+            {{- .Values.securityContext | toYaml | nindent 12 }}
+      volumes:
+        # Writable scratch dirs for the postgres socket and /tmp under readOnlyRootFilesystem.
+        - name: run
+          emptyDir:
+            sizeLimit: 16Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+        {{- if not .Values.postgresql.primary.persistence.enabled }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
+  {{- if .Values.postgresql.primary.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        {{- if .Values.postgresql.primary.persistence.storageClass }}
+        storageClassName: {{ .Values.postgresql.primary.persistence.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.postgresql.primary.persistence.size }}
+  {{- end }}
+{{- end }}

@@ -276,27 +276,20 @@ proxyConfig:
   HTTPS_PROXY: ""
   NO_PROXY: ""
 
-# Bundled PostgreSQL configuration (Bitnami subchart)
-# Deploys a PostgreSQL instance managed by this Helm chart
-# Set enabled=true to use the bundled PostgreSQL deployment
+# Bundled PostgreSQL configuration (self-authored StatefulSet on the official image).
+# Deploys a single-replica PostgreSQL 18 instance managed by this Helm chart.
+# Set enabled=true to use the bundled PostgreSQL deployment.
 postgresql:
   enabled: false
-  # PostgreSQL container image (Bitnami subchart).
-  # Pinned by digest for immutability (FedRAMP/security-scan requirement).
-  # Resolves to PostgreSQL 18.4 (postgresql subchart 18.7.6 appVersion).
-  # Bitnami's Aug 2025 cutover removed versioned tags from docker.io/bitnami/
-  # (only ':latest' remains free; versioned tags require a paid subscription),
-  # so we pin the multi-arch index digest of ':latest' for reproducibility.
-  # IMPORTANT: re-resolve and re-pin this digest whenever the postgresql
-  # subchart version changes in Chart.yaml, otherwise upgrades silently keep
-  # this image. Re-resolve via:
-  #   docker buildx imagetools inspect docker.io/bitnami/postgresql:latest \
-  #     --format '{{json .Manifest}}' | jq -r '.digest'
   image:
     registry: docker.io
-    repository: bitnami/postgresql
-    tag: "latest"
-    digest: "sha256:256bf40a7343862b9a66d1d27cd34599e80dad99284fc5450b24cb02e26ff34e"
+    repository: library/postgres
+    # PostgreSQL 18, pinned by digest for immutability (FedRAMP/security-scan requirement).
+    # REQUIRED when enabled=true — an empty digest fails template rendering (no tag fallback).
+    # Resolve with:
+    #   docker buildx imagetools inspect docker.io/library/postgres:18 \
+    #     --format '{{json .Manifest}}' | jq -r '.digest'
+    digest: ""
   auth:
     username: rauser
     password: ""
@@ -308,6 +301,7 @@ postgresql:
     persistence:
       enabled: true
       size: 8Gi
+      storageClass: ""
     resources:
       requests:
         cpu: 250m
@@ -315,8 +309,6 @@ postgresql:
       limits:
         cpu: 1
         memory: 1Gi
-  readReplicas:
-    replicaCount: 0
 
 # External PostgreSQL configuration
 # Used when postgresql.enabled=false and executor.storageEngine=postgres

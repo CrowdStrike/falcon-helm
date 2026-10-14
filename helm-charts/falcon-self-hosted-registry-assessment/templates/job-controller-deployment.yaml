@@ -18,6 +18,9 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/job-controller-configmap.yaml") . | sha256sum }}
     spec:
+      {{ if .Values.jobController.serviceAccount.create }}
+      serviceAccountName: {{ include "ra-self-hosted-job-controller.fullname" . }}
+      {{- end }}
       securityContext:
 {{ if .Values.jobController.podSecurityContext -}}
 {{ .Values.jobController.podSecurityContext | toYaml | indent 8 }}

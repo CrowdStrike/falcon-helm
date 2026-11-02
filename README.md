@@ -9,6 +9,9 @@ more.
 
 This repository is a collection of CrowdStrike Helm Charts designed to streamline the deployment and use of CrowdStrike products on Kubernetes clusters.
 
+> [!IMPORTANT]
+> **Announcement:** In January 2027, the Falcon sensor for Linux (DaemonSet), Kubernetes Admission Controller (KAC), and Image Assessment at Runtime (IAR) will be consolidated into Falcon Cluster Guard. This affects the `falcon-sensor` (DaemonSet), `falcon-kac`, `falcon-image-analyzer`, and `falcon-platform` Helm charts. Read the [Falcon Cluster Guard Announcement](FALCON_CLUSTER_GUARD.md) to prepare your environment.
+
 ## Helm Charts
 
 | Helm Chart                                                                                   | Description                                                                                                                                      |

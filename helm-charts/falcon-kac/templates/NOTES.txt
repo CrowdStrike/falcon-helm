@@ -14,3 +14,7 @@ following command:
 
   kubectl -n {{ include "falcon-kac.namespace" . }} get pods
 
+{{ "\033[33m" }}ANNOUNCEMENT: In January 2027, the Falcon sensor for Linux (DaemonSet), Kubernetes Admission
+Controller (KAC), and Image Assessment at Runtime (IAR) will be consolidated into Falcon Cluster Guard.
+Read the Falcon Cluster Guard Announcement to prepare your environment:
+https://github.com/CrowdStrike/falcon-helm/blob/main/FALCON_CLUSTER_GUARD.md{{ "\033[0m" }}

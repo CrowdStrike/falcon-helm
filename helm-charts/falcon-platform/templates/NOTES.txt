@@ -79,3 +79,10 @@ When utilizing your own registry, a common error on installation is forgetting
 to add your containerized sensor to your local image registry prior to
 executing `helm install`. Please read the Helm Chart's readme for more
 deployment considerations.
+{{- if or (and (index .Values "falcon-sensor").enabled (index .Values "falcon-sensor").node.enabled) (index .Values "falcon-kac").enabled (index .Values "falcon-image-analyzer").enabled }}
+
+{{ "\033[33m" }}ANNOUNCEMENT: In January 2027, the Falcon sensor for Linux (DaemonSet), Kubernetes Admission
+Controller (KAC), and Image Assessment at Runtime (IAR) will be consolidated into Falcon Cluster Guard.
+Read the Falcon Cluster Guard Announcement to prepare your environment:
+https://github.com/CrowdStrike/falcon-helm/blob/main/FALCON_CLUSTER_GUARD.md{{ "\033[0m" }}
+{{- end }}

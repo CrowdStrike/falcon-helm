@@ -1,5 +1,8 @@
 # CrowdStrike Falcon Kubernetes Admission Controller Helm Chart
 
+> [!IMPORTANT]
+> **Announcement:** In January 2027, the Falcon sensor for Linux (DaemonSet), Kubernetes Admission Controller (KAC), and Image Assessment at Runtime (IAR) will be consolidated into Falcon Cluster Guard. Read the [Falcon Cluster Guard Announcement](https://github.com/CrowdStrike/falcon-helm/blob/main/FALCON_CLUSTER_GUARD.md) to prepare your environment.
+
 The Falcon Kubernetes Admission Controller (KAC) is a custom plugin that you can deploy to your Kubernetes cluster to
 monitor and review Kubernetes objects when they are created. It’s deployed to a worker node in a cluster, and when
 enabled, it listens to post-authenticated API requests from the control plane.

@@ -1,0 +1,11 @@
+falcon:
+  cid: 1234567890ABCDEF1234567890ABCDEF-12
+node:
+  daemonset:
+    resources:
+      requests:
+        cpu: 300m
+        memory: 1600Mi
+      limits:
+        cpu: 1000m
+        memory: 2048Mi

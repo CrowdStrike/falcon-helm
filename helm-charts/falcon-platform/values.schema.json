@@ -120,17 +120,6 @@
         }
       }
     },
-    "falcon-sensor": {
-      "type": "object",
-      "description": "Falcon Sensor configuration",
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "description": "Enable Falcon Sensor deployment",
-          "default": true
-        }
-      }
-    },
     "falcon-clusterguard": {
       "type": "object",
       "description": "Falcon Cluster Guard configuration",
@@ -142,14 +131,14 @@
         }
       }
     },
-    "falcon-image-analyzer": {
+    "falcon-sensor": {
       "type": "object",
-      "description": "Falcon Image Analyzer configuration", 
+      "description": "Falcon Container sensor configuration. Node mode is replaced by falcon-clusterguard.",
       "properties": {
         "enabled": {
           "type": "boolean",
-          "description": "Enable Falcon Image Analyzer deployment",
-          "default": true
+          "description": "Enable Falcon Container sensor deployment. Also requires container.enabled=true",
+          "default": false
         }
       }
     }

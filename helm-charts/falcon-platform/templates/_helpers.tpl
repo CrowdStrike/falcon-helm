@@ -42,21 +42,8 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if and (index .Values "falcon-clusterguard").enabled (index .Values "falcon-clusterguard").namespaceOverride -}}
 {{- $namespaces = append $namespaces (index .Values "falcon-clusterguard").namespaceOverride -}}
 {{- end -}}
-{{- if and (index .Values "falcon-image-analyzer").enabled (index .Values "falcon-image-analyzer").namespaceOverride -}}
-{{- $namespaces = append $namespaces (index .Values "falcon-image-analyzer").namespaceOverride -}}
-{{- end -}}
 {{- if and (index .Values "falcon-sensor").enabled (index .Values "falcon-sensor").namespaceOverride -}}
 {{- $namespaces = append $namespaces (index .Values "falcon-sensor").namespaceOverride -}}
 {{- end -}}
 {{- $namespaces | uniq | join "," -}}
-{{- end }}
-
-{{/* Returns "true" when the clusterguard controller Deployment is disabled via the acknowledgement string */}}
-{{- define "falcon-platform.clusterGuardDisabled" -}}
-{{- $fcg := index .Values "falcon-clusterguard" -}}
-{{- if eq (($fcg.clusterguardController).disableClusterGuardController | default "") "I understand this disables K8s metadata collection and degrades node sensor visibility" -}}
-true
-{{- else -}}
-false
-{{- end -}}
 {{- end }}

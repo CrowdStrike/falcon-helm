@@ -5,8 +5,8 @@ platform purpose-built to stop breaches via a unified set of cloud-delivered tec
 that prevent all types of attacks — including malware and much more.
 
 Falcon Cluster Guard (FCG) is a unified Kubernetes security service that replaces the
-separate `falcon-sensor` (node mode) and `falcon-kac` charts with a single deployment
-built around a single container image.
+separate `falcon-sensor` (node mode), `falcon-kac`, and `falcon-image-analyzer` charts with a
+single deployment built around a single container image.
 
 ## Table of Contents
 
@@ -55,14 +55,14 @@ built around a single container image.
 
 ## What is FCG?
 
-FCG replaces the separate `falcon-sensor` (node-only) and `falcon-kac` charts with a
-unified installer built around a single container image. FCG provides:
+FCG replaces the separate `falcon-sensor` (node-only), `falcon-kac`, and `falcon-image-analyzer`
+charts with a unified installer built around a single container image. FCG provides:
 
 - **Node-level protection**: eBPF/kernel-based sensor deployed as a DaemonSet on every cluster node
 - **Cluster Guard controller**: central gRPC metadata service that supplies Kubernetes context to node sensors, eliminating the scalability bottleneck of each sensor querying the API server directly
 - **Admission control**: optional ValidatingWebhookConfiguration that inspects Kubernetes API requests
 - **Resource visibility**: periodic snapshots + live event watchers for cluster-wide resource discovery
-- **Image assessment** (optional): a Falcon Image Analyzer (IAR) Deployment that assesses the container images running in the cluster. Disabled by default; see [Image Analyzer Configuration](#image-analyzer-configuration)
+- **Image assessment** (optional): a Falcon Image Analyzer (IAR) Deployment or DaemonSet that assesses the container images running in the cluster. Disabled by default; see [Image Analyzer Configuration](#image-analyzer-configuration)
 
 > **Note:** FCG does not currently support container sidecar injection. If you need the
 > Falcon Container sensor (sidecar mode), continue using the `falcon-sensor` chart with
@@ -239,7 +239,7 @@ controller Deployment.
 | Parameter                  | Description                                                                                                          |
 |:---------------------------|:---------------------------------------------------------------------------------------------------------------------|
 | `image.repository`         | FCG container image repository (Default: `registry.crowdstrike.com/falcon-clusterguard/release/falcon-clusterguard`) |
-| `image.tag`                | Image tag. Prefer `image.digest` for immutability. (Default: `8.14.0-XXXXX-1`)                                       |
+| `image.tag`                | Image tag. Prefer `image.digest` for immutability. (Default: `8.12.0-1102-1`)                                        |
 | `image.digest`             | Image digest (`sha256:...`). Overrides `image.tag` when set.                                                         |
 | `image.pullPolicy`         | Kubernetes image pull policy (Default: `Always`)                                                                     |
 | `image.pullSecret`         | Name of an existing docker-registry Secret                                                                           |
@@ -384,7 +384,11 @@ standalone `falcon-sensor`, `falcon-kac`, and `falcon-image-analyzer` charts:
 | Workloads                                       | SecretProviderClass          | Synced Kubernetes secret                                              | Keys                                                               |
 |:------------------------------------------------|:-----------------------------|:----------------------------------------------------------------------|:-------------------------------------------------------------------|
 | Node sensor DaemonSet, Cluster Guard Controller | `<release-fullname>-csi`     | `secretsStore.secretName`, default `<release-fullname>-csi`           | `FALCONCTL_OPT_CID`, `FALCONCTL_OPT_PROVISIONING_TOKEN` (optional) |
-| Image Analyzer (when `imageAnalyzer.enabled`)   | `<release-fullname>-iar-csi` | `<secretsStore.secretName>-iar`, default `<release-fullname>-iar-csi` | `AGENT_CLIENT_ID`, `AGENT_CLIENT_SECRET`, `AGENT_CID`              |
+| Image Analyzer (when `imageAnalyzer.enabled`)   | `<name>-iar-csi`             | `<secretsStore.secretName>-iar`, default `<name>-iar-csi`             | `AGENT_CLIENT_ID`, `AGENT_CLIENT_SECRET`, `AGENT_CID`              |
+
+`<release-fullname>` is `<release>-falcon-clusterguard` (or `fullnameOverride`). `<name>` is
+`nameOverride`, or `falcon-clusterguard` when it is not set, so image analyzer object names don't
+include the release name.
 
 The secrets store volume is mounted at `/mnt/secrets-store` in the node sensor container, the
 `falcon-client` container of the clusterguard controller, and the image analyzer container. Every
@@ -421,7 +425,7 @@ The following must be installed and configured on your AKS cluster before enabli
 - A user-assigned managed identity with `Key Vault Secrets User` role on the vault
 - A federated credential binding the managed identity to **each** FCG ServiceAccount that mounts secrets:
   the node sensor (`nodeSensor.serviceAccount.name`), the clusterguard controller (`clusterguardController.serviceAccount.name`),
-  and, when enabled, the image analyzer (`imageAnalyzer.serviceAccount.name`, default `<release-fullname>-iar`).
+  and, when enabled, the image analyzer (`imageAnalyzer.serviceAccount.name`, default `falcon-clusterguard-iar`).
   All of them are in the FCG namespace.
 
 #### Required secrets in Azure Key Vault
@@ -865,9 +869,12 @@ running in your cluster. IAR is installed in the same namespace as the rest of F
 
 When `imageAnalyzer.enabled=true`, the chart creates:
 
-- A `<release-fullname>-iar` Deployment or DaemonSet (see `imageAnalyzer.mode`), ServiceAccount, ConfigMap, ClusterRole, and ClusterRoleBinding (read access to pods, secrets, services, namespaces, and nodes)
-- An `iar-agent-service` Service (port `443` → `imageAnalyzer.iarAgentService.httpPort`) and a `<falcon-clusterguard.name>-iar-tls` Secret with a Helm-generated (or cert-manager) certificate
+- A `falcon-clusterguard-iar` Deployment or DaemonSet (see `imageAnalyzer.mode`), ServiceAccount, ConfigMap, ClusterRole, and ClusterRoleBinding (read access to pods, secrets, services, namespaces, and nodes)
+- An `iar-agent-service` Service (port `443` → `imageAnalyzer.iarAgentService.httpPort`) and a `falcon-clusterguard-iar-tls` Secret with a Helm-generated (or cert-manager) certificate
 - A credentials Secret, image pull Secret, `SecretProviderClass`, or OpenShift SCC, depending on configuration
+
+These names use `nameOverride` in place of `falcon-clusterguard` when it is set (for example
+`<nameOverride>-iar`). They don't include the release name.
 
 IAR runs in one of two modes:
 
@@ -945,7 +952,7 @@ credentials in a secret.
 | Existing Kubernetes secret | `AGENT_CLIENT_ID` / `AGENT_CLIENT_SECRET` keys in the `falconSecret` secret (or `global.falconSecret`)   | `AGENT_CID` key in the same secret    |
 | Secrets Store CSI Driver   | `falcon-client-id` / `falcon-client-secret` in the store (chart-level `secretsStore.*` block, see below) | `falcon-cid` in the store             |
 
-With Helm values, the chart creates a `<release-fullname>-iar` Secret containing all three keys.
+With Helm values, the chart creates a `falcon-clusterguard-iar` Secret containing all three keys.
 The existing-secret option uses the same `falconSecret` as the node sensor and clusterguard
 controller (see [Using Existing Kubernetes Secrets](#using-existing-kubernetes-secrets)). The
 secret is loaded into every FCG workload with `envFrom`, so the node sensor and controller pods
@@ -965,8 +972,8 @@ controller. There is no separate `imageAnalyzer.secretsStore` block. See
 prerequisites, and an example.
 
 When `secretsStore` is enabled and `imageAnalyzer.enabled=true`, the chart creates a separate
-`<release-fullname>-iar-csi` SecretProviderClass. It syncs these Key Vault secrets into the
-`<release-fullname>-iar-csi` Kubernetes secret, or `<secretsStore.secretName>-iar` when a name is set:
+`falcon-clusterguard-iar-csi` SecretProviderClass. It syncs these Key Vault secrets into the
+`falcon-clusterguard-iar-csi` Kubernetes secret, or `<secretsStore.secretName>-iar` when a name is set:
 
 | Key Vault secret name  | Synced key            | Value                                      |
 |:-----------------------|:----------------------|:-------------------------------------------|
@@ -983,7 +990,7 @@ the image analyzer pod. They are never mounted by the node sensor or clusterguar
 |:----------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------------       |
 | `imageAnalyzer.enabled`                                   | Deploy the image analyzer                                                                                                                   | `false`                                           |
 | `imageAnalyzer.mode`                                      | Workload type: `deployment` (watcher mode) or `daemonset` (socket mode, privileged). See [DaemonSet Mode](#daemonset-mode).                 | `deployment`                                      |
-| `imageAnalyzer.serviceAccount.name`                       | IAR ServiceAccount name                                                                                                                     | `<release-fullname>-iar`                          |
+| `imageAnalyzer.serviceAccount.name`                       | IAR ServiceAccount name                                                                                                                     | `falcon-clusterguard-iar`                         |
 | `imageAnalyzer.serviceAccount.annotations`                | Annotations applied to the IAR ServiceAccount (e.g., for IRSA or Workload Identity)                                                         | `{}`                                              |
 | `imageAnalyzer.crowdstrikeConfig.agentRegion`             | CrowdStrike API region (`us-1`, `us-2`, `eu-1`, `gov1`, `gov2`), or `autodiscovery`                                                         | `autodiscovery`                                   |
 | `imageAnalyzer.crowdstrikeConfig.agentMaxConsumerThreads` | Maximum number of image-processing consumer threads                                                                                         | `"1"`                                             |
@@ -1071,7 +1078,7 @@ kubectl label namespace falcon-system \
 | `openshift.createSCC`           | Create SCCs for all FCG components, and bind them to their respective service accounts. | `true`                |
 | `openshift.nodeSCCName`         | Name of the node sensor SCC. Defaults to `<release-fullname>-node-sensor`               | `""` (auto-generated) |
 | `openshift.cgControllerSCCName` | Name of the clusterguard controller SCC. Defaults to `<release-fullname>-cg-controller` | `""` (auto-generated) |
-| `openshift.iarSCCName`          | Name of the image analyzer SCC. Defaults to `<release-fullname>-iar`                    | `""` (auto-generated) |
+| `openshift.iarSCCName`          | Name of the image analyzer SCC. Defaults to `falcon-clusterguard-iar`                   | `""` (auto-generated) |
 
 ### Installing on OpenShift
 
@@ -1234,9 +1241,9 @@ Templates are grouped by component under `templates/`:
 
 | Directory                   | Contents                                                                                                     |
 |:----------------------------|:-------------------------------------------------------------------------------------------------------------|
-| `templates/shared/`         | Resources used by more than one component (image pull Secret, ResourceQuota) and chart-wide validation       |
-| `templates/node-sensor`           | Node sensor DaemonSet, ConfigMap, RBAC, SCC, PriorityClass, Guardian proxy Service, and post-delete cleanup  |
-| `templates/cg-controller/`  | Cluster Guard controller Deployment, webhook configuration, ConfigMap, RBAC, SCC, Services, and certificates |
+| `templates/`                | Resources used by more than one component (image pull Secret, `SecretProviderClass`) and chart-wide validation |
+| `templates/node-sensor/`    | Node sensor DaemonSet, ConfigMap, RBAC, SCC, PriorityClass, Guardian proxy Service, and post-delete cleanup  |
+| `templates/cg-controller/`  | Cluster Guard controller Deployment, webhook configuration, ConfigMap, RBAC, SCC, ResourceQuota, Services, and certificates |
 | `templates/image-analyzer/` | Image Analyzer Deployment or DaemonSet and supporting resources, plus `_helpers.tpl` and `_pod.tpl`          |
 | `templates/tests/`          | `helm test` hooks                                                                                            |
 

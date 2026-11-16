@@ -4,18 +4,19 @@
 > **Announcement:** In January 2027, the Falcon sensor for Linux (DaemonSet), Kubernetes Admission Controller (KAC), and Image Assessment at Runtime (IAR) will be consolidated into Falcon Cluster Guard. Read the [Falcon Cluster Guard Announcement](https://github.com/CrowdStrike/falcon-helm/blob/main/FALCON_CLUSTER_GUARD.md) to prepare your environment.
 
 The Falcon Platform Helm Chart deploys the complete CrowdStrike Falcon Kubernetes runtime security
-platform. This umbrella chart manages all individual Falcon components as dependencies, providing
+platform. This umbrella chart manages the individual Falcon component charts as dependencies, providing
 unified deployment and configuration.
 
 ## Table of Contents
 - [Overview](#overview)
   - [Components](#components)
   - [Falcon Platform Support for Falcon Component Subcharts](#falcon-platform-support-for-falcon-component-subcharts)
-  - [Namespace Isolation Strategy](#namespace-isolation-strategy)
+  - [Namespace Strategy](#namespace-strategy)
   - [Sensor Uninstall and Maintenance Protection](#sensor-uninstall-and-maintenance-protection)
 - [Prerequisites](#prerequisites)
   - [Minimum Requirements](#minimum-requirements)
 - [Deploy the Falcon Platform](#deploy-the-falcon-platform)
+  - [Deploy the Falcon Container Sensor](#deploy-the-falcon-container-sensor)
 - [Verify Falcon Platform Deployment](#verify-falcon-platform-deployment)
   - [Check Installation Status](#check-installation-status)
   - [Verify Individual Component Health](#verify-individual-component-health)
@@ -36,8 +37,10 @@ unified deployment and configuration.
   - [Uninstall the Falcon Platform Helm Chart](#uninstall-the-falcon-platform-helm-chart)
 - [Migrating from Individual Component Helm Charts](#migrating-from-individual-component-helm-charts)
 - [Migrating to Falcon Cluster Guard (FCG)](#migrating-to-falcon-cluster-guard-fcg)
-  - [What changed](#what-changes)
-  - [Run the migration script](#step-1--run-the-migration-script)
+  - [What Changed](#what-changed)
+  - [Step 1 — Run the migration script](#step-1--run-the-migration-script)
+  - [Step 2 — Check for deprecated keys](#step-2--check-for-deprecated-keys)
+  - [Step 3 — Confirm the image analyzer settings](#step-3--confirm-the-image-analyzer-settings)
   - [Step 4 — Apply the upgrade](#step-4--apply-the-upgrade)
   - [Step 5 — Clean up deprecated namespaces](#step-5--clean-up-deprecated-namespaces)
   - [Example: before and after values](#example-before-and-after-values)
@@ -45,8 +48,8 @@ unified deployment and configuration.
 - [Troubleshooting](#troubleshooting)
   - [Partial Falcon Platform Installation - Release Failure](#partial-falcon-platform-installation---release-failure)
   - [Upgrade Errors After Migrating to FCG](#upgrade-errors-after-migrating-to-fcg)
-  - [Falcon Sensor Troubleshooting Guides](#falcon-sensor-troubleshooting-guides)
-  - [Falcon Image Analyzer Troubleshooting Guides](#falcon-image-analyzer-troubleshooting-guides)
+  - [Falcon Cluster Guard Troubleshooting Guides](#falcon-cluster-guard-troubleshooting-guides)
+  - [Falcon Container Sensor Troubleshooting Guides](#falcon-container-sensor-troubleshooting-guides)
   - [Component Logs](#component-logs)
 
 ## Overview
@@ -57,15 +60,25 @@ of multiple security components while providing centralized configuration manage
 orchestration.
 
 ### Components
-The platform manages three core security components as dependencies, with the Falcon Sensor
-supporting one of two deployment modes.
+The platform manages two component charts as dependencies.
 
-| Component                                                                 | Purpose                                                 | Default Status |
-|---------------------------------------------------------------------------|---------------------------------------------------------|----------------|
-| [**Falcon Node Sensor**](/helm-charts/falcon-sensor/README.md)            | Daemonset for runtime node protection and monitoring    | Enabled        |
-| [**Falcon Container Sensor**](/helm-charts/falcon-sensor/README.md)       | Sidecar for runtime container protection and monitoring | Disabled       |
-| [**Falcon KAC**](/helm-charts/falcon-kac/README.md)                       | Kubernetes admission controller for policy enforcement  | Enabled        |
-| [**Falcon Image Analyzer**](/helm-charts/falcon-image-analyzer/README.md) | Container image vulnerability scanning and assessment   | Enabled        |
+| Component                                                                    | Chart                 | Purpose                                                                                                  | Default Status |
+|------------------------------------------------------------------------------|-----------------------|----------------------------------------------------------------------------------------------------------|----------------|
+| [**Falcon Cluster Guard (FCG)**](/helm-charts/falcon-clusterguard/README.md) | `falcon-clusterguard` | Node sensor DaemonSet, clusterguard controller (cluster visibility and admission control), and optional image analyzer | Enabled        |
+| [**Falcon Container Sensor**](/helm-charts/falcon-sensor/README.md)          | `falcon-sensor`       | Sidecar for runtime container protection and monitoring                                                  | Disabled       |
+
+Falcon Cluster Guard runs these workloads from a single container image:
+
+| FCG workload            | Purpose                                                                | Default Status | Values prefix                                  |
+|-------------------------|------------------------------------------------------------------------|----------------|------------------------------------------------|
+| Node sensor             | DaemonSet for runtime node protection and monitoring                   | Enabled        | `falcon-clusterguard.nodeSensor.*`             |
+| Clusterguard controller | Kubernetes metadata service and cluster visibility for node sensors    | Enabled        | `falcon-clusterguard.clusterguardController.*` |
+| Admission control       | Validating admission webhook for policy enforcement                    | Disabled       | `falcon-clusterguard.clusterguardController.admissionControl.*` |
+| Image analyzer (IAR)    | Container image vulnerability scanning and assessment                  | Disabled       | `falcon-clusterguard.imageAnalyzer.*`          |
+
+> [!NOTE]
+> The `falcon-sensor` chart only deploys the Falcon Container sensor (`container.enabled=true`).
+> Node mode (`falcon-sensor.node.enabled=true`) is no longer supported; the FCG node sensor replaces it.
 
 ### Falcon Platform Support for Falcon Component Subcharts
 The Falcon Platform uses Helm's dependency management system to orchestrate multiple subcharts.
@@ -75,122 +88,37 @@ versions of each component chart during installation.
 
 The table below shows the subchart versions bundled with each falcon-platform release.
 
-| falcon-platform | falcon-sensor | falcon-kac | falcon-image-analyzer |
-|:----------------|:--------------|:-----------|:----------------------|
-| `1.5.1`         | `1.37.0`      | `1.7.0`    | `1.2.1`               |
-| `1.5.0`         | `1.37.0`      | `1.7.0`    | `1.2.0`               |
-| `1.4.0`         | `1.36.0`      | `1.6.0`    | `1.1.20`              |
-| `1.3.0`         | `1.35.0`      | `1.6.0`    | `1.1.20`              |
-| `1.2.0`         | `1.34.2`      | `1.6.0`    | `1.1.18`              |
-| `1.1.0`         | `1.34.1`      | `1.5.2`    | `1.1.17`              |
-| `1.0.0`         | `1.34.1`      | `1.5.1`    | `1.1.16`              |
-
+| falcon-platform    | falcon-clusterguard | falcon-sensor      |
+|:-------------------|:--------------------|:-------------------|
+| `2.0.0-fcg-beta.0` | `0.1.0-beta.0`      | `2.0.0-fcg-beta.0` |
 
 <details>
-<summary><b>falcon-platform 1.5.1</b></summary>
+<summary><b>falcon-platform 2.0.0-fcg-beta.0</b></summary>
 
-| Component                 | Helm Version | Sensor Version | Notes                                                          |
-|:--------------------------|:-------------|:---------------|:---------------------------------------------------------------|
-| falcon-sensor (node)      | `1.37.0`     | `>= 7.40`      | Deprecated backend option. Added new CrowdStrike config volume |
-| falcon-sensor (container) | `1.37.0`     | `>= 7.37`      | —                                                              |
-| falcon-kac                | `1.7.0`      | `>= 7.33`      | Fixes missing endpointslices permissions                       |
-| falcon-image-analyzer     | `1.2.1`      | `>= 1.0.26`    | Added `log.verbosity`                                          |
+| Component                 | Helm Version       | Sensor Version | Notes                                                                                     |
+|:--------------------------|:-------------------|:---------------|:------------------------------------------------------------------------------------------|
+| falcon-clusterguard       | `0.1.0-beta.0`     | `>= 8.14`      | Initial beta release of Falcon Cluster Guard. Replaces the node sensor, KAC, and IAR.     |
+| falcon-sensor (container) | `2.0.0-fcg-beta.0` | `>= 7.37`      | Node mode is no longer supported. Use `falcon-clusterguard` for node protection.         |
 
 </details>
 
-<details>
-<summary><b>falcon-platform 1.5.0</b></summary>
+For falcon-platform `1.x` releases, see the
+[falcon-platform 1.5.1 README](https://github.com/CrowdStrike/falcon-helm/blob/falcon-platform-1.5.1/helm-charts/falcon-platform/README.md).
 
-| Component                 | Helm Version | Sensor Version | Notes                                                          |
-|:--------------------------|:-------------|:---------------|:---------------------------------------------------------------|
-| falcon-sensor (node)      | `1.37.0`     | `>= 7.40`      | Deprecated backend option. Added new CrowdStrike config volume |
-| falcon-sensor (container) | `1.37.0`     | `>= 7.37`      | —                                                              |
-| falcon-kac                | `1.7.0`      | `>= 7.33`      | Fixes missing endpointslices permissions                       |
-| falcon-image-analyzer     | `1.2.0`      | `>= 1.0.24`    | —                                                              |
+### Namespace Strategy
+Both components are deployed to the `falcon-system` namespace by default. Each component uses its own
+service accounts and RBAC policies.
 
-</details>
+| Namespace     | Component                                                                       |
+|---------------|---------------------------------------------------------------------------------|
+| falcon-system | Falcon Cluster Guard (node sensor, clusterguard controller, image analyzer)     |
+| falcon-system | Falcon Sensor for Linux (Container) injector                                    |
 
-<details>
-<summary><b>falcon-platform 1.4.0</b></summary>
+To deploy a component to a different namespace, set `falcon-clusterguard.namespaceOverride` or
+`falcon-sensor.namespaceOverride`.
 
-| Component | Helm Version | Sensor Version | Notes |
-|:----------|:--------|:---------------|:------|
-| falcon-sensor (node) | `1.36.0` | `>= 7.35` | — |
-| falcon-sensor (container) | `1.36.0` | `>= 7.37` | Added AI-DR support. |
-| falcon-kac | `1.6.0` | `>= 7.33` | — |
-| falcon-image-analyzer | `1.1.20` | `>= 1.0.24` | — |
-
-</details>
-
-<details>
-<summary><b>falcon-platform 1.3.0</b></summary>
-
-| Component | Helm Version | Sensor Version | Notes |
-|:----------|:--------|:---------------|:------|
-| falcon-sensor (node) | `1.35.0` | `>= 7.35` | Added Falcon Data Protection for Cloud support for self-managed Kubernetes clusters. |
-| falcon-sensor (container) | `1.35.0` | `>= 7.31` | — |
-| falcon-kac | `1.6.0` | `>= 7.33` | — |
-| falcon-image-analyzer | `1.1.20` | `>= 1.0.24` | falcon-imageanalyzer images now use a non-regionalized unified image repo, starting with 1.0.24. |
-
-</details>
-
-<details>
-<summary><b>falcon-platform 1.2.0</b></summary>
-
-| Component | Helm Version | Sensor Version | Notes |
-|:----------|:--------|:---------------|:------|
-| falcon-sensor (node) | `1.34.2` | `>= 7.31` | — |
-| falcon-sensor (container) | `1.34.2` | `>= 7.31` | falcon-container images now use a non-regionalized unified image repo, starting with 7.33. |
-| falcon-kac | `1.6.0` | `>= 7.33` | Added KAC extended resource monitoring capabilities which require additional RBAC permissions.<br/>falcon-kac images now use a non-regionalized unified image repo, starting with 7.33. |
-| falcon-image-analyzer | `1.1.18` | `>= 1.0.21` | — |
-
-</details>
-
-<details>
-<summary><b>falcon-platform 1.1.0</b></summary>
-
-| Component | Helm Version | Sensor Version | Notes |
-|:----------|:--------|:---------------|:------|
-| falcon-sensor (node) | `1.34.1` | `>= 7.31` | — |
-| falcon-sensor (container) | `1.34.1` | `>= 7.31` | — |
-| falcon-kac | `1.5.2` | `<= 7.32` | Added `falconImageAnalyzerNamespace` param to support communication with Falcon Image Analyzer. |
-| falcon-image-analyzer | `1.1.17` | `>= 1.0.21` | Added Image Analyzer Agent service to allow Falcon KAC to request image scan data. |
-
-</details>
-
-<details>
-<summary><b>falcon-platform 1.0.0</b></summary>
-
-| Component | Version | Sensor Version | Notes |
-|:----------|:--------|:---------------|:------|
-| falcon-sensor (node) | `1.34.1` | `>= 7.31` | falcon-sensor images now use a non-regionalized unified image repo, starting with 7.31. |
-| falcon-sensor (container) | `1.34.1` | `>= 7.31` | — |
-| falcon-kac | `1.5.1` | `<= 7.32` | — |
-| falcon-image-analyzer | `1.1.16` | — | — |
-
-</details>
-
-### Namespace Isolation Strategy
-Each Falcon component operates in its own dedicated namespace.
-
-> [!NOTE]
-> Either the Falcon Sensor for Linux (Node) or Falcon Sensor for Linux (Container) is deployed, but not both.
-
-| Namespace             | Component                                      |
-|-----------------------|------------------------------------------------|
-| falcon-system         | Falcon Sensor for Linux (Node)                 |
-| falcon-system         | Falcon Sensor for Linux (Container)            |
-| falcon-kac            | Falcon Kubernetes Admission Controller (KAC)   |
-| falcon-image-analyzer | Falcon Image Assessment at Runtime agent (IAR) |
-
-This isolation provides security boundaries with individual RBAC policies and service accounts,
-independent resource quotas and limits per component, and operational isolation where component
-failures don't impact other components.
-
-### Sensor uninstall and maintenance protection
+### Sensor Uninstall and Maintenance Protection
 Important notes for Kubernetes and other container deployments of the Falcon sensor.
-- **Falcon Node sensor for Linux with sensor version 7.33 and earlier:** We do not recommend enabling the **Uninstall and maintenance protection** policy setting for DaemonSet deployments. This setting can cause operational issues that require manual intervention.
-- **Falcon Node sensor for Linux with sensors version 7.34 and later:** DaemonSet deployments do not support the **Uninstall and maintenance protection** policy setting and automatically ignores it.
 - **Falcon Container sensor for Linux:** Deployed as a sidecar container within application pods. This sensor does not support the **Uninstall and maintenance protection** policy setting and automatically ignores it.
 
 ## Prerequisites
@@ -199,7 +127,7 @@ Important notes for Kubernetes and other container deployments of the Falcon sen
 - Falcon Customer ID (CID)
 - Appropriate cluster permissions (cluster-admin) for installation
 - Falcon registry access to pull Falcon component container images
-- Falcon OAuth client credentials
+- Falcon OAuth client credentials, only if you enable the FCG image analyzer
   - Required Permissions:
     - Falcon Container CLI: Write
     - Falcon Container Image: Read/Write
@@ -210,19 +138,17 @@ Important notes for Kubernetes and other container deployments of the Falcon sen
 
 > [!NOTE]
 > - The falcon-platform Helm chart uses the latest version of each Falcon component subchart and does not allow version customization for individual subcharts. For granular version control, use the individual Falcon component Helm charts instead.
-> - The falcon-platform Helm chart creates dedicated namespaces for each Falcon component automatically. For optimal security and resource management, we recommend deploying each component in its own dedicated namespace.
+> - The falcon-platform Helm chart can create the component namespaces for you with `createComponentNamespaces=true`.
 > - The falcon-platform Helm chart treats all CrowdStrike components as a single deployment. Running `helm uninstall` will remove all components - follow the [guide here](#uninstall-a-single-component) to uninstall a single component.
+> - The FCG node sensor requires the `privileged` Pod Security Standards level on its namespace. See [Pod Security Standards](/helm-charts/falcon-clusterguard/README.md#pod-security-standards).
 
 ### 1. Set your environment variables:
 ```bash
 export FALCON_CID=<your-falcon-cid>
 export ENCODED_DOCKER_CONFIG=<your-base64-encoded-docker-config>
-export SENSOR_REGISTRY=<your-sensor-registry>
-export SENSOR_IMAGE_TAG=<your-falcon-sensor-image-tag>
-export KAC_REGISTRY=<your-kac-registry>
-export KAC_IMAGE_TAG=<your-falcon-kac-image-tag>
-export IAR_REGISTRY=<your-iar-registry>
-export IAR_IMAGE_TAG=<your-falcon-iar-image-tag>
+export PLATFORM_CHART_VERSION=<falcon-platform-chart-version>
+export FCG_REGISTRY=<your-falcon-clusterguard-registry>
+export FCG_IMAGE_TAG=<your-falcon-clusterguard-image-tag>
 export CLUSTER_NAME=<your-cluster-name>
 export FALCON_CLIENT_ID=<your-falcon-client-id>
 export FALCON_CLIENT_SECRET=<your-falcon-client-secret>
@@ -236,28 +162,61 @@ helm repo update
 
 ### 3. Deploy the Helm Chart
 
-Deploy all 3 components using `--set` arguments to pass configuration values directly. The
-`createComponentNamespaces=true` setting automatically creates the required namespaces for each
-component.
+Deploy Falcon Cluster Guard with the node sensor, clusterguard controller, admission control, and
+image analyzer using `--set` arguments to pass configuration values directly. The
+`createComponentNamespaces=true` setting automatically creates the `falcon-system` namespace.
 
 ```bash
-helm install falcon-platform crowdstrike/falcon-platform --version 1.0.0 \
+helm install falcon-platform crowdstrike/falcon-platform --version $PLATFORM_CHART_VERSION \
   --namespace falcon-platform \
   --create-namespace \
   --set createComponentNamespaces=true \
   --set global.falcon.cid=$FALCON_CID \
   --set global.containerRegistry.configJSON=$ENCODED_DOCKER_CONFIG \
-  --set falcon-sensor.node.image.repository=$SENSOR_REGISTRY \
-  --set falcon-sensor.node.image.tag=$SENSOR_IMAGE_TAG \
-  --set falcon-kac.image.repository=$KAC_REGISTRY \
-  --set falcon-kac.image.tag=$KAC_IMAGE_TAG \
-  --set falcon-image-analyzer.deployment.enabled=true \
-  --set falcon-image-analyzer.image.repository=$IAR_REGISTRY \
-  --set falcon-image-analyzer.image.tag=$IAR_IMAGE_TAG \
-  --set falcon-image-analyzer.crowdstrikeConfig.clusterName=$CLUSTER_NAME \
-  --set falcon-image-analyzer.crowdstrikeConfig.clientID=$FALCON_CLIENT_ID \
-  --set falcon-image-analyzer.crowdstrikeConfig.clientSecret=$FALCON_CLIENT_SECRET
+  --set falcon-clusterguard.image.repository=$FCG_REGISTRY \
+  --set falcon-clusterguard.image.tag=$FCG_IMAGE_TAG \
+  --set falcon-clusterguard.clusterName=$CLUSTER_NAME \
+  --set falcon-clusterguard.clusterguardController.admissionControl.enabled=true \
+  --set falcon-clusterguard.imageAnalyzer.enabled=true \
+  --set falcon-clusterguard.imageAnalyzer.crowdstrikeConfig.clientID=$FALCON_CLIENT_ID \
+  --set falcon-clusterguard.imageAnalyzer.crowdstrikeConfig.clientSecret=$FALCON_CLIENT_SECRET
 ```
+
+`clusterName` is usually discovered automatically on EKS, GKE, and AKS. Set it for self-hosted clusters.
+Omit the `imageAnalyzer` values to deploy without the image analyzer.
+
+### Deploy the Falcon Container Sensor
+
+The Falcon Container sensor is injected as a sidecar into application pods. Use it in managed
+environments that don't allow node access or privileged DaemonSets. Enable it with
+`falcon-sensor.enabled=true` and `falcon-sensor.container.enabled=true`. Leave
+`falcon-sensor.node.enabled` set to `false`.
+
+```bash
+export SENSOR_REGISTRY=<your-falcon-container-sensor-registry>
+export SENSOR_IMAGE_TAG=<your-falcon-container-sensor-image-tag>
+
+helm install falcon-platform crowdstrike/falcon-platform --version $PLATFORM_CHART_VERSION \
+  --namespace falcon-platform \
+  --create-namespace \
+  --set createComponentNamespaces=true \
+  --set global.falcon.cid=$FALCON_CID \
+  --set global.containerRegistry.configJSON=$ENCODED_DOCKER_CONFIG \
+  --set falcon-clusterguard.image.repository=$FCG_REGISTRY \
+  --set falcon-clusterguard.image.tag=$FCG_IMAGE_TAG \
+  --set falcon-clusterguard.nodeSensor.enabled=false \
+  --set falcon-sensor.enabled=true \
+  --set falcon-sensor.container.enabled=true \
+  --set falcon-sensor.container.image.repository=$SENSOR_REGISTRY \
+  --set falcon-sensor.container.image.tag=$SENSOR_IMAGE_TAG \
+  --set falcon-sensor.container.image.pullSecrets.enable=true \
+  --set falcon-sensor.container.image.pullSecrets.allNamespaces=true
+```
+
+This example keeps the FCG clusterguard controller for cluster visibility and turns off the FCG
+node sensor (`falcon-clusterguard.nodeSensor.enabled=false`). To deploy only the container sensor,
+set `falcon-clusterguard.enabled=false` instead. The container sensor is injected into pods created
+after installation, so restart your application deployments to add the sidecar.
 
 ## Verify Falcon Platform Deployment
 
@@ -269,53 +228,46 @@ helm list -n falcon-platform
 
 # Expected Output:
 NAME           	NAMESPACE      	REVISION	UPDATED                             	STATUS  	CHART                	APP VERSION
-falcon-platform	falcon-platform	1       	2025-10-06 16:54:28.315583 -0400 EDT	deployed	falcon-platform-1.0.0
+falcon-platform	falcon-platform	1       	2026-11-16 16:54:28.315583 -0500 EST	deployed	falcon-platform-<chart-version>
 
 # Check all pods with the falcon-platform label
 kubectl get pods -l app.kubernetes.io/instance=falcon-platform -A
 
 # Expected Output:
-NAMESPACE               NAME                                          READY   STATUS    RESTARTS   AGE
-falcon-image-analyzer   falcon-platform-falcon-image-analyzer-xxxxx   1/1     Running   0          2m
-falcon-kac              falcon-kac-xxxxxxxxx-xxxxx                    3/3     Running   0          2m
-falcon-system           falcon-platform-falcon-sensor-xxxxx           1/1     Running   0          2m
+NAMESPACE       NAME                                              READY   STATUS    RESTARTS   AGE
+falcon-system   falcon-clusterguard-controller-xxxxxxxxx-xxxxx    3/3     Running   0          2m
+falcon-system   falcon-clusterguard-iar-xxxxxxxxx-xxxxx           1/1     Running   0          2m
+falcon-system   falcon-sensor-xxxxx                               1/1     Running   0          2m
 ```
 
 ### Verify Individual Component Health
 
 ```bash
-# Node sensor daemonset
-# Falcon Sensor is deployed to falcon-system namespace by default
+# Falcon Cluster Guard is deployed to the falcon-system namespace by default
 kubectl get deployments,daemonsets,pods -n falcon-system
 
 # Expected Output:
-NAME                                           DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE
-daemonset.apps/falcon-platform-falcon-sensor   1         1         1       1            1           kubernetes.io/os=linux   2m
+NAME                                             READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/falcon-clusterguard-controller   1/1     1            1           2m
+deployment.apps/falcon-clusterguard-iar          1/1     1            1           2m
 
-NAME                                      READY   STATUS    RESTARTS   AGE
-pod/falcon-platform-falcon-sensor-xxxxx   1/1     Running   0          2m
+NAME                           DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE
+daemonset.apps/falcon-sensor   1         1         1       1            1           kubernetes.io/os=linux   2m
 
-# KAC webhook registration
-# Falcon KAC is deployed to falcon-kac namespace by default
-kubectl get deployments,pods -n falcon-kac
+NAME                                                  READY   STATUS    RESTARTS   AGE
+pod/falcon-clusterguard-controller-xxxxxxxxx-xxxxx    3/3     Running   0          2m
+pod/falcon-clusterguard-iar-xxxxxxxxx-xxxxx           1/1     Running   0          2m
+pod/falcon-sensor-xxxxx                               1/1     Running   0          2m
 
-# Expected Output:
-NAME                         READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/falcon-kac   1/1     1            1           2m
+# Admission control webhook registration (when admissionControl.enabled=true)
+kubectl get validatingwebhookconfiguration validating.falcon-kac.crowdstrike.com
+```
 
-NAME                              READY   STATUS    RESTARTS   AGE
-pod/falcon-kac-xxxxxxxxx-xxxxx   3/3     Running   0          2m
+When the Falcon Container sensor is enabled, its injector Deployment and webhook are also deployed:
 
-# Image analyzer deployment
-# Falcon Image Analyzer is deployed to falcon-image-analyzer namespace by default
-kubectl get deployments,daemonsets,pods -n falcon-image-analyzer
-
-# Expected Output:
-NAME                                                    READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/falcon-platform-falcon-image-analyzer   1/1     1            1           2m
-
-NAME                                                        READY   STATUS    RESTARTS   AGE
-pod/falcon-platform-falcon-image-analyzer-xxxxxxxxx-xxxxx   1/1     Running   0          2m
+```bash
+kubectl get deployment falcon-sensor-injector -n falcon-system
+kubectl get mutatingwebhookconfiguration falcon-sensor-injector
 ```
 
 ## Configure Falcon Platform
@@ -329,34 +281,29 @@ The umbrella chart implements a hierarchical configuration system with three lev
 
 ### Component-Specific Requirements
 
-**Falcon Sensor:**
+**Falcon Cluster Guard:**
 - Falcon CID
 - CrowdStrike container registry access
-
-**Falcon KAC:**
-- Falcon CID
-- CrowdStrike container registry access
-
-**Falcon Image Analyzer:**
-- Falcon CID
-- CrowdStrike container registry access
-- Kubernetes cluster name
-- Falcon OAuth client credentials (Client ID + Secret)
+- Kubernetes cluster name, if it can't be discovered automatically (for example, self-hosted clusters)
+- Image analyzer only: Falcon OAuth client credentials (Client ID + Secret)
   - Required Permissions:
     - Falcon Container CLI: Write
     - Falcon Container Image: Read/Write
     - Falcon Images Download: Read
 
+**Falcon Container Sensor:**
+- Falcon CID
+- CrowdStrike container registry access
+
 ### Falcon Platform Configuration
 Falcon Platform specific configurations apply to top level resources managed by Falcon Platform,
 rather than the Falcon component subcharts.
 
-| Parameter                               | Default               | Description                                                                                |
-|-----------------------------------------|-----------------------|--------------------------------------------------------------------------------------------|
-| createComponentNamespaces               | false                 | Create namespaces for each Falcon component. Pre-install only, does not work for upgrades. |
-| falcon-sensor.namespaceOverride         | falcon-system         | Name of dedicated namespace for Falcon Linux Node or Container sensor.                     |
-| falcon-kac.namespaceOverride            | falcon-kac            | Name of dedicated namespace for Falcon Kubernetes Admission Controller.                    |
-| falcon-image-analyzer.namespaceOverride | falcon-image-analyzer | Name of dedicated namespace for Falcon Image Analyzer.                                     |
+| Parameter                             | Default       | Description                                                                                |
+|---------------------------------------|---------------|--------------------------------------------------------------------------------------------|
+| createComponentNamespaces             | false         | Create namespaces for each Falcon component. Pre-install only, does not work for upgrades. |
+| falcon-clusterguard.namespaceOverride | falcon-system | Name of dedicated namespace for Falcon Cluster Guard.                                      |
+| falcon-sensor.namespaceOverride       | falcon-system | Name of dedicated namespace for the Falcon Container sensor injector.                      |
 
 > [!WARNING]
 > `createComponentNamespaces` will fail if the component namespaces already exist.
@@ -371,203 +318,144 @@ Global settings apply to all components unless component specific values are set
 | global.falconSecret.enabled         | false   | Enable existing secret injection as an alternative to setting plain text values for sensitive data |
 | global.falconSecret.secretName      | ""      | Name of existing Kubernetes secret with sensitive data necessary for Falcon component installation |
 | global.containerRegistry.configJSON | ""      | Your container registry config json as a base64 encoded string                                     |
-| global.containerRegistry.pullSecret | ""      | Name of existing container registry pull secret as an alternative to `registryConfigJSON`          |
+| global.containerRegistry.pullSecret | ""      | Name of existing container registry pull secret as an alternative to `configJSON`                  |
 | global.openshift.enabled            | false   | Enable OpenShift compatibility mode for all Falcon components                                      |
 | global.openshift.createSCC          | true    | Create SecurityContextConstraints resources. Set to `false` to manage SCCs outside of Helm         |
 | global.secretsStore.enabled         | false   | Enable Secrets Store CSI Driver as the secret source for all components. See [Secrets Store CSI Driver Integration](#secrets-store-csi-driver-integration). |
-| global.secretsStore.provider        | ""      | Secrets Store CSI Driver provider (`azure`)                                          |
+| global.secretsStore.provider        | ""      | Secrets Store CSI Driver provider (`azure`)                                                        |
 | global.secretsStore.azure.vaultName | ""      | Azure Key Vault name shared across all components                                                  |
 | global.secretsStore.azure.tenantID  | ""      | Azure Tenant ID shared across all components                                                       |
 | global.secretsStore.azure.clientID  | ""      | Azure Workload Identity client ID (optional; required only when multiple managed identities are assigned) |
 | global.secretsStore.secretName      | ""      | Name of the Kubernetes secret created by the CSI driver (overridable per component)               |
 
 > [!NOTE]
-Any existing secrets for `falconSecret` or `containerRegistry.pullSecret` must exist in the namespace dedicated to the respective Falcon component before installing the Helm chart. For example, you must already have an existing secret matching `global.falconSecret.secretName` in the `falcon-sensor` default namespace, or custom namespace you choose for your `falcon-sensor.namespaceOverride`.
+> Any existing secrets for `falconSecret` or `containerRegistry.pullSecret` must exist in the namespace of the respective Falcon component before installing the Helm chart. For example, you must already have an existing secret matching `global.falconSecret.secretName` in the `falcon-system` namespace, or the custom namespace you choose for `falcon-clusterguard.namespaceOverride` or `falcon-sensor.namespaceOverride`.
 
 ### Component-Specific Configuration
 Each Falcon component supports the existing configuration options for each subchart.
 
-#### Falcon Sensor
-Falcon Sensor specific configurations must be prefixed with `falcon-sensor`. For comprehensive configuration options please see the linked documentation below.
+#### Falcon Cluster Guard
+Falcon Cluster Guard specific configurations must be prefixed with `falcon-clusterguard`. For comprehensive configuration options please see the linked documentation below.
+- [Falcon Cluster Guard - Image Configuration](/helm-charts/falcon-clusterguard/README.md#image-configuration)
+- [Falcon Cluster Guard - Falcon Configuration Options](/helm-charts/falcon-clusterguard/README.md#falcon-configuration-options)
+- [Falcon Cluster Guard - Node Sensor Configuration](/helm-charts/falcon-clusterguard/README.md#node-sensor-configuration)
+- [Falcon Cluster Guard - Cluster Guard Controller Configuration](/helm-charts/falcon-clusterguard/README.md#cluster-guard-controller-configuration)
+- [Falcon Cluster Guard - Image Analyzer Configuration](/helm-charts/falcon-clusterguard/README.md#image-analyzer-configuration)
+- [Falcon Cluster Guard - GKE Autopilot Configuration](/helm-charts/falcon-clusterguard/README.md#gke-autopilot-configuration)
+
+**Common Values:**
+
+| Parameter                                                              | Description                                                                                       |
+|:-----------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------|
+| `falcon-clusterguard.enabled`                                          | Default: true                                                                                     |
+| `falcon-clusterguard.image.repository`                                 | FCG container registry URL. Default: `registry.crowdstrike.com/falcon-clusterguard/release/falcon-clusterguard` |
+| `falcon-clusterguard.image.tag`                                        | FCG container image tag                                                                           |
+| `falcon-clusterguard.image.digest`                                     | FCG container image digest (alternative to `tag`)                                                 |
+| `falcon-clusterguard.image.pullSecret`                                 | Overrides global.containerRegistry.pullSecret                                                     |
+| `falcon-clusterguard.image.registryConfigJSON`                         | Overrides global.containerRegistry.configJSON                                                     |
+| `falcon-clusterguard.clusterName`                                      | Cluster name reported by every FCG component. Required when it can't be discovered automatically  |
+| `falcon-clusterguard.falcon.cid`                                       | Overrides global.falcon.cid                                                                       |
+| `falcon-clusterguard.falcon.trace`                                     | Set trace level (`none`,`err`,`warn`,`info`,`debug`); Default: `none`                             |
+| `falcon-clusterguard.falconSecret.enabled`                             | Overrides global.falconSecret.enabled                                                             |
+| `falcon-clusterguard.falconSecret.secretName`                          | Overrides global.falconSecret.secretName                                                          |
+| `falcon-clusterguard.nodeSensor.enabled`                               | Deploy the node sensor DaemonSet. Default: true                                                   |
+| `falcon-clusterguard.clusterguardController.admissionControl.enabled`  | Deploy the validating admission webhook. Default: false                                           |
+| `falcon-clusterguard.imageAnalyzer.enabled`                            | Deploy the image analyzer. Default: false                                                         |
+| `falcon-clusterguard.imageAnalyzer.mode`                               | `deployment` (watcher mode) or `daemonset` (socket mode). Default: `deployment`                   |
+| `falcon-clusterguard.imageAnalyzer.crowdstrikeConfig.clientID`         | CrowdStrike Falcon OAuth client ID. Required for the image analyzer unless using `falconSecret` or `secretsStore` |
+| `falcon-clusterguard.imageAnalyzer.crowdstrikeConfig.clientSecret`     | CrowdStrike Falcon OAuth client secret. Required for the image analyzer unless using `falconSecret` or `secretsStore` |
+| `falcon-clusterguard.imageAnalyzer.crowdstrikeConfig.agentRuntime`     | Node container runtime. Required when `imageAnalyzer.mode=daemonset`                              |
+| `falcon-clusterguard.secretsStore.enabled`                             | Overrides global.secretsStore.enabled for this component. See [Secrets Store CSI Driver Integration](#secrets-store-csi-driver-integration). |
+| `falcon-clusterguard.secretsStore.provider`                            | Overrides global.secretsStore.provider for this component                                         |
+| `falcon-clusterguard.secretsStore.azure.vaultName`                     | Overrides global.secretsStore.azure.vaultName for this component                                  |
+| `falcon-clusterguard.secretsStore.azure.tenantID`                      | Overrides global.secretsStore.azure.tenantID for this component                                   |
+| `falcon-clusterguard.secretsStore.azure.clientID`                      | Overrides global.secretsStore.azure.clientID for this component                                   |
+| `falcon-clusterguard.secretsStore.provisioningTokenSecretName`         | Secrets store secret name for `FALCONCTL_OPT_PROVISIONING_TOKEN` (optional)                       |
+
+#### Falcon Container Sensor
+Falcon Container sensor specific configurations must be prefixed with `falcon-sensor`. For comprehensive configuration options please see the linked documentation below.
 - [Falcon Sensor - Falcon Configuration Options](/helm-charts/falcon-sensor/README.md#falcon-configuration-options)
-- [Falcon Sensor - Daemonset Configuration Options](/helm-charts/falcon-sensor/README.md#node-configuration)
 - [Falcon Sensor - Container Configuration Options](/helm-charts/falcon-sensor/README.md#container-sensor-configuration)
-- [Falcon Sensor - GKE Autopilot Configuration](/helm-charts/falcon-sensor/README.md#gke-autopilot-configuration)
 
-**Required Daemonset Values:**
-
-| Parameter                              | Description                          |
-|:---------------------------------------|:-------------------------------------|
-| `falcon-sensor.node.image.repository`  | Falcon Sensor container registry URL |
-| `falcon-sensor.node.image.tag`         | Falcon Sensor container image tag    |
-
-**Optional Daemonset Values:**
-
-| Parameter                                     | Description                                                           |
-|:----------------------------------------------|:----------------------------------------------------------------------|
-| `falcon-sensor.enabled`                       | Default: true                                                         |
-| `falcon-sensor.falcon.trace`                  | Set trace level (`none`,`err`,`warn`,`info`,`debug`); Default: `none` |
-| `falcon-sensor.node.image.digest`             | Falcon Node Sensor container image digest (alternative to `tag`)      |
-| `falcon-sensor.node.image.pullSecrets`        | Overrides global.containerRegistry.pullSecret                         |
-| `falcon-sensor.node.image.registryConfigJSON` | Overrides global.containerRegistry.configJSON                         |
-
-**Required Container Values:**
+**Required Values:**
 
 | Parameter                                              | Description                                                                 |
 |:-------------------------------------------------------|:----------------------------------------------------------------------------|
-| `falcon-sensor.node.enabled`                           | Disable daemonset installation (must be `false`)                            |
+| `falcon-sensor.enabled`                                | Enable the falcon-sensor subchart (must be `true`). Default: false          |
 | `falcon-sensor.container.enabled`                      | Enable sensor installation as a sidecar container (must be `true`)          |
 | `falcon-sensor.container.image.repository`             | Falcon Container Sensor container registry URL                              |
 | `falcon-sensor.container.image.tag`                    | Falcon Container Sensor container image tag                                 |
 | `falcon-sensor.container.image.pullSecrets.enable`     | Required if connecting to a container registry that requires authentication |
 | `falcon-sensor.container.image.pullSecrets.namespaces` | List of allowed namespaces to use given pull secrets                        |
 
-**Optional Container Values:**
+> [!NOTE]
+> `falcon-sensor.node.enabled` must remain `false` (the falcon-platform default). Setting it to `true`
+> fails the install, because the FCG node sensor replaces the falcon-sensor DaemonSet.
+
+**Optional Values:**
 
 | Parameter                                                      | Description                                                              |
 |:---------------------------------------------------------------|:-------------------------------------------------------------------------|
-| `falcon-sensor.enabled`                                        | Default: true                                                            |
 | `falcon-sensor.falcon.trace`                                   | Set trace level (`none`,`err`,`warn`,`info`,`debug`); Default: `none`    |
 | `falcon-sensor.container.image.digest`                         | Falcon Container Sensor container image digest (alternative to `tag`)    |
 | `falcon-sensor.container.image.pullSecrets.allNamespaces`      | Allow all namespaces to use given pull secrets - Not supported on ArgoCD |
 | `falcon-sensor.container.image.pullSecrets.name`               | Overrides global.containerRegistry.pullSecret                            |
 | `falcon-sensor.container.image.pullSecrets.registryConfigJSON` | Overrides global.containerRegistry.configJSON                            |
-
-
-**Shared Global Overrides:**
-The following falcon-sensor parameters apply to both Node and Container sensors
-
-| Parameter                               | Description                              |
-|:----------------------------------------|:-----------------------------------------|
-| `falcon-sensor.falcon.cid`              | Overrides global.falcon.cid              |
-| `falcon-sensor.falconSecret.enabled`    | Overrides global.falconSecret.enabled    |
-| `falcon-sensor.falconSecret.secretName` | Overrides global.falconSecret.secretName |
-| `falcon-sensor.secretsStore.enabled`                       | Overrides global.secretsStore.enabled for this component. See [Secrets Store CSI Driver Integration](#secrets-store-csi-driver-integration). |
-| `falcon-sensor.secretsStore.provider`                      | Overrides global.secretsStore.provider for this component |
-| `falcon-sensor.secretsStore.azure.vaultName`               | Overrides global.secretsStore.azure.vaultName for this component |
-| `falcon-sensor.secretsStore.azure.tenantID`                | Overrides global.secretsStore.azure.tenantID for this component |
-| `falcon-sensor.secretsStore.azure.clientID`                | Overrides global.secretsStore.azure.clientID for this component |
-| `falcon-sensor.secretsStore.provisioningTokenSecretName`   | Secrets store secret name for `FALCONCTL_OPT_PROVISIONING_TOKEN` (optional) |
-
-#### Falcon KAC
-Falcon KAC specific configurations must be prefixed with `falcon-kac`. For comprehensive configuration options please see the linked documentation below.
-- [Falcon KAC - Falcon Configuration Options](/helm-charts/falcon-kac/README.md#falcon-configuration-options)
-
-**Required Values:**
-
-| Parameter                      | Description                       |
-|:-------------------------------|:----------------------------------|
-| `falcon-kac.image.repository`  | Falcon KAC container registry URL |
-| `falcon-kac.image.tag`         | Falcon KAC container image tag    |
-
-**Optional Values:**
-
-| Parameter                             | Description                                                           |
-|:--------------------------------------|:----------------------------------------------------------------------|
-| `falcon-kac.enabled`                  | Default: true                                                         |
-| `falcon-kac.falcon.trace`             | Set trace level (`none`,`err`,`warn`,`info`,`debug`); Default: `none` |
-| `falcon-kac.image.digest`             | Falcon KAC container image digest (alternative to `tag`)              |
-| `falcon-kac.image.pullSecrets`        | Overrides global.containerRegistry.pullSecret                         |
-| `falcon-kac.image.registryConfigJSON` | Overrides global.containerRegistry.configJSON                         |
-| `falcon-kac.falcon.cid`               | Overrides global.falcon.cid                                           |
-| `falcon-kac.falconSecret.enabled`     | Overrides global.falconSecret.enabled                                 |
-| `falcon-kac.falconSecret.secretName`  | Overrides global.falconSecret.secretName                              |
-| `falcon-kac.secretsStore.enabled`                       | Overrides global.secretsStore.enabled for this component. See [Secrets Store CSI Driver Integration](#secrets-store-csi-driver-integration). |
-| `falcon-kac.secretsStore.provider`                      | Overrides global.secretsStore.provider for this component |
-| `falcon-kac.secretsStore.azure.vaultName`               | Overrides global.secretsStore.azure.vaultName for this component |
-| `falcon-kac.secretsStore.azure.tenantID`                | Overrides global.secretsStore.azure.tenantID for this component |
-| `falcon-kac.secretsStore.azure.clientID`                | Overrides global.secretsStore.azure.clientID for this component |
-| `falcon-kac.secretsStore.provisioningTokenSecretName`   | Secrets store secret name for `FALCONCTL_OPT_PROVISIONING_TOKEN` (optional) |
-
-#### Falcon Image Analyzer
-Falcon Image Analyzer specific configurations must be prefixed with `falcon-image-analyzer`. For comprehensive configuration options please see the linked documentation below.
-- [Falcon Image Analyzer - Configuration Options](/helm-charts/falcon-image-analyzer/README.md#falcon-configuration-options)
-
-**Required Values:**
-
-| Parameter                                              | Description                                        |
-|:-------------------------------------------------------|:---------------------------------------------------|
-| `falcon-image-analyzer.deployment.enabled`             | Enable for watcher mode (cannot enable both modes) |
-| `falcon-image-analyzer.daemonset.enabled`              | Enable for socket mode (cannot enable both modes)  |
-| `falcon-image-analyzer.image.repository`               | Falcon Image Analyzer container registry URL       |
-| `falcon-image-analyzer.image.tag`                      | Falcon Image Analyzer container image tag          |
-| `falcon-image-analyzer.crowdstrikeConfig.clusterName`  | Kubernetes cluster name                            |
-| `falcon-image-analyzer.crowdstrikeConfig.agentRuntime` | Required if daemonset enabled                      |
-| `falcon-image-analyzer.crowdstrikeConfig.clientId`     | CrowdStrike Falcon OAuth client ID                 |
-| `falcon-image-analyzer.crowdstrikeConfig.clientSecret` | CrowdStrike Falcon OAuth client secret             |
-
-**Optional Values:**
-
-| Parameter                                                | Description                                                         |
-|:---------------------------------------------------------|:--------------------------------------------------------------------|
-| `falcon-image-analyzer.enabled`                          | Default: true                                                       |
-| `falcon-image-analyzer.enableDebug`                      | Set to `true` for debug level log verbosity                         |
-| `falcon-image-analyzer.image.digest`                     | Falcon Image Analyzer container image digest (alternative to `tag`) |
-| `falcon-image-analyzer.image.pullSecret`                 | Overrides global.containerRegistry.pullSecret                       |
-| `falcon-image-analyzer.image.registryConfigJSON`         | Overrides global.containerRegistry.configJSON                       |
-| `falcon-image-analyzer.crowdstrikeConfig.cid`            | Overrides global.falcon.cid                                         |
-| `falcon-image-analyzer.crowdstrikeConfig.existingSecret` | Overrides global.falconSecret.secretName                            |
-| `falcon-image-analyzer.secretsStore.enabled`                        | Overrides global.secretsStore.enabled for this component. See [Secrets Store CSI Driver Integration](#secrets-store-csi-driver-integration). |
-| `falcon-image-analyzer.secretsStore.provider`                       | Overrides global.secretsStore.provider for this component |
-| `falcon-image-analyzer.secretsStore.azure.vaultName`                | Overrides global.secretsStore.azure.vaultName for this component |
-| `falcon-image-analyzer.secretsStore.azure.tenantID`                 | Overrides global.secretsStore.azure.tenantID for this component |
-| `falcon-image-analyzer.secretsStore.azure.clientID`                 | Overrides global.secretsStore.azure.clientID for this component |
-
+| `falcon-sensor.container.podLabels`                            | Additional labels to add to the injector Deployment pods                 |
+| `falcon-sensor.falcon.cid`                                     | Overrides global.falcon.cid                                              |
+| `falcon-sensor.falconSecret.enabled`                           | Overrides global.falconSecret.enabled                                    |
+| `falcon-sensor.falconSecret.secretName`                        | Overrides global.falconSecret.secretName                                 |
+| `falcon-sensor.secretsStore.enabled`                           | Overrides global.secretsStore.enabled for this component. See [Secrets Store CSI Driver Integration](#secrets-store-csi-driver-integration). |
+| `falcon-sensor.secretsStore.provider`                          | Overrides global.secretsStore.provider for this component                |
+| `falcon-sensor.secretsStore.azure.vaultName`                   | Overrides global.secretsStore.azure.vaultName for this component         |
+| `falcon-sensor.secretsStore.azure.tenantID`                    | Overrides global.secretsStore.azure.tenantID for this component          |
+| `falcon-sensor.secretsStore.azure.clientID`                    | Overrides global.secretsStore.azure.clientID for this component          |
+| `falcon-sensor.secretsStore.provisioningTokenSecretName`       | Secrets store secret name for `FALCONCTL_OPT_PROVISIONING_TOKEN` (optional) |
 
 ### Using Existing Kubernetes Secrets
 
 Instead of specifying sensitive values directly in Helm values, you can use existing Kubernetes secrets for the following env vars:
-- `FALCONCTL_OPT_CID`: Falcon CID - Required for falcon-sensor and falcon-kac
-- `FALCONCTL_OPT_PROVISIONING_TOKEN`: Falcon provisioning token - Optional for falcon-sensor and falcon-kac
-- `AGENT_CLIENT_ID`: Falcon OAuth client ID - Required for falcon-image-analyzer
-- `AGENT_CLIENT_SECRET`: Falcon OAuth client secret - Required for falcon-image-analyzer
-- `AGENT_CID`: Falcon CID - Required for falcon-image-analyzer
+- `FALCONCTL_OPT_CID`: Falcon CID - Required for falcon-clusterguard and falcon-sensor
+- `FALCONCTL_OPT_PROVISIONING_TOKEN`: Falcon provisioning token - Optional for falcon-clusterguard and falcon-sensor
+- `AGENT_CLIENT_ID`: Falcon OAuth client ID - Required for the falcon-clusterguard image analyzer
+- `AGENT_CLIENT_SECRET`: Falcon OAuth client secret - Required for the falcon-clusterguard image analyzer
+- `AGENT_CID`: Falcon CID - Required for the falcon-clusterguard image analyzer
 
-When using `falconSecret`, create the secret in each respective namespace beforehand:
+When using `falconSecret`, create the secret in the component namespace beforehand. Both components
+use `falcon-system` by default, so a single secret serves both:
 
 ```bash
 # Set additional environment variables
 export FALCON_SECRET_NAME=<your-falcon-secret-name>
 export FALCON_PROVISIONING_TOKEN=<your-falcon-provisioning-token>
 
-# First create each component namespace
+# First create the component namespace
 kubectl create namespace falcon-system
-kubectl create namespace falcon-kac
-kubectl create namespace falcon-image-analyzer
 
-# Create secret with required values for falcon-sensor
+# Create secret with required values for falcon-clusterguard and falcon-sensor
 kubectl create secret generic $FALCON_SECRET_NAME -n falcon-system \
   --from-literal=FALCONCTL_OPT_CID=$FALCON_CID \
-  --from-literal=FALCONCTL_OPT_PROVISIONING_TOKEN=$FALCON_PROVISIONING_TOKEN
-
-# Create secret with required values for falcon-kac
-kubectl create secret generic $FALCON_SECRET_NAME -n falcon-kac \
-  --from-literal=FALCONCTL_OPT_CID=$FALCON_CID
-
-# Create secret with required values for falcon-image-analyzer
-kubectl create secret generic $FALCON_SECRET_NAME -n falcon-image-analyzer \
+  --from-literal=FALCONCTL_OPT_PROVISIONING_TOKEN=$FALCON_PROVISIONING_TOKEN \
   --from-literal=AGENT_CLIENT_ID=$FALCON_CLIENT_ID \
   --from-literal=AGENT_CLIENT_SECRET=$FALCON_CLIENT_SECRET \
   --from-literal=AGENT_CID=$FALCON_CID
 ```
 
-Once you have created your Kubernetes secrets, you can install the falcon-platform Helm chart with the following global options:
+The `AGENT_*` keys are only needed when the FCG image analyzer is enabled. With the image analyzer
+enabled, don't set `falcon-clusterguard.imageAnalyzer.crowdstrikeConfig.clientID` or `clientSecret`.
+
+Once you have created your Kubernetes secret, you can install the falcon-platform Helm chart with the following global options:
 
 ```bash
-helm install falcon-platform crowdstrike/falcon-platform --version 1.0.0 -n falcon-platform \
+helm install falcon-platform crowdstrike/falcon-platform --version $PLATFORM_CHART_VERSION -n falcon-platform \
   --create-namespace \
   --set global.falconSecret.enabled=true \
   --set global.falconSecret.secretName=$FALCON_SECRET_NAME \
   --set global.containerRegistry.configJSON=$ENCODED_DOCKER_CONFIG \
-  --set falcon-sensor.node.image.repository=$SENSOR_REGISTRY \
-  --set falcon-sensor.node.image.tag=$SENSOR_IMAGE_TAG \
-  --set falcon-kac.image.repository=$KAC_REGISTRY \
-  --set falcon-kac.image.tag=$KAC_IMAGE_TAG \
-  --set falcon-image-analyzer.daemonset.enabled=true \
-  --set falcon-image-analyzer.image.repository=$IAR_REGISTRY \
-  --set falcon-image-analyzer.image.tag=$IAR_IMAGE_TAG \
-  --set falcon-image-analyzer.crowdstrikeConfig.agentRuntime=$IAR_AGENT_RUNTIME \
-  --set falcon-image-analyzer.crowdstrikeConfig.clusterName=$CLUSTER_NAME
+  --set falcon-clusterguard.image.repository=$FCG_REGISTRY \
+  --set falcon-clusterguard.image.tag=$FCG_IMAGE_TAG \
+  --set falcon-clusterguard.clusterName=$CLUSTER_NAME \
+  --set falcon-clusterguard.imageAnalyzer.enabled=true
 ```
 
 ### Secrets Store CSI Driver Integration
@@ -594,17 +482,17 @@ For Azure Key Vault, the vault name, tenant ID, and optional workload identity c
 
 **Azure Key Vault** (fixed secret names):
 
-| Component              | Secret name (Azure)                                  | Env var mapped                      |
-|:-----------------------|:-----------------------------------------------------|:------------------------------------|
-| falcon-sensor          | `falcon-cid`                                         | `FALCONCTL_OPT_CID`                 |
-| falcon-sensor          | `falcon-provisioning-token` (optional, configurable) | `FALCONCTL_OPT_PROVISIONING_TOKEN`  |
+| Component                                        | Secret name (Azure)                                   | Env var mapped                     |
+|:-------------------------------------------------|:------------------------------------------------------|:-----------------------------------|
 | falcon-clusterguard (node sensor, cg-controller) | `falcon-cid`                                          | `FALCONCTL_OPT_CID`                |
 | falcon-clusterguard (node sensor, cg-controller) | `secretsStore.provisioningTokenSecretName` (optional) | `FALCONCTL_OPT_PROVISIONING_TOKEN` |
-| falcon-clusterguard (image analyzer)             | `falcon-client-id`     | `AGENT_CLIENT_ID`             |
-| falcon-clusterguard (image analyzer)             | `falcon-client-secret` | `AGENT_CLIENT_SECRET`         |
-| falcon-clusterguard (image analyzer)             | `falcon-cid`           | `AGENT_CID`                   |
+| falcon-clusterguard (image analyzer)             | `falcon-client-id`                                    | `AGENT_CLIENT_ID`                  |
+| falcon-clusterguard (image analyzer)             | `falcon-client-secret`                                | `AGENT_CLIENT_SECRET`              |
+| falcon-clusterguard (image analyzer)             | `falcon-cid`                                          | `AGENT_CID`                        |
+| falcon-sensor (container)                        | `falcon-cid`                                          | `FALCONCTL_OPT_CID`                |
+| falcon-sensor (container)                        | `falcon-provisioning-token` (optional, configurable)  | `FALCONCTL_OPT_PROVISIONING_TOKEN` |
 
-`falcon-clusterguard` creates two SecretProviderClasses in its namespace, `<release-fullname>-csi` for the node sensor and clusterguard controller and `<release-fullname>-iar-csi` for the Image Analyzer, so the Image Analyzer's API client credentials are never mounted by the node sensor. If `global.secretsStore.secretName` is set, FCG uses it for the node sensor/controller secret and `<secretName>-iar` for the Image Analyzer secret.
+`falcon-clusterguard` creates two SecretProviderClasses in its namespace, `<release>-falcon-clusterguard-csi` for the node sensor and clusterguard controller and `falcon-clusterguard-iar-csi` for the Image Analyzer, so the Image Analyzer's API client credentials are never mounted by the node sensor. If `global.secretsStore.secretName` is set, FCG uses it for the node sensor/controller secret and `<secretName>-iar` for the Image Analyzer secret.
 
 #### Example configuration
 
@@ -625,14 +513,6 @@ global:
       tenantID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
       # clientID: ""  # optional: required only when multiple managed identities are assigned
 
-falcon-sensor:
-  serviceAccount:
-    annotations:
-      azure.workload.identity/client-id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-  container:
-    podLabels:
-      azure.workload.identity/use: "true"
-
 falcon-clusterguard:
   nodeSensor:
     serviceAccount:
@@ -652,9 +532,17 @@ falcon-clusterguard:
         azure.workload.identity/client-id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
     podLabels:
       azure.workload.identity/use: "true"
+
+falcon-sensor:            # only when the Falcon Container sensor is enabled
+  serviceAccount:
+    annotations:
+      azure.workload.identity/client-id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  container:
+    podLabels:
+      azure.workload.identity/use: "true"
 ```
 
-To use a custom provisioning token secret name for `falcon-sensor` or `falcon-clusterguard`, set `secretsStore.provisioningTokenSecretName` in that component's section.
+To use a custom provisioning token secret name for `falcon-clusterguard` or `falcon-sensor`, set `secretsStore.provisioningTokenSecretName` in that component's section.
 
 Each component can still override `vaultName`, `tenantID`, or `clientID` individually if needed — per-component values take precedence over globals.
 
@@ -662,19 +550,24 @@ Each component can still override `vaultName`, `tenantID`, or `clientID` individ
 
 ### Install/Reinstall a Single Component
 When installing a new component for the first time, make sure the component namespace exists.
-`createComponentNamespaces` does not support namespace creation for Helm upgrades.
+`createComponentNamespaces` does not support namespace creation for Helm upgrades. Both components
+use `falcon-system` by default, so the namespace usually already exists.
 
 ```bash
-# Create component namespace if it does not already exist
-kubectl create namespace falcon-kac
+# Create the component namespace if it does not already exist
+kubectl create namespace falcon-system
 
-# Upgrade Helm chart with new component enabled and required values - for example to install falcon-kac after initial Helm install
-helm upgrade --install falcon-platform crowdstrike/falcon-platform --version 1.0.0 -n falcon-platform \
+# Upgrade Helm chart with new component enabled and required values - for example to add the Falcon Container sensor after initial Helm install
+helm upgrade --install falcon-platform crowdstrike/falcon-platform --version $PLATFORM_CHART_VERSION -n falcon-platform \
   --reuse-values \
-  --set falcon-kac.enabled=true \
-  --set falcon-kac.image.repository=$KAC_REGISTRY \
-  --set falcon-kac.image.tag=$KAC_IMAGE_TAG
+  --set falcon-sensor.enabled=true \
+  --set falcon-sensor.container.enabled=true \
+  --set falcon-sensor.container.image.repository=$SENSOR_REGISTRY \
+  --set falcon-sensor.container.image.tag=$SENSOR_IMAGE_TAG
 ```
+
+FCG workloads are enabled the same way, for example `--set falcon-clusterguard.imageAnalyzer.enabled=true`
+together with the image analyzer credentials.
 
 ### Upgrade the Falcon Platform Helm Chart Version
 ```bash
@@ -682,26 +575,22 @@ helm upgrade --install falcon-platform crowdstrike/falcon-platform --version 1.0
 helm repo update
 
 # Upgrade Helm chart with existing Helm values
-helm upgrade falcon-platform crowdstrike/falcon-platform --version 1.0.1 -n falcon-platform \
+helm upgrade falcon-platform crowdstrike/falcon-platform --version $PLATFORM_CHART_VERSION -n falcon-platform \
   --reuse-values
 ```
 
-### Individual Component Updates
+> [!IMPORTANT]
+> If you are upgrading from falcon-platform `1.x`, don't use `--reuse-values`. Follow
+> [Migrating to Falcon Cluster Guard (FCG)](#migrating-to-falcon-cluster-guard-fcg) instead.
 
-> [!NOTE]
-> DaemonSet deployments of sensor versions 7.33 and earlier of the Falcon sensor for Linux are blocked from updates and
-> uninstallation if their sensor update policy has the **Uninstall and maintenance protection** setting enabled. Before
-> upgrading or uninstalling these versions of the sensor, move the sensors to a new sensor update policy with this
-> policy setting turned off. For more info, see [Sensor update and uninstallation for DaemonSet sensor versions 7.33
-> and lower](https://falcon.crowdstrike.com/documentation/anchor/sc632f2e).
+### Individual Component Updates
 
 ```bash
 # Upgrade the version of each Falcon component image
-helm upgrade falcon-platform crowdstrike/falcon-platform --version 1.0.0 -n falcon-platform \
+helm upgrade falcon-platform crowdstrike/falcon-platform --version $PLATFORM_CHART_VERSION -n falcon-platform \
   --reuse-values \
-  --set falcon-sensor.node.image.tag=$SENSOR_IMAGE_TAG \
-  --set falcon-kac.image.tag=$KAC_IMAGE_TAG \
-  --set falcon-image-analyzer.image.tag=$IAR_IMAGE_TAG
+  --set falcon-clusterguard.image.tag=$FCG_IMAGE_TAG \
+  --set falcon-sensor.container.image.tag=$SENSOR_IMAGE_TAG
 ```
 
 > [!IMPORTANT]
@@ -714,46 +603,42 @@ helm upgrade falcon-platform crowdstrike/falcon-platform --version 1.0.0 -n falc
 
 ### Uninstall a Single Component
 
-> [!NOTE]
-> DaemonSet deployments of sensor versions 7.33 and earlier of the Falcon sensor for Linux are blocked from updates and
-> uninstallation if their sensor update policy has the **Uninstall and maintenance protection** setting enabled. Before
-> upgrading or uninstalling these versions of the sensor, move the sensors to a new sensor update policy with this
-> policy setting turned off. For more info, see [Sensor update and uninstallation for DaemonSet sensor versions 7.33
-> and lower](https://falcon.crowdstrike.com/documentation/anchor/sc632f2e).
-
 ```bash
-# Upgrade your helm release with the component disabled - for example to uninstall falcon-image-analyzer only:
-helm upgrade falcon-platform crowdstrike/falcon-platform --version 1.0.0 -n falcon-platform \
+# Upgrade your helm release with the component disabled - for example to uninstall the Falcon Container sensor only:
+helm upgrade falcon-platform crowdstrike/falcon-platform --version $PLATFORM_CHART_VERSION -n falcon-platform \
   --reuse-values \
-  --set falcon-image-analyzer.enabled=false
-
-# Optionally delete the component namespace
-kubectl delete namespace falcon-image-analyzer
+  --set falcon-sensor.enabled=false
 ```
 
+To remove a single FCG workload, disable it instead, for example
+`--set falcon-clusterguard.imageAnalyzer.enabled=false`. Don't delete the `falcon-system` namespace
+while another component still runs in it.
+
 ### Uninstall the Falcon Platform Helm Chart
+
+When the FCG node sensor is enabled, `helm uninstall` runs a cleanup DaemonSet that removes the
+sensor from every node. See [Uninstall Helm Chart](/helm-charts/falcon-clusterguard/README.md#uninstall-helm-chart).
+
 ```bash
 # Remove Falcon Platform and all components
 helm uninstall falcon-platform -n falcon-platform
 
-# Optionally delete the release namespace, and the namespace for each Falcon component subchart
-kubectl delete namespace falcon-platform falcon-system falcon-kac falcon-image-analyzer
+# Optionally delete the release namespace and the Falcon component namespace
+kubectl delete namespace falcon-platform falcon-system
 ```
 
 ## Migrating from Individual Component Helm Charts
 > [!WARNING]
-> If you are already using the individual Falcon component Helm charts,
-> we recommend to continue doing so. We do not have any plans to stop supporting the
-> component Helm charts. We will continue supporting each Falcon component chart
-> to make updates to the unified falcon-platform Helm chart. Migrating to the unified
-> falcon-platform Helm chart requires completely uninstalling and reinstalling your
-> Falcon components, which is not recommended.
+> If you are already using the individual `falcon-clusterguard` or `falcon-sensor` Helm charts,
+> we recommend to continue doing so. Migrating to the unified falcon-platform Helm chart requires
+> completely uninstalling and reinstalling your Falcon components, which is not recommended.
 
 ## Migrating to Falcon Cluster Guard (FCG)
 
-Falcon Cluster Guard (`falcon-clusterguard`) replaces `falcon-sensor` (node mode), `falcon-kac`,
-and `falcon-image-analyzer` with a single unified chart and container image. If you are upgrading to a version
-of `falcon-platform` that includes FCG, follow the steps below.
+Falcon Cluster Guard (`falcon-clusterguard`) replaces the falcon-platform `1.x` node sensor
+(`falcon-sensor` node mode), Kubernetes Admission Controller (`falcon-kac`), and Image Assessment at
+Runtime (`falcon-image-analyzer`) with a single unified chart and container image. If you are
+upgrading from a `1.x` version of `falcon-platform`, follow the steps below.
 
 > [!IMPORTANT]
 > **`falcon-sensor` is NOT fully deprecated.** It still supports the Falcon Container sensor.
@@ -762,23 +647,24 @@ of `falcon-platform` that includes FCG, follow the steps below.
 >
 > `falcon-kac` and `falcon-image-analyzer` are fully deprecated and equivalent features have been migrated to `falcon-clusterguard`.
 
+> [!NOTE]
+> DaemonSet deployments of sensor versions 7.33 and earlier of the Falcon sensor for Linux are blocked from updates and
+> uninstallation if their sensor update policy has the **Uninstall and maintenance protection** setting enabled. Before
+> migrating these versions of the sensor, move the sensors to a new sensor update policy with this
+> policy setting turned off. For more info, see [Sensor update and uninstallation for DaemonSet sensor versions 7.33
+> and lower](https://falcon.crowdstrike.com/documentation/anchor/sc632f2e).
+
 ### What Changed
 
-| Area             | Before                                                      | After                                                                            |
+| Area             | Before (falcon-platform `1.x`)                              | After                                                                            |
 |------------------|-------------------------------------------------------------|----------------------------------------------------------------------------------|
-| Node sensor      | `falcon-sensor` subchart, `falcon-sensor.node.*`            | `falcon-clusterguard.nodeSensor.*` — `falcon-sensor` subchart removed            |
-| Container sensor | `falcon-sensor.container.*`                                 | **Unchanged** — `falcon-sensor` subchart retained if container mode is needed    |
+| Node sensor      | `falcon-sensor.node.*`                                      | `falcon-clusterguard.nodeSensor.*` — `falcon-sensor` node mode removed           |
+| Container sensor | `falcon-sensor.container.*`                                 | **Unchanged** — `falcon-sensor` subchart retained for container mode             |
 | KAC              | `falcon-kac` subchart, `falcon-kac.*`                       | `falcon-clusterguard.clusterguardController.*` — `falcon-kac` subchart removed   |
 | Image scanning   | `falcon-image-analyzer` subchart, `falcon-image-analyzer.*` | `falcon-clusterguard.imageAnalyzer.*` — `falcon-image-analyzer` subchart removed |
 | IAR mode         | `deployment.enabled` or `daemonset.enabled`                 | `falcon-clusterguard.imageAnalyzer.mode` (`deployment` or `daemonset`)           |
 | Container image  | Separate images per component                               | Single unified FCG image                                                         |
 | Namespace        | `falcon-system`, `falcon-kac`, `falcon-image-analyzer`      | `falcon-system` for FCG                                                          |
-
-> [!NOTE]
-> `falcon-sensor` (node mode), `falcon-kac`, and `falcon-image-analyzer` have been **removed as
-> subchart dependencies** from `falcon-platform`. Their existing Kubernetes resources are
-> automatically pruned by `helm upgrade` — no manual deletion needed, and the `falcon-sensor`
-> cleanup DaemonSet will not run.
 
 ### Step 1 — Run the migration script
 
@@ -857,14 +743,14 @@ falcon-clusterguard:
 
 Some settings move outside `imageAnalyzer` because FCG shares them across components:
 
-| Standalone `falcon-image-analyzer` value | FCG value                                                                                                  |
-|------------------------------------------|------------------------------------------------------------------------------------------------------------|
-| `daemonset.enabled: true`                | `imageAnalyzer.mode: daemonset` (`agentRuntime`, `agentRuntimeSocket`, and `securityContext` move with it) |
-| `crowdstrikeConfig.clusterName`          | `clusterName` (top level)                                                                                  |
-| `crowdstrikeConfig.cid`                  | `falcon.cid`, if no FCG or global CID is set                                                               |
-| `azure.*`                                | `azure.*` (top level)                                                                                      |
-| `gcp.enabled`                            | `gke.enabled`                                                                                              |
-| `openshift.sccName`                      | `openshift.iarSCCName`                                                                                     |
+| Previous `falcon-image-analyzer` value | FCG value                                                                                                  |
+|----------------------------------------|------------------------------------------------------------------------------------------------------------|
+| `daemonset.enabled: true`              | `imageAnalyzer.mode: daemonset` (`agentRuntime`, `agentRuntimeSocket`, and `securityContext` move with it) |
+| `crowdstrikeConfig.clusterName`        | `clusterName` (top level)                                                                                  |
+| `crowdstrikeConfig.cid`                | `falcon.cid`, if no FCG or global CID is set                                                               |
+| `azure.*`                              | `azure.*` (top level)                                                                                      |
+| `gcp.enabled`                          | `gke.enabled`                                                                                              |
+| `openshift.sccName`                    | `openshift.iarSCCName`                                                                                     |
 
 `kac.namespace` and `namespaceOverride` are no longer used. The output has no
 `falcon-image-analyzer` block, because `falcon-platform` no longer includes that subchart. See
@@ -884,8 +770,8 @@ Don't add `--reuse-values`. The migrated file already contains all of your setti
 if the upgrade fails.
 
 > [!NOTE]
-> `falcon-sensor` (node mode), `falcon-kac`, and `falcon-image-analyzer` have been removed as
-> subchart dependencies from `falcon-platform`. Running `helm upgrade` will automatically remove
+> `falcon-kac` and `falcon-image-analyzer` are no longer subchart dependencies of `falcon-platform`,
+> and `falcon-sensor` no longer deploys node mode. Running `helm upgrade` automatically removes
 > their Kubernetes resources (DaemonSet, Deployment, RBAC, etc.) as part of the normal diff — no
 > explicit `enabled: false` flag is required, and the `falcon-sensor` cleanup DaemonSet will
 > **not** run (that only fires on `helm uninstall`). The FCG image analyzer starts in the FCG
@@ -957,24 +843,29 @@ global:
   falcon:
     cid: YOUR-CID-HERE
 
-# Falcon Cluster Guard — replaces falcon-sensor.node, falcon-kac, and falcon-image-analyzer.
+# falcon-sensor.node is deprecated — replaced by falcon-clusterguard.nodeSensor.*
+# falcon-kac is deprecated — replaced by falcon-clusterguard.clusterguardController.*
+# falcon-image-analyzer is deprecated — replaced by falcon-clusterguard.imageAnalyzer.*
+
 falcon-clusterguard:
   enabled: true
   namespaceOverride: falcon-system
-  clusterName: my-cluster
+  clusterName: "my-cluster"
   image:
     repository: registry.crowdstrike.com/falcon-clusterguard/release/falcon-clusterguard
-    tag: "<fcg-tag>"
-    pullSecret: YOUR-IMAGE-PULL-SECRET-NAME
-
+    tag: <fcg-tag>
   nodeSensor:
     daemonset:
       tolerations:
-        - key: node-role.kubernetes.io/master
-          operator: Exists
-          effect: NoSchedule
+        - key: "node-role.kubernetes.io/master"
+          operator: "Exists"
+          effect: "NoSchedule"
+    serviceAccount:
+      name: crowdstrike-falcon-sa
 
   clusterguardController:
+    admissionControl:
+      enabled: true
     resources:
       client:  # was: falconClientResources
         limits:
@@ -982,6 +873,8 @@ falcon-clusterguard:
         requests:
           cpu: 250m
           memory: 384Mi
+    serviceAccount:
+      name: falcon-kac-sa
     visibility:
       resourceWatcher:
         enabled: true
@@ -993,35 +886,42 @@ falcon-clusterguard:
       clientSecret: "secret"
 ```
 
+The script keeps the previous ServiceAccount names so that existing bindings, such as IRSA or
+Workload Identity, keep working.
+
 ### Container sensor + FCG together
 
-If your cluster uses container sensor, KAC and/or IAR, the migrated values file should have
-**both** `falcon-sensor` and `falcon-clusterguard` enabled. The image analyzer runs in FCG:
+If your cluster uses the container sensor together with KAC and/or IAR, the migrated values file has
+**both** `falcon-sensor` and `falcon-clusterguard` enabled. The clusterguard controller and image
+analyzer run in FCG:
 
 ```yaml
-# Container sensor — stays on falcon-sensor chart
+# Container sensor — stays on the falcon-sensor chart
 falcon-sensor:
   enabled: true
-  node:
-    enabled: false        # node mode moved to falcon-clusterguard
   container:
     enabled: true         # container mode continues here
     image:
       repository: registry.crowdstrike.com/falcon-container/release/falcon-container
       tag: "<falcon-container-tag>"
 
-# Node sensor + clusterguard controller — new FCG chart
+# Clusterguard controller + image analyzer — new FCG chart
 falcon-clusterguard:
   enabled: true
   image:
     repository: registry.crowdstrike.com/falcon-clusterguard/release/falcon-clusterguard
     tag: "<fcg-tag>"
-
   nodeSensor:
-    enabled: false
+    enabled: false        # set because falcon-sensor.node.enabled was false
+  clusterguardController:
+    admissionControl:
+      enabled: true       # KAC admission control moved to falcon-clusterguard
   imageAnalyzer:
     enabled: true         # image analyzer moved to falcon-clusterguard
 ```
+
+The script sets `falcon-clusterguard.nodeSensor.enabled: false` when your previous values didn't
+run the node sensor, and prints a warning. Set it to `true` to deploy the FCG node sensor.
 
 ## Troubleshooting
 
@@ -1055,52 +955,54 @@ For `field is immutable`, `cannot be imported into the current release`, and ser
 conflict errors, see [Upgrade Errors](../falcon-clusterguard/README.md#upgrade-errors) in the
 `falcon-clusterguard` README.
 
-### Falcon Sensor Troubleshooting Guides
-- [Falcon Sensor - Node Deployment Considerations](/helm-charts/falcon-sensor/README.md#deployment-considerations)
-- [Falcon Sensor - Container Deployment Considerations](/helm-charts/falcon-sensor/README.md#deployment-considerations-1)
-- [Falcon Sensor - Pod Security Standards](/helm-charts/falcon-sensor/README.md#pod-security-standards)
-- [Falcon Sensor - More Troubleshooting](/helm-charts/falcon-sensor/README.md#troubleshooting)
+### Falcon Cluster Guard Troubleshooting Guides
+- [Falcon Cluster Guard - Node Sensor Deployment Considerations](/helm-charts/falcon-clusterguard/README.md#deployment-considerations)
+- [Falcon Cluster Guard - Pod Security Standards](/helm-charts/falcon-clusterguard/README.md#pod-security-standards)
+- [Falcon Cluster Guard - Image Analyzer Configuration](/helm-charts/falcon-clusterguard/README.md#image-analyzer-configuration)
+- [Falcon Cluster Guard - More Troubleshooting](/helm-charts/falcon-clusterguard/README.md#troubleshooting)
 
-### Falcon Image Analyzer Troubleshooting Guides
-- [Falcon Image Analyzer - Deployment Considerations](/helm-charts/falcon-image-analyzer/README.md#deployment-considerations)
-- [Falcon Image Analyzer - Allow traffic to CrowdStrike servers](/helm-charts/falcon-image-analyzer/README.md#allow-traffic-to-crowdstrike-servers)
-- [Falcon Image Analyzer - Pod Security Standards](/helm-charts/falcon-image-analyzer/README.md#pod-security-standards)
-- [Falcon Image Analyzer - Pod Eviction](/helm-charts/falcon-image-analyzer/README.md#pod-eviction)
-- [Falcon Image Analyzer - Exclusions](/helm-charts/falcon-image-analyzer/README.md#exclusions)
+### Falcon Container Sensor Troubleshooting Guides
+- [Falcon Sensor - Container Deployment Considerations](/helm-charts/falcon-sensor/README.md#deployment-considerations-1)
+- [Falcon Sensor - More Troubleshooting](/helm-charts/falcon-sensor/README.md#troubleshooting)
 
 ### Component Logs
 For debugging purposes make sure to enable debug level logging for the relevant Falcon components.
 
-#### Sensor Logs
+#### Falcon Cluster Guard Logs
+```bash
+# Enable debug level logs for the FCG node sensor and clusterguard controller
+helm upgrade falcon-platform crowdstrike/falcon-platform --version $PLATFORM_CHART_VERSION -n falcon-platform \
+  --reuse-values \
+  --set falcon-clusterguard.falcon.trace=debug
+
+# Get node sensor logs
+kubectl logs -n falcon-system -l app=falcon-sensor
+
+# Get clusterguard controller logs
+kubectl logs -n falcon-system -l app=falcon-clusterguard --all-containers
+```
+
+To debug only one of them, set `falcon-clusterguard.nodeSensor.falcon.trace` or
+`falcon-clusterguard.clusterguardController.falcon.trace` instead.
+
+#### Image Analyzer Logs
+```bash
+# Enable debug level logs for the FCG image analyzer
+helm upgrade falcon-platform crowdstrike/falcon-platform --version $PLATFORM_CHART_VERSION -n falcon-platform \
+  --reuse-values \
+  --set falcon-clusterguard.imageAnalyzer.log.verbosity=debug
+
+# Get image analyzer logs
+kubectl logs -n falcon-system -l app=falcon-image-analyzer
+```
+
+#### Container Sensor Logs
 ```bash
 # Enable debug level logs for falcon-sensor
-helm upgrade falcon-platform crowdstrike/falcon-platform --version 1.0.0 -n falcon-platform \
+helm upgrade falcon-platform crowdstrike/falcon-platform --version $PLATFORM_CHART_VERSION -n falcon-platform \
   --reuse-values \
   --set falcon-sensor.falcon.trace=debug
 
-# Get all falcon-sensor logs
-kubectl logs -n falcon-system -l app.kubernetes.io/instance=falcon-platform
-```
-
-#### KAC Logs
-```bash
-# Enable debug level logs for falcon-kac
-helm upgrade falcon-platform crowdstrike/falcon-platform --version 1.0.0 -n falcon-platform \
-  --reuse-values \
-  --set falcon-kac.falcon.trace=debug
-
-# Get all falcon-kac logs
-kubectl logs -n falcon-kac -l app.kubernetes.io/instance=falcon-platform
-```
-
-### Image Analyzer Logs
-
-```bash
-# Enable debug level logs for falcon-image-analyzer
-helm upgrade falcon-platform crowdstrike/falcon-platform --version 1.0.0 -n falcon-platform \
-  --reuse-values \
-  --set falcon-image-analyzer.crowdstrikeConfig.enableDebug=true
-
-# Get all falcon-image-analyzer logs
-kubectl logs -n falcon-image-analyzer -l app.kubernetes.io/instance=falcon-platform
+# Get container sensor injector logs
+kubectl logs -n falcon-system -l app=falcon-sensor-injector
 ```

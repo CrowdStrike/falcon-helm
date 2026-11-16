@@ -1,96 +1,176 @@
 Thank you for installing the CrowdStrike Falcon Platform Helm Chart!
 
+Release:   {{ .Release.Name }}
+Namespace: {{ .Release.Namespace }}
+Version:   {{ .Chart.Version }}
+
 Access to the Falcon component image downloads at registry.crowdstrike.com is required
 to complete installation of this Helm chart. If using an internal registry instead of
 registry.crowdstrike.com, ensure that all Falcon component images are present in a
 container registry accessible to your Kubernetes deployment.
 
-## Enabled Components
-
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 {{- $anyEnabled := false }}
-
+{{- /* Subcharts are only present in .Subcharts when enabled, so every include below is guarded. */}}
 {{- if (index .Values "falcon-clusterguard").enabled }}
 {{- $anyEnabled = true }}
-{{- $fcg := index .Values "falcon-clusterguard" }}
+{{- $fcg := index .Subcharts "falcon-clusterguard" }}
+{{- $ns := include "falcon-clusterguard.namespace" $fcg }}
 
-✓ Falcon Cluster Guard
-  - Namespace: {{ $fcg.namespaceOverride | default .Release.Namespace }}
-  - Image: {{ $fcg.image.repository }}:{{ $fcg.image.tag | default "latest" }}
-  - Cluster name: {{ $fcg.clusterName | default "(auto-discovered)" }}
+FALCON CLUSTER GUARD
+  Namespace:    {{ $ns }}
+  Version:      {{ $fcg.Chart.AppVersion }}
+  Image:        {{ $fcg.Values.image.repository }}{{ if $fcg.Values.image.digest }}@{{ $fcg.Values.image.digest }}{{ else }}:{{ $fcg.Values.image.tag }}{{ end }}
+  Cluster name: {{ $fcg.Values.clusterName | default "(auto-discovered)" }}
+{{- if include "falcon-clusterguard.csiEnabled" $fcg | eq "true" }}
+  Falcon CID:   Secrets Store CSI ({{ include "falcon-clusterguard.csiSecretName" $fcg }})
+{{- else if include "falcon-clusterguard.falconSecretEnabled" $fcg | eq "true" }}
+  Falcon CID:   existing secret ({{ include "falcon-clusterguard.falconSecretName" $fcg }})
+{{- else }}
+  Falcon CID:   Helm values (falcon.cid)
+{{- end }}
 
-  {{- if $fcg.nodeSensor.enabled }}
+WORKLOADS
+{{- if and $fcg.Values.nodeSensor.enabled $fcg.Values.nodeSensor.cleanupOnly }}
+  Node Sensor: cleanup only (falcon-clusterguard.nodeSensor.cleanupOnly=true). The sensor DaemonSet is not deployed.
+{{- else if $fcg.Values.nodeSensor.enabled }}
+  Node Sensor DaemonSet:
+    kubectl rollout status daemonset/{{ include "falcon-clusterguard.nodeDaemonsetName" $fcg }} \
+      -n {{ $ns }}
+  {{- if and (not $fcg.Values.gke.autopilot) (not (kindIs "invalid" (dig "limits" "cpu" nil ($fcg.Values.nodeSensor.daemonset.resources | default dict)))) }}
+    Note: a CPU limit is set (falcon-clusterguard.nodeSensor.daemonset.resources.limits.cpu). This is not
+    recommended: the sensor is throttled when it reaches the limit, which can delay event processing.
+  {{- end }}
+{{- else }}
+  Node Sensor: disabled (falcon-clusterguard.nodeSensor.enabled=false)
+{{- end }}
+{{- if (eq (include "falcon-clusterguard.clusterGuardDisabled" $fcg) "false") }}
 
-  ✓ Node Sensor (DaemonSet)
-    - Replaces: falcon-sensor node mode
+  Cluster Guard Controller Deployment:
+    kubectl rollout status deployment/{{ include "falcon-clusterguard.controllerName" $fcg }} \
+      -n {{ $ns }}
+{{- else }}
+
+  Cluster Guard Controller: disabled (falcon-clusterguard.clusterguardController.disableClusterGuardController is set)
+{{- end }}
+{{- if $fcg.Values.imageAnalyzer.enabled }}
+{{- $iarKind := ternary "DaemonSet" "Deployment" (include "falcon-clusterguard.iarDaemonsetEnabled" $fcg | eq "true") }}
+
+  Image Analyzer {{ $iarKind }}:
+    kubectl rollout status {{ lower $iarKind }}/{{ include "falcon-clusterguard.iarName" $fcg }} \
+      -n {{ $ns }}
+{{- else }}
+
+  Image Analyzer: disabled (falcon-clusterguard.imageAnalyzer.enabled=false)
+{{- end }}
+{{- if (eq (include "falcon-clusterguard.clusterGuardDisabled" $fcg) "false") }}
+
+FALCON CLUSTER GUARD CONTROLLER CONFIGURATION
+  Metadata Service: api.{{ $ns }}.svc:443
+  {{- if eq (include "falcon-clusterguard.admissionControlEnabled" $fcg) "true" }}
+  Admission control: ENABLED (failurePolicy: {{ $fcg.Values.clusterguardController.webhook.failurePolicy }})
+  ValidatingWebhookConfiguration: validating.{{ include "falcon-clusterguard.webhookName" $fcg }}
+  Webhook Service:  webhook.{{ $ns }}.svc:443
+  {{- else }}
+  Admission control: DISABLED (visibility-only mode).
+    Set falcon-clusterguard.clusterguardController.admissionControl.enabled=true to enable the validating webhook.
   {{- end }}
 
-  {{- if eq (include "falcon-platform.clusterGuardDisabled" .) "false" }}
+  {{- if $fcg.Values.certManager.enabled }}
 
-  ✓ Cluster Guard Controller (Deployment)
-    - Replaces: falcon-kac
-    - Cluster visibility: enabled
-    {{- if $fcg.clusterguardController.admissionControl.enabled }}
-    - Admission control webhook: enabled (failurePolicy: {{ ($fcg.clusterguardController.webhook).failurePolicy | default "Ignore" }})
-    {{- else }}
-    - Admission control webhook: disabled (set clusterguardController.admissionControl.enabled=true to enable)
-    {{- end }}
-  {{- end }}
-
-  {{- if $fcg.imageAnalyzer.enabled }}
-  {{- if eq (toString $fcg.imageAnalyzer.mode) "daemonset" }}
-
-  ✓ Image Analyzer (DaemonSet)
-    - Replaces: falcon-image-analyzer
-    - Mode: socket
-    - Runtime: {{ $fcg.imageAnalyzer.crowdstrikeConfig.agentRuntime }}
+  TLS certificates (admission webhook and gRPC mTLS) are issued by cert-manager.
   {{- else }}
 
-  ✓ Image Analyzer (Deployment)
-    - Replaces: falcon-image-analyzer
-    - Mode: watcher
+  TLS certificates are auto-generated on install.
+  {{- if $fcg.Values.clusterguardController.autoCertificateUpdate }}
+  Auto-rotation is ENABLED — Helm-generated certs refresh on every helm upgrade.
+  {{- else }}
+  Auto-rotation is DISABLED — Helm-generated certs are preserved across upgrades.
   {{- end }}
+  {{- end }}
+{{- end }}
+{{- if $fcg.Values.imageAnalyzer.enabled }}
+
+FALCON IMAGE ANALYZER CONFIGURATION
+  {{- if include "falcon-clusterguard.iarDaemonsetEnabled" $fcg | eq "true" }}
+  Mode:          socket (DaemonSet)
+  Runtime:       {{ $fcg.Values.imageAnalyzer.crowdstrikeConfig.agentRuntime }} ({{ include "falcon-clusterguard.iarAgentRuntimeSocket" $fcg }})
+  {{- else }}
+  Mode:          watcher (Deployment)
+  {{- end }}
+  Agent Service: {{ include "falcon-clusterguard.iarAgentService" $fcg }}.{{ $ns }}.svc:443
+  {{- if include "falcon-clusterguard.csiEnabled" $fcg | eq "true" }}
+  Credentials:   Secrets Store CSI ({{ include "falcon-clusterguard.iarCsiSecretName" $fcg }})
+  {{- else if include "falcon-clusterguard.falconSecretEnabled" $fcg | eq "true" }}
+  Credentials:   existing secret ({{ include "falcon-clusterguard.falconSecretName" $fcg }})
+  {{- else }}
+  Credentials:   chart-managed secret ({{ include "falcon-clusterguard.iarName" $fcg }})
+  {{- end }}
+  {{- if $fcg.Values.certManager.enabled }}
+  TLS:           issued by cert-manager ({{ include "falcon-clusterguard.iarName" $fcg }}-tls)
+  {{- else if $fcg.Values.imageAnalyzer.iarAgentService.autoCertificateUpdate }}
+  TLS:           Helm-generated ({{ include "falcon-clusterguard.iarName" $fcg }}-tls), refreshed on every helm upgrade
+  {{- else }}
+  TLS:           Helm-generated ({{ include "falcon-clusterguard.iarName" $fcg }}-tls), preserved across upgrades
+  {{- end }}
+  {{- if $fcg.Values.gke.enabled }}
+  GKE:           waits for the GKE metadata server before starting (falcon-clusterguard.gke.enabled)
+  {{- end }}
+  {{- if $fcg.Values.azure.enabled }}
+  AKS:           mounts {{ $fcg.Values.azure.azureConfig }} for registry authentication (falcon-clusterguard.azure.enabled)
   {{- end }}
 
+  View Image Analyzer logs:
+    kubectl logs -l app=falcon-image-analyzer \
+      -n {{ $ns }} --tail=100
+{{- end }}
+{{- if $fcg.Values.testing.enabled }}
+
+HELM TESTS
+  Run the test suite:
+    helm test {{ .Release.Name }} -n {{ .Release.Namespace }}
+{{- end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 {{- end }}
 
 {{- if (index .Values "falcon-sensor").enabled }}
+{{- $sensor := index .Subcharts "falcon-sensor" }}
+{{- if $sensor.Values.container.enabled }}
 {{- $anyEnabled = true }}
-{{- $sensorType := "" }}
-{{- $sensorDeploymentType := "" }}
-{{- if (index .Values "falcon-sensor").node.enabled }}
-{{- $sensorType = "Node" }}
-{{- $sensorDeploymentType = "daemonset" }}
-{{- else if (index .Values "falcon-sensor").container.enabled }}
-{{- $sensorType = "Container" }}
-{{- $sensorDeploymentType = "sidecar" }}
-{{- end }}
+{{- $sensorNs := include "falcon-sensor.namespace" $sensor }}
 
-✓ Falcon Sensor - Runtime {{ $sensorType }} Protection
-  - Deployment: {{ $sensorDeploymentType }}
-  - Namespace: {{ (index .Values "falcon-sensor").namespaceOverride }}
+FALCON CONTAINER SENSOR
+  Namespace: {{ $sensorNs }}
+  Version:   {{ $sensor.Chart.AppVersion }}
 
-{{- if (index .Values "falcon-sensor").node.enabled }}
+  Injector Deployment:
+    kubectl rollout status deployment/{{ include "falcon-sensor.name" $sensor }}-injector \
+      -n {{ $sensorNs }}
 
-    {{ "\033[33m" }}WARNING: falcon-sensor node mode is deprecated.
-    Node sensor is now part of falcon-clusterguard. Set falcon-sensor.node.enabled=false
-    and enable falcon-clusterguard to migrate.{{ "\033[0m" }}
-  {{- if (index .Values "falcon-sensor").node.backend }}
+  CrowdStrike Falcon sensors will deploy across all pods as sidecars in your Kubernetes cluster
+  after installing this Helm chart and starting a new pod deployment for all your applications.
 
-    {{ "\033[33m" }}WARNING: falcon-sensor.node.backend is deprecated and will be ignored.
-    It may be removed in a future helm release.{{ "\033[0m" }}
-  {{- end }}
-{{- end }}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{{- else }}
 
-{{- if (index .Values "falcon-sensor").container.enabled }}
-
-CrowdStrike Falcon sensors will deploy across all pods as sidecars in your Kubernetes cluster after
-installing this Helm chart and starting a new pod deployment for all your applications.
-The default image name to deploy the pod sensor is `falcon-sensor`.
+{{ "\033[33m" }}WARNING: falcon-sensor.enabled=true but falcon-sensor.container.enabled=false, so no
+Falcon Container sensor is deployed. The falcon-sensor chart only deploys the Falcon Container sensor:
+set falcon-sensor.container.enabled=true, or set falcon-sensor.enabled=false. Node protection is
+provided by falcon-clusterguard.{{ "\033[0m" }}
 {{- end }}
 {{- end }}
 
-{{- /* falcon-image-analyzer is no longer a subchart; its values only remain from older releases
-       (for example with --reuse-values). Warn instead of reporting a component that isn't deployed. */}}
+{{- /* falcon-kac and falcon-image-analyzer are no longer subcharts; their values only remain from
+       falcon-platform 1.x releases (for example with --reuse-values). Warn instead of reporting
+       components that aren't deployed. */}}
+{{- if (index .Values "falcon-kac" | default dict).enabled }}
+
+{{ "\033[33m" }}WARNING: falcon-kac is no longer part of falcon-platform, so the falcon-kac.* values are
+ignored and no standalone admission controller is deployed. Admission control is now part of
+falcon-clusterguard: move these settings to falcon-clusterguard.clusterguardController.*
+(scripts/migration/migrate-to-fcg.py does this).{{ "\033[0m" }}
+{{- end }}
 {{- if (index .Values "falcon-image-analyzer" | default dict).enabled }}
 
 {{ "\033[33m" }}WARNING: falcon-image-analyzer is no longer part of falcon-platform, so the
@@ -100,48 +180,19 @@ falcon-clusterguard.imageAnalyzer.* (scripts/migration/migrate-to-fcg.py does th
 {{- end }}
 
 {{- if not $anyEnabled }}
+
 ⚠️  No components are currently enabled.
-   Set individual component 'enabled: true' in values.yaml to deploy them.
+   Set falcon-clusterguard.enabled=true, or falcon-sensor.enabled=true with
+   falcon-sensor.container.enabled=true, to deploy them.
 {{- end }}
 
-## Component Status
-
-Check deployment status with:
+Check all Falcon Platform pods with:
   kubectl get pods -l app.kubernetes.io/instance={{ .Release.Name }} -A
-
-Monitor components:
-  kubectl logs -l app.kubernetes.io/instance={{ .Release.Name }} -n <component-namespace>
-
-{{- if (index .Values "falcon-clusterguard").enabled }}
-{{- $fcg := index .Values "falcon-clusterguard" }}
-{{- $ns := $fcg.namespaceOverride | default .Release.Namespace }}
-
-## Falcon Cluster Guard Status
-
-  {{- if $fcg.nodeSensor.enabled }}
-  Node sensor DaemonSet:
-    kubectl rollout status daemonset/{{ ($fcg.nodeSensor.daemonset).name | default "falcon-sensor" }} -n {{ $ns }}
-  {{- end }}
-  {{- if eq (include "falcon-platform.clusterGuardDisabled" .) "false" }}
-  Cluster Guard Controller Deployment:
-    kubectl rollout status deployment/{{ printf "%s-controller" ($fcg.nameOverride | default "falcon-clusterguard" | trunc 52 | trimSuffix "-") }} -n {{ $ns }}
-  {{- end }}
-  {{- if $fcg.imageAnalyzer.enabled }}
-  Image Analyzer pods:
-    kubectl get pods -l app=falcon-image-analyzer -n {{ $ns }}
-  {{- end }}
-{{- end }}
-
-## Troubleshooting
 
 When utilizing your own registry, a common error on installation is forgetting
 to add your containerized sensor to your local image registry prior to
 executing `helm install`. Please read the Helm Chart's readme for more
 deployment considerations.
-{{- if or (and (index .Values "falcon-sensor").enabled (index .Values "falcon-sensor").node.enabled) (index .Values "falcon-kac").enabled (index .Values "falcon-image-analyzer").enabled }}
 
-{{ "\033[33m" }}ANNOUNCEMENT: In January 2027, the Falcon sensor for Linux (DaemonSet), Kubernetes Admission
-Controller (KAC), and Image Assessment at Runtime (IAR) will be consolidated into Falcon Cluster Guard.
-Read the Falcon Cluster Guard Announcement to prepare your environment:
-https://github.com/CrowdStrike/falcon-helm/blob/main/FALCON_CLUSTER_GUARD.md{{ "\033[0m" }}
-{{- end }}
+For support, visit https://crowdstrike.com or open an issue at
+https://github.com/CrowdStrike/falcon-helm
